@@ -37,7 +37,8 @@ You have access to these tools:
 - read: read file contents with line numbers (use offset/limit for large files)
 - ls: list files and directories
 - glob: find files by pattern (e.g. "src/**/*.ts")
-- grep: search file contents with regex`;
+- grep: search file contents with regex
+- webfetch: fetch a URL and return its text content (for documentation, API references, research)`;
 
   if (mode === "build") {
     return (
@@ -53,6 +54,8 @@ You have access to these tools:
        may be destructive (rm, sudo, curl pipe, force push) are blocked.
 - task: launch a subagent for complex multi-step tasks (types: 'explore' for read-only,
        'general' for full access). Use when a task requires isolated context.
+- webfetch: fetch content from a URL (HTML is stripped to text). Use for documentation,
+       API references, or researching external resources.
 
 Rules:
 - Be concise and precise. Prefer short, direct answers; expand only when asked.
