@@ -12,6 +12,7 @@ import { saveSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
 import { dispatch, isSlashCommand } from "../commands/index.ts";
+import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
 
 type HistoryItem = {
   id: number;
@@ -79,7 +80,7 @@ export default function App({ session }: { session: Session }) {
 
   const nextId = (): number => Date.now() + Math.random();
 
-  async function doTurn(userText: string) {
+  async function doTurn(userText: string, skillBodies?: string[]) {
     setStatusText("");
     setBusy(true);
     setStreaming("");
@@ -101,7 +102,7 @@ export default function App({ session }: { session: Session }) {
     let currentToolId = 0;
 
     try {
-      const chunks = runTurn(messagesRef.current, aborterRef.current.signal);
+      const chunks = runTurn(messagesRef.current, aborterRef.current.signal, undefined, skillBodies);
 
       for await (const chunk of chunks) {
         switch (chunk.type) {
@@ -225,13 +226,42 @@ ${args ? `Additional context: ${args}` : ""}`;
               return `Init failed: ${err instanceof Error ? err.message : String(err)}`;
             }
           },
+          doSkill: async (name, body) => {
+            nextTurn();
+            messagesRef.current.push({ role: "user" as const, content: v });
+            const aborter = new AbortController();
+            try {
+              const chunks = runTurn(messagesRef.current, aborter.signal, undefined, [body]);
+              for await (const chunk of chunks) {}
+              sessionRef.current.meta.turnCount++;
+              await finalizeSnapshots();
+              await saveSession(sessionRef.current);
+              return `Skill '${name}' executed.`;
+            } catch (err) {
+              messagesRef.current.pop();
+              return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
+            }
+          },
         }).then((result) => {
           if (result) setStatusText(result);
         });
         return;
       }
 
-      doTurn(v);
+      async function runWithSkills() {
+        const matchedSkills = matchSkills(v, getCachedRegistry());
+        const skillBodies: string[] = [];
+        for (const name of matchedSkills) {
+          const body = await loadSkillBody(name);
+          if (body) skillBodies.push(body);
+        }
+        if (skillBodies.length > 0) {
+          setStatusText(`Skills matched: ${matchedSkills.join(", ")}`);
+        }
+        doTurn(v, skillBodies.length > 0 ? skillBodies : undefined);
+      }
+
+      runWithSkills();
     },
     [busy, exit],
   );

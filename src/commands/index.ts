@@ -1,13 +1,13 @@
 import type { AgentMode } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
+import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
 
 export interface CommandInfo {
   name: string;
   description: string;
-  /** Se true, il comando delega all'LLM (es. /init) */
   delegate?: boolean;
-  /** Template da inviare all'LLM (con $ARGUMENTS) */
   template?: string;
+  isSkill?: boolean;
 }
 
 export type CommandHandler = (
@@ -16,6 +16,7 @@ export type CommandHandler = (
     setMode?: (m: AgentMode) => void;
     clearMessages?: () => void;
     doInit?: (args: string) => Promise<string>;
+    doSkill?: (name: string, body: string) => Promise<string>;
   },
 ) => string | void | Promise<string | void>;
 
@@ -26,7 +27,7 @@ export function register(
   name: string,
   description: string,
   handler: CommandHandler,
-  opts?: { delegate?: boolean; template?: string },
+  opts?: { delegate?: boolean; template?: string; isSkill?: boolean },
 ) {
   registry.set(name, { name, description, delegate: opts?.delegate, template: opts?.template });
   handlers.set(name, handler);
@@ -108,3 +109,22 @@ register("redo", "Redo previously undone file modifications", async () => {
   if (files.length > 0) return `Redo: restored ${files.join(", ")}`;
   return "Nothing to redo.";
 });
+
+export async function initSkillCommands(): Promise<void> {
+  const skills = getCachedRegistry();
+  for (const skill of skills) {
+    register(
+      skill.name,
+      skill.description,
+      async (args, ctx) => {
+        const body = await loadSkillBody(skill.name);
+        if (!body) return `Skill '${skill.name}' not found.`;
+        if (ctx.doSkill) {
+          return ctx.doSkill(skill.name, body);
+        }
+        return `Skill '${skill.name}' loaded.`;
+      },
+      { delegate: true, isSkill: true },
+    );
+  }
+}

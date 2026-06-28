@@ -10,6 +10,7 @@ import { saveSession } from "./session/store.ts";
 import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
 import { dispatch, isSlashCommand } from "./commands/index.ts";
+import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -91,16 +92,41 @@ ${args ? `Additional context: ${args}` : ""}`;
               return `Init failed: ${err instanceof Error ? err.message : String(err)}`;
             } finally { aborter = null; }
           },
+          doSkill: async (name, body) => {
+            nextTurn();
+            messages.push({ role: "user", content: input });
+            aborter = new AbortController();
+            try {
+              await consumeTurn(runTurn(messages, aborter.signal, undefined, [body]));
+              session.meta.turnCount++;
+              await finalizeSnapshots();
+              await saveSession(session);
+              return `Skill '${name}' executed.`;
+            } catch (err) {
+              messages.pop();
+              return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
+            } finally { aborter = null; }
+          },
         });
         if (result) stdout.write(`${DIM}${result}${RESET}\n\n`);
         continue;
+      }
+
+      const matchedSkills = matchSkills(input, getCachedRegistry());
+      const skillBodies: string[] = [];
+      for (const name of matchedSkills) {
+        const body = await loadSkillBody(name);
+        if (body) skillBodies.push(body);
+      }
+      if (skillBodies.length > 0) {
+        stdout.write(`${DIM}Skills matched: ${matchedSkills.join(", ")}${RESET}\n`);
       }
 
       nextTurn();
       messages.push({ role: "user", content: input });
       aborter = new AbortController();
       try {
-        await consumeTurn(runTurn(messages, aborter.signal));
+        await consumeTurn(runTurn(messages, aborter.signal, undefined, skillBodies.length > 0 ? skillBodies : undefined));
         stdout.write("\n\n");
         session.meta.turnCount++;
         await finalizeSnapshots();
