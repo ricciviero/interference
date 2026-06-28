@@ -3,17 +3,10 @@ import { resolveModel } from "../provider.ts";
 import { currentProvider } from "../config.ts";
 
 const COMPACT_THRESHOLD = 0.9;
+const DEFAULT_CONTEXT = 200_000;
 
-const CONTEXT_LIMITS: Record<string, number> = {
-  "deepseek-v4-pro": 1_000_000,
-  "claude-sonnet-4-6": 200_000,
-  "glm-4.6": 200_000,
-  "kimi-k2.6": 128_000,
-  default: 128_000,
-};
-
-function getContextLimit(modelId: string): number {
-  return CONTEXT_LIMITS[modelId] ?? CONTEXT_LIMITS.default!;
+function getContextLimit(): number {
+  return currentProvider().contextLimit ?? DEFAULT_CONTEXT;
 }
 
 function estimateTokens(text: string): number {
@@ -34,20 +27,14 @@ function estimateMessagesTokens(messages: ModelMessage[]): number {
   return total;
 }
 
-export function shouldCompact(
-  messages: ModelMessage[],
-  modelId?: string,
-): boolean {
-  const limit = getContextLimit(modelId ?? "default");
+export function shouldCompact(messages: ModelMessage[]): boolean {
+  const limit = getContextLimit();
   const used = estimateMessagesTokens(messages);
   return used > limit * COMPACT_THRESHOLD;
 }
 
-export function getUsagePercent(
-  messages: ModelMessage[],
-  modelId?: string,
-): number {
-  const limit = getContextLimit(modelId ?? "default");
+export function getUsagePercent(messages: ModelMessage[]): number {
+  const limit = getContextLimit();
   const used = estimateMessagesTokens(messages);
   return Math.round((used / limit) * 100);
 }

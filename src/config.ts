@@ -25,15 +25,17 @@ export interface ProviderDef {
   extraBody?: Record<string, unknown>;
   /** Tetto output token (serve quando il reasoning ha un budget, es. Anthropic). */
   maxOutputTokens?: number;
+  /** Context window size in tokens (per compaction threshold). Default 200K. */
+  contextLimit?: number;
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   deepseek: {
     label: "DeepSeek",
     envKey: "DEEPSEEK_API_KEY",
-    defaultModel: "deepseek-v4-pro", // 1M ctx, reasoning
+    defaultModel: "deepseek-v4-pro",
     kind: "deepseek",
-    // Reasoning al massimo: thinking ON + effort max.
+    contextLimit: 1_000_000,
     providerOptions: {
       deepseek: { thinking: { type: "enabled" }, reasoningEffort: "max" },
     },
@@ -41,8 +43,9 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   anthropic: {
     label: "Anthropic (Claude)",
     envKey: "ANTHROPIC_API_KEY",
-    defaultModel: "claude-sonnet-4-6", // model-id / pricing → skill claude-api
+    defaultModel: "claude-sonnet-4-6",
     kind: "anthropic",
+    contextLimit: 200_000,
     // Extended thinking (regime 4.x classico): budget alto, maxOutputTokens > budget.
     providerOptions: {
       anthropic: { thinking: { type: "enabled", budgetTokens: 32000 } },
@@ -52,8 +55,9 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   glm: {
     label: "Zhipu GLM",
     envKey: "GLM_API_KEY",
-    defaultModel: "glm-4.6", // 200K ctx
+    defaultModel: "glm-4.6",
     kind: "openai-compatible",
+    contextLimit: 200_000,
     baseURL: "https://api.z.ai/api/paas/v4", // path /api/paas/v4, NON /v1
     extraBody: { thinking: { type: "enabled" } },
   },
@@ -62,6 +66,7 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     envKey: "KIMI_API_KEY",
     defaultModel: "kimi-k2.6",
     kind: "openai-compatible",
+    contextLimit: 128_000,
     baseURL: "https://api.moonshot.ai/v1",
     extraBody: { thinking: { type: "enabled", keep: "all" } },
   },

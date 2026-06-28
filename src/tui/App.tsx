@@ -7,7 +7,7 @@ import type { Chunk } from "../agent/loop.ts";
 import { MissingApiKeyError } from "../provider.ts";
 import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
-import { currentModel, currentMode, setMode } from "../config.ts";
+import { currentMode, setMode } from "../config.ts";
 import { saveSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
@@ -161,15 +161,15 @@ export default function App({ session }: { session: Session }) {
       await finalizeSnapshots();
       await saveSession(sessionRef.current);
 
-      if (shouldCompact(messagesRef.current, currentModel())) {
-        const pct = getUsagePercent(messagesRef.current, currentModel());
+      if (shouldCompact(messagesRef.current)) {
+        const pct = getUsagePercent(messagesRef.current);
         setStatusText(`Compacting context (${pct}%)`);
         const compacted = await compactMessages(messagesRef.current);
         messagesRef.current.length = 0;
         messagesRef.current.push(...compacted);
         sessionRef.current.messages = messagesRef.current;
         await saveSession(sessionRef.current);
-        setStatusText(`Compacted (${getUsagePercent(messagesRef.current, currentModel())}%)`);
+        setStatusText(`Compacted (${getUsagePercent(messagesRef.current)}%)`);
       }
     } catch (err) {
       messagesRef.current.pop();
