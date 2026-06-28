@@ -1,10 +1,11 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo/interference-lockup-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="logo/interference-lockup-light.svg">
-    <img alt="Interference" src="logo/interference-lockup-light.svg" width="460">
+    <source media="(prefers-color-scheme: dark)" srcset="logo/interference-icon-512-dark.png">
+    <img alt="Interference" src="logo/interference-icon-512.png" width="96">
   </picture>
 </p>
+
+# Interference
 
 > **Run coding LLMs locally on Apple Silicon — discover, download to external SSD, serve via OpenAI-compatible API, use with opencode.**
 
