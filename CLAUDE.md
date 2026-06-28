@@ -194,6 +194,9 @@ Le feature del progetto sono organizzate come **iterazioni** in [`iterazioni/`](
 11. `11-config-file/` — file `interference.json` per progetto (model, permessi, mode, instructions)
 12. `12-diff-tui/` — diff view nella TUI per edit/write (mostra cosa è cambiato)
 
+*Fase 5 — Esperienza utente*
+13. `13-ux-tui/` — UX/UI completa: status footer, confirm dialog, slash autocomplete, toast, session list, vim keybindings
+
 **Workflow**: leggi `task.md` poi `plan.md` → se serve aggiorna `plan.md` prima del codice → implementa → **pass di completezza** (§6.8) → aggiorna `CLAUDE.md`/`docs/` se cambia architettura → stato `task.md` a 🟢.
 
 <!-- Sezione "Fix in coda" gestita da `iterations-planner` al primo bug non banale (cartella `fix/`). -->

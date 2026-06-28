@@ -31,21 +31,28 @@ interference/
 │   ├── permissions.ts        # allow/ask/deny + pattern + confirmHandler event-driven
 │   ├── agent/
 │   │   ├── loop.ts          # agent loop: streamText + tools + stopWhen + fullStream
-│   │   └── prompt.ts        # system prompt (dinamico Plan vs Build + env + instructions)
+│   │   ├── prompt.ts        # system prompt (dinamico Plan vs Build + env + instructions + skills)
+│   │   ├── compaction.ts    # compattazione automatica contesto (summary via LLM)
+│   │   └── subagent.ts      # definizioni subagent (explore/general)
 │   ├── tools/
 │   │   ├── index.ts         # registry (readonlyTools, allTools, toolsForMode)
+│   │   ├── registry.ts     # set di tool senza task (rompe circolarità)
 │   │   ├── _fs.ts           # resolveInWorkspace (path containment)
-│   │   ├── read.ts ls.ts glob.ts grep.ts     # read-only
-│   │   └── write.ts edit.ts bash.ts          # mutanti (con gate permessi)
+│   │   ├── read.ts ls.ts glob.ts grep.ts webfetch.ts    # read-only + web
+│   │   ├── write.ts edit.ts bash.ts                      # mutanti (con gate permessi)
+│   │   └── task.ts          # subagent tool (explore/general)
 │   ├── commands/
 │   │   └── index.ts         # registry slash command + dispatch + skill auto-registration
 │   ├── context.ts           # caricamento AGENTS.md/CLAUDE.md
 │   ├── skills.ts            # skill loader: registry, body, frontmatter, keyword match, bootstrap
+│   ├── config-file.ts       # caricamento interference.json (walk up, first-match-wins)
+│   ├── permissions.ts       # allow/ask/deny engine + confirmHandler event-driven
 │   ├── session/
 │   │   ├── store.ts         # persistenza storico sessioni
 │   │   └── snapshot.ts      # snapshot file before/after + undo/redo stack
 │   └── tui/
-│       ├── App.tsx          # root Ink: Static history + streaming + spinner + TextInput + conferme
+│       ├── App.tsx          # root Ink: Static history + streaming + spinner + TextInput + conferme + diff
+│       ├── DiffView.tsx     # diff view per edit/write (colori +/-)
 │       ├── Message.tsx      # componente messaggio (user/assistant)
 │       └── ToolStep.tsx     # componente tool step (call → result)
 └── docs/
@@ -57,12 +64,16 @@ interference/
 
 - **provider** — astrae il `LanguageModel`; cloud (Anthropic/OpenAI) o locale (OpenAI-compatible). Cambiare provider non tocca il loop.
 - **agent loop** — `streamText({ model, system, messages, tools, stopWhen: stepCountIs(N) })`; consuma `fullStream` (text-delta + tool-call + tool-result); reinietta gli errori di tool per auto-correzione.
-- **tools** — definizione uniforme `tool({ description, inputSchema, execute })`; registry che espone set diversi per modo; ogni I/O passa da `resolveInWorkspace`.
-- **permessi** — `decide(tool, args) → allow|ask|deny`, valutato nel dispatch (non nel prompt); `ask` → conferma con preview; `setConfirmHandler` event-driven.
-- **session** — storico persistito per progetto (`~/.interference/<hash>/sessions/`); snapshot dei file toccati prima delle mutazioni; undo/redo via ripristino snapshot.
-- **commands** — registry slash command centralizzato; dispatch prima dell'invio all'LLM; skill auto-registrate come slash command.
-- **skills** — loader universale da `~/.interference/skills/<name>/SKILL.md`; keyword match pre-turno; bootstrap automatico.
-- **context** — caricamento AGENTS.md/CLAUDE.md da path globali e project tree (walk up, first-match-wins); injection nel system prompt.
+- **tools** — definizione uniforme `tool({ description, inputSchema, execute })`; registry (readonly, all, toolsForMode); ogni I/O passa da `resolveInWorkspace`; 8 tool: read, ls, glob, grep, webfetch, write, edit, bash, task.
+- **permessi** — `decide(tool, args) → allow|ask|deny`, valutato nel dispatch; `ask` → conferma con preview; `setConfirmHandler` event-driven; deny list per comandi pericolosi e path segreti.
+- **session** — storico persistito (`~/.interference/<hash>/sessions/`); snapshot before/after; undo/redo via `/undo` `/redo`; ripresa con `--continue`.
+- **commands** — registry slash command centralizzato; dispatch prima dell'invio all'LLM; skill auto-registrate; comandi: help, clear, init, model, plan/build, undo, redo, compact.
+- **skills** — loader da `~/.interference/skills/<name>/SKILL.md`; frontmatter YAML (name, description); keyword match pre-turno; bootstrap automatico.
+- **context** — caricamento AGENTS.md/CLAUDE.md (walk up, first-match-wins); instructions custom da `interference.json`; injection nel system prompt.
+- **compaction** — compattazione automatica a ~90% contesto; summary via LLM (`generateText`); preserva ultimi 2 turni; soglie per-modello configurate in ProviderDef.
+- **config-file** — `interference.json` per-progetto (walk up, first-match-wins); model, mode, permissions, instructions; merge con env vars.
+- **subagent** — tool `task` con tipi `explore` (read-only) e `general` (full); contesto isolato; anti-recursion (task non esposto al subagent); risultato XML-wrapped.
+- **tui** — Ink: `<Static>` per history, streaming, spinner, TextInput, conferme y/n, diff view per write/edit (+verde, -rosso); fallback non-TTY via `cli-plain.ts`.
 - **tui** — Ink: `<Static>` per la history, area dinamica per il turno in streaming, spinner, input; fallback testo se non-TTY.
 
 ---
