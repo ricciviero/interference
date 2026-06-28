@@ -8,7 +8,7 @@ import { MissingApiKeyError } from "../provider.ts";
 import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
 import { currentMode, setMode } from "../config.ts";
-import { saveSession } from "../session/store.ts";
+import { saveSession, loadSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
 import { dispatch, isSlashCommand } from "../commands/index.ts";
@@ -269,6 +269,15 @@ ${args ? `Additional context: ${args}` : ""}`;
               return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
             }
           },
+          doSessions: async () => {
+            setShowSessions(true);
+            return "";
+          },
+          doRename: async (name) => {
+            sessionRef.current.meta.id = name;
+            await saveSession(sessionRef.current);
+            return `Session renamed to '${name}'.`;
+          },
         }).then((result) => {
           if (result) setStatusText(result);
         });
@@ -297,9 +306,29 @@ ${args ? `Additional context: ${args}` : ""}`;
     <Box flexDirection="column" padding={1}>
       {showSessions && (
         <SessionList
-          onSelect={(id) => {
+          onSelect={async (id) => {
             setShowSessions(false);
-            addToast(`Session ${id.slice(0, 12)} selected (reload to resume)`);
+            const loaded = await loadSession(id);
+            if (loaded) {
+              messagesRef.current = loaded.messages;
+              sessionRef.current = loaded;
+              // Rebuild history from messages
+              const items: HistoryItem[] = [];
+              let nid = Date.now();
+              for (const m of loaded.messages) {
+                if (m.role === "user" || m.role === "assistant") {
+                  const content = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
+                  items.push({ id: nid++, role: m.role as "user" | "assistant", content });
+                }
+              }
+              setHistory(items);
+              setStreaming("");
+              setReasoning("");
+              setToolSteps([]);
+              addToast(`Resumed session ${id.slice(0, 12)} (${loaded.meta.turnCount} turns)`, "success");
+            } else {
+              addToast(`Session ${id.slice(0, 12)} not found`, "error");
+            }
           }}
           onCancel={() => setShowSessions(false)}
         />

@@ -17,6 +17,8 @@ export type CommandHandler = (
     clearMessages?: () => void;
     doInit?: (args: string) => Promise<string>;
     doSkill?: (name: string, body: string) => Promise<string>;
+    doSessions?: () => Promise<string>;
+    doRename?: (name: string) => Promise<string>;
   },
 ) => string | void | Promise<string | void>;
 
@@ -114,8 +116,15 @@ register("compact", "Compact conversation context to save tokens", () => {
   return "Compaction will run at the end of this turn if context is > 90% full.";
 });
 
-register("sessions", "List and resume previous sessions", () => {
-  return "Opening session list...";
+register("sessions", "List and resume previous sessions", (_args, ctx) => {
+  if (ctx.doSessions) return ctx.doSessions();
+  return "Session list not available in this context.";
+});
+
+register("rename", "Rename the current session (usage: /rename <new-name>)", (args, ctx) => {
+  if (!args.trim()) return "Usage: /rename <new-name>";
+  if (ctx.doRename) return ctx.doRename(args.trim());
+  return `Session would be renamed to '${args.trim()}'.`;
 });
 
 export async function initSkillCommands(): Promise<void> {

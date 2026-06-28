@@ -6,7 +6,7 @@ import { runTurn } from "./agent/loop.ts";
 import type { Chunk } from "./agent/loop.ts";
 import { MissingApiKeyError } from "./provider.ts";
 import { setConfirmHandler } from "./permissions.ts";
-import { saveSession } from "./session/store.ts";
+import { saveSession, loadSession, listSessions } from "./session/store.ts";
 import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
 import { dispatch, isSlashCommand } from "./commands/index.ts";
@@ -108,6 +108,36 @@ ${args ? `Additional context: ${args}` : ""}`;
               messages.pop();
               return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
             } finally { aborter = null; }
+          },
+          doSessions: async () => {
+            const list = await listSessions();
+            if (list.length === 0) return "No sessions found.";
+            stdout.write(`\n${DIM}Sessions:${RESET}\n`);
+            for (let i = 0; i < Math.min(list.length, 15); i++) {
+              const s = list[i]!;
+              stdout.write(`  ${DIM}${i + 1}.${RESET} ${s.id.slice(0, 12)} ${DIM}· ${s.mode} · ${s.turnCount}t · ${s.updatedAt.slice(0, 10)}${RESET}\n`);
+            }
+            stdout.write(`${DIM}Enter number to resume or 0 to cancel: ${RESET}`);
+            let choice: string;
+            try { choice = (await rl.question("")).trim(); } catch { return "Cancelled."; }
+            const idx = parseInt(choice) - 1;
+            if (idx >= 0 && idx < list.length && list[idx]) {
+              const loaded = await loadSession(list[idx]!.id);
+              if (loaded) {
+                messages.length = 0;
+                messages.push(...loaded.messages);
+                session.meta = loaded.meta;
+                session.messages = loaded.messages;
+                return `Resumed session ${list[idx]!.id.slice(0, 12)} (${loaded.meta.turnCount} turns).`;
+              }
+              return "Session not found.";
+            }
+            return "Cancelled.";
+          },
+          doRename: async (name) => {
+            session.meta.id = name;
+            await saveSession(session);
+            return `Session renamed to '${name}'.`;
           },
         });
         if (result) stdout.write(`${DIM}${result}${RESET}\n\n`);
