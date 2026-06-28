@@ -15,6 +15,7 @@ import { dispatch, isSlashCommand } from "../commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "../agent/compaction.ts";
 import { computeDiff, type DiffLine } from "./DiffView.tsx";
+import { estimateCost, formatCost } from "../cost.ts";
 import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
@@ -435,6 +436,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             busy={busy}
             statusLine={statusText}
             turnCount={sessionRef.current.meta.turnCount}
+            cost={formatCost(estimateCost(messagesRef.current))}
           />
         </>
       )}

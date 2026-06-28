@@ -13,6 +13,7 @@ import { dispatch, isSlashCommand } from "./commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
 import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
+import { estimateCost, formatCost } from "./cost.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -24,15 +25,21 @@ export default async function plain(session: Session): Promise<void> {
   const provider = currentProvider();
   const mode = currentMode();
   const modeLabel = mode === "plan" ? "Plan" : "Build";
+  const modeSymbol = mode === "plan" ? "⬡" : "⬢";
+
+  stdout.write(`\n${BOLD}  interference${RESET}  ${DIM}the open-source coding agent${RESET}\n`);
+  stdout.write(`${DIM}  ______________________________${RESET}\n`);
+  stdout.write(`\n`);
   stdout.write(
-    `${BOLD}interference${RESET} ${DIM}· ${provider.label} · ${currentModel()} · ${modeLabel}${RESET}\n`,
+    `${DIM}  ${modeSymbol} ${modeLabel}${RESET}  ${DIM}·${RESET}  ${provider.label}  ${DIM}·${RESET}  ${currentModel()}  ${DIM}·${RESET}  ${getUsagePercent(session.messages)}% ctx  ${DIM}·${RESET}  ${formatCost(estimateCost(session.messages))}${RESET}\n`,
   );
+  stdout.write(`\n`);
 
   if (session.messages.length > 0) {
-    stdout.write(`${DIM}Resumed session ${session.meta.id} (${session.meta.turnCount} turns)${RESET}\n`);
+    stdout.write(`${DIM}  ↳ Resumed ${session.meta.id.slice(0, 12)} (${session.meta.turnCount} turns)${RESET}\n\n`);
   }
 
-  stdout.write(`${DIM}Type a message · /exit · /build · /undo · /redo · Ctrl-C${RESET}\n\n`);
+  stdout.write(`  ${DIM}Type a message · /help · /build · /sessions · Ctrl-C${RESET}\n\n`);
 
   const rl = readline.createInterface({ input: stdin, output: stdout });
   const messages = session.messages;

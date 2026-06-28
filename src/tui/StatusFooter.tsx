@@ -8,6 +8,7 @@ interface Props {
   busy: boolean;
   statusLine: string;
   turnCount: number;
+  cost: string;
 }
 
 export function StatusFooter({
@@ -18,6 +19,7 @@ export function StatusFooter({
   busy,
   statusLine,
   turnCount,
+  cost,
 }: Props) {
   const modeColor = mode === "build" ? "yellow" : "blue";
 
@@ -36,6 +38,9 @@ export function StatusFooter({
           </Text>
         )}
         <Text dimColor>#{turnCount}</Text>
+        {cost && (
+          <Text dimColor>{cost}</Text>
+        )}
       </Box>
       <Box>
         {busy && (

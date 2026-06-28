@@ -13,7 +13,7 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3.5);
 }
 
-function estimateMessagesTokens(messages: ModelMessage[]): number {
+export function estimateMessagesTokens(messages: ModelMessage[]): number {
   let total = 0;
   for (const m of messages) {
     if (typeof m.content === "string") {
