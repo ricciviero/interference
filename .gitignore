@@ -1,40 +1,30 @@
 # =============================================================================
-# Interference — .gitignore (Python toolkit, uv)
+# interference — .gitignore (TypeScript + Bun)
 # =============================================================================
 
 # --- Environment / secrets ---------------------------------------------------
 .env
-.env.local
-*.env.local
-# `.env.example` IS committed (template, no real secrets).
+.env.*
+!.env.example
 
-# --- Python / uv -------------------------------------------------------------
-__pycache__/
-*.py[cod]
-.venv/
-*.egg-info/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-# uv.lock IS committed (riproducibilità).
+# --- Node / Bun --------------------------------------------------------------
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.bun/
+# bun.lock / bun.lockb ARE committed (riproducibilità).
 
-# --- Modelli & cache (mai nel repo; comunque stanno sull'SSD esterno) --------
-*.gguf
-*.safetensors
-*.npz
-/models/
-hf/
-
-# --- Local working notes (per-developer iterations) --------------------------
+# --- Internal / non versionato (scelta progetto) -----------------------------
+# Configurazione e doc operative interne all'agente: fuori dal repo pubblico.
+/CLAUDE.md
+/.claude
+/docs
+# Asset sorgente del brand (la landing usa solo i file in site/assets/).
+/logo
+# Note di lavoro per developer.
 /iterazioni
-
-# --- Packaging ----------------------------------------------------------------
-/dist/
-*.pyz
-
-# --- Legacy stack Rust/Tauri (in attesa di rimozione) ------------------------
-/target/
-**/target/
+/fix
 
 # --- Logs --------------------------------------------------------------------
 logs/
@@ -49,8 +39,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
-/CLAUDE.md
 
 # --- Misc secrets ------------------------------------------------------------
 *.pem
