@@ -1,29 +1,13 @@
-import { read } from "./read.ts";
-import { ls } from "./ls.ts";
-import { glob } from "./glob.ts";
-import { grep } from "./grep.ts";
-import { write } from "./write.ts";
-import { edit } from "./edit.ts";
-import { bash } from "./bash.ts";
+import { read, ls, glob, grep, write, edit, bash, readonlyTools, allToolsWithoutTask } from "./registry.ts";
+import { task } from "./task.ts";
 import type { ToolSet } from "ai";
 
-export { read, ls, glob, grep, write, edit, bash };
-
-export const readonlyTools: ToolSet = {
-  read,
-  ls,
-  glob,
-  grep,
-};
+export { read, ls, glob, grep, write, edit, bash, task };
+export { readonlyTools };
 
 export const allTools: ToolSet = {
-  read,
-  ls,
-  glob,
-  grep,
-  write,
-  edit,
-  bash,
+  ...allToolsWithoutTask,
+  task,
 };
 
 export type AgentMode = "plan" | "build";

@@ -14,12 +14,13 @@ export async function* runTurn(
   signal?: AbortSignal,
   mode?: AgentMode,
   skillBodies?: string[],
+  overrideSystem?: string,
 ): AsyncGenerator<Chunk> {
   const def = currentProvider();
   const effectiveMode = mode ?? currentMode();
   const tools = toolsForMode(effectiveMode);
 
-  let system = systemPrompt(effectiveMode);
+  let system = overrideSystem ?? systemPrompt(effectiveMode);
   if (skillBodies && skillBodies.length > 0) {
     system += "\n\n<skill_context>\n" + skillBodies.join("\n\n---\n\n") + "\n</skill_context>";
   }
