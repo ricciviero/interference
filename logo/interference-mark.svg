@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="240" height="240" role="img" aria-label="Interference logomark">
+  <title>Interference</title>
+  <defs>
+    <clipPath id="pm-clip"><circle cx="50" cy="50" r="48"/></clipPath>
+  </defs>
+  <g clip-path="url(#pm-clip)" fill="none" stroke="currentColor" stroke-width="1">
+    <circle cx="34" cy="50" r="5.2"/>
+    <circle cx="34" cy="50" r="10.4"/>
+    <circle cx="34" cy="50" r="15.6"/>
+    <circle cx="34" cy="50" r="20.8"/>
+    <circle cx="34" cy="50" r="26"/>
+    <circle cx="34" cy="50" r="31.2"/>
+    <circle cx="34" cy="50" r="36.4"/>
+    <circle cx="34" cy="50" r="41.6"/>
+    <circle cx="34" cy="50" r="46.8"/>
+    <circle cx="66" cy="50" r="5.2"/>
+    <circle cx="66" cy="50" r="10.4"/>
+    <circle cx="66" cy="50" r="15.6"/>
+    <circle cx="66" cy="50" r="20.8"/>
+    <circle cx="66" cy="50" r="26"/>
+    <circle cx="66" cy="50" r="31.2"/>
+    <circle cx="66" cy="50" r="36.4"/>
+    <circle cx="66" cy="50" r="41.6"/>
+    <circle cx="66" cy="50" r="46.8"/>
+  </g>
+  <circle cx="34" cy="50" r="2.4" fill="currentColor"/>
+  <circle cx="66" cy="50" r="2.4" fill="currentColor"/>
+  <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="1"/>
+</svg>

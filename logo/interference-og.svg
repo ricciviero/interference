@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Interference — Scientific Coding Agent">
+  <title>Interference</title>
+
+  <rect width="1200" height="630" fill="#fafaf7"/>
+
+  <!-- Registration marks (print-shop feel) -->
+  <g stroke="#0a0a0a" stroke-width="0.8" fill="none" opacity="0.28">
+    <g transform="translate(36,36)">
+      <line x1="0" y1="9" x2="18" y2="9"/><line x1="9" y1="0" x2="9" y2="18"/>
+      <circle cx="9" cy="9" r="4"/>
+    </g>
+    <g transform="translate(1146,36)">
+      <line x1="0" y1="9" x2="18" y2="9"/><line x1="9" y1="0" x2="9" y2="18"/>
+      <circle cx="9" cy="9" r="4"/>
+    </g>
+    <g transform="translate(36,576)">
+      <line x1="0" y1="9" x2="18" y2="9"/><line x1="9" y1="0" x2="9" y2="18"/>
+      <circle cx="9" cy="9" r="4"/>
+    </g>
+    <g transform="translate(1146,576)">
+      <line x1="0" y1="9" x2="18" y2="9"/><line x1="9" y1="0" x2="9" y2="18"/>
+      <circle cx="9" cy="9" r="4"/>
+    </g>
+  </g>
+
+  <!-- Top slug -->
+  <text x="76" y="80" fill="#0a0a0a" opacity="0.55"
+    font-family="'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace"
+    font-size="13" letter-spacing="2.4">INT · v0.1 · 2026</text>
+
+  <!-- Mark (left) -->
+  <g transform="translate(90,195) scale(2.4)">
+    <defs>
+      <clipPath id="og-clip"><circle cx="50" cy="50" r="48"/></clipPath>
+    </defs>
+    <g clip-path="url(#og-clip)" fill="none" stroke="#0a0a0a" stroke-width="0.9">
+      <circle cx="34" cy="50" r="5.2"/><circle cx="34" cy="50" r="10.4"/>
+      <circle cx="34" cy="50" r="15.6"/><circle cx="34" cy="50" r="20.8"/>
+      <circle cx="34" cy="50" r="26"/><circle cx="34" cy="50" r="31.2"/>
+      <circle cx="34" cy="50" r="36.4"/><circle cx="34" cy="50" r="41.6"/>
+      <circle cx="34" cy="50" r="46.8"/>
+      <circle cx="66" cy="50" r="5.2"/><circle cx="66" cy="50" r="10.4"/>
+      <circle cx="66" cy="50" r="15.6"/><circle cx="66" cy="50" r="20.8"/>
+      <circle cx="66" cy="50" r="26"/><circle cx="66" cy="50" r="31.2"/>
+      <circle cx="66" cy="50" r="36.4"/><circle cx="66" cy="50" r="41.6"/>
+      <circle cx="66" cy="50" r="46.8"/>
+    </g>
+    <circle cx="34" cy="50" r="2.4" fill="#0a0a0a"/>
+    <circle cx="66" cy="50" r="2.4" fill="#0a0a0a"/>
+    <circle cx="50" cy="50" r="48" fill="none" stroke="#0a0a0a" stroke-width="0.9"/>
+  </g>
+
+  <!-- Wordmark + tagline (right) -->
+  <g transform="translate(390,305)" fill="#0a0a0a">
+    <text x="0" y="0"
+      font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+      font-weight="500" font-size="68" letter-spacing="6">INTERFERENCE</text>
+    <text x="2" y="38"
+      font-family="'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace"
+      font-weight="500" font-size="18" letter-spacing="3.8"
+      opacity="0.6">SCIENTIFIC CODING AGENT</text>
+  </g>
+
+  <!-- Bottom slug -->
+  <text x="76" y="572" fill="#0a0a0a" opacity="0.55"
+    font-family="'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace"
+    font-size="13" letter-spacing="2.4">A LOGO FOR THE LANGUAGE OF SCIENCE</text>
+
+  <text x="1124" y="572" fill="#0a0a0a" opacity="0.55"
+    font-family="'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace"
+    font-size="13" letter-spacing="2.4" text-anchor="end">DIRECTION · A</text>
+</svg>

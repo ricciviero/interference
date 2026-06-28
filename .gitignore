@@ -27,9 +27,6 @@ hf/
 
 # --- Local working notes (per-developer iterations) --------------------------
 /iterazioni
-/.claude
-/docs
-/logo
 
 # --- Packaging ----------------------------------------------------------------
 /dist/
@@ -53,7 +50,7 @@ Thumbs.db
 *.swo
 *~
 
-# Note: `.claude/` IS committed (it's the project constitution).
+/CLAUDE.md
 
 # --- Misc secrets ------------------------------------------------------------
 *.pem
