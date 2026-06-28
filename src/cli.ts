@@ -7,6 +7,7 @@ import { initSnapshot } from "./session/snapshot.ts";
 import { initInstructions } from "./agent/prompt.ts";
 import { bootstrapSkills } from "./skills.ts";
 import { initSkillCommands } from "./commands/index.ts";
+import { loadConfig, applyConfig } from "./config-file.ts";
 import type { Session } from "./session/store.ts";
 
 async function main(): Promise<void> {
@@ -19,6 +20,10 @@ async function main(): Promise<void> {
 
   await initStore();
   await bootstrapSkills();
+
+  const config = await loadConfig();
+  if (config) applyConfig(config);
+
   await initInstructions();
   await initSkillCommands();
 

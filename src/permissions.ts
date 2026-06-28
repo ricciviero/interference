@@ -1,6 +1,6 @@
 type Decision = "allow" | "ask" | "deny";
 
-interface PermRule {
+export interface PermRule {
   tool?: string;
   pattern?: string;
   decision: Decision;
