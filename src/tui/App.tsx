@@ -20,6 +20,7 @@ import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
 import { SessionList } from "./SessionList.tsx";
 import { useToast, ToastContainer } from "./Toast.tsx";
+import { Welcome } from "./Welcome.tsx";
 import { listCommands } from "../commands/index.ts";
 
 type HistoryItem = {
@@ -304,7 +305,18 @@ ${args ? `Additional context: ${args}` : ""}`;
         />
       )}
 
-      {!showSessions && (
+      {!showSessions && history.length === 0 && !busy && !confirmPreview && (
+        <Welcome
+          provider={sessionRef.current.meta.provider}
+          model={sessionRef.current.meta.model}
+          sessionCount={0}
+          onSubmit={(v) => {
+            doTurn(v, undefined);
+          }}
+        />
+      )}
+
+      {!showSessions && (history.length > 0 || busy || confirmPreview) && (
         <>
           <ToastContainer toasts={toasts} />
 
