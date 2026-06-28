@@ -14,6 +14,7 @@ import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts"
 import { dispatch, isSlashCommand } from "../commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "../agent/compaction.ts";
+import { computeDiff, formatDiff, type DiffLine } from "./DiffView.tsx";
 
 type HistoryItem = {
   id: number;
@@ -28,6 +29,7 @@ type ToolEntry = {
   input: unknown;
   output?: string;
   isError?: boolean;
+  diff?: DiffLine[] | null;
 };
 
 export default function App({ session }: { session: Session }) {
@@ -131,15 +133,16 @@ export default function App({ session }: { session: Session }) {
 
           case "tool-result":
             setToolSteps((ts) =>
-              ts.map((t) =>
-                t.id === currentToolId
-                  ? {
-                      ...t,
-                      output: chunk.output,
-                      isError: chunk.isError,
-                    }
-                  : t,
-              ),
+              ts.map((t) => {
+                if (t.id !== currentToolId) return t;
+                const diff = computeToolDiff(t.toolName, t.input as Record<string, unknown>, chunk.isError ? null : chunk.output);
+                return {
+                  ...t,
+                  output: chunk.output,
+                  isError: chunk.isError,
+                  diff,
+                };
+              }),
             );
             break;
         }
@@ -354,7 +357,24 @@ function ToolStepRow({ tool }: { tool: ToolEntry }) {
         <Text>({args})</Text>
         {!tool.output && <Spinner label="" />}
       </Box>
-      {tool.output && (
+      {tool.diff && tool.diff.length > 0 && (
+        <Box flexDirection="column" marginBottom={0}>
+          {tool.diff.slice(0, 15).map((d, i) => (
+            <Text
+              key={i}
+              color={d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined}
+              dimColor={d.type !== "add" && d.type !== "remove"}
+            >
+              {d.type === "add" ? "+ " : d.type === "remove" ? "- " : "  "}
+              {d.text.slice(0, 100)}
+            </Text>
+          ))}
+          {tool.diff.length > 15 && (
+            <Text dimColor>… {tool.diff.length - 15} more lines</Text>
+          )}
+        </Box>
+      )}
+      {tool.output && !tool.diff && (
         <Text dimColor color={tool.isError ? "red" : undefined}>
           {"  → "}
           {tool.output.length > 150
@@ -364,4 +384,25 @@ function ToolStepRow({ tool }: { tool: ToolEntry }) {
       )}
     </Box>
   );
+}
+
+function computeToolDiff(
+  toolName: string,
+  input: Record<string, unknown> | undefined,
+  output: string | null,
+): DiffLine[] | null {
+  if (!input || output === null || (output && output.startsWith("Error"))) return null;
+
+  if (toolName === "edit" && typeof input.oldString === "string" && typeof input.newString === "string") {
+    return computeDiff(
+      (input.oldString as string).split("\n"),
+      (input.newString as string).split("\n"),
+    );
+  }
+
+  if (toolName === "write" && typeof input.content === "string") {
+    return computeDiff([], (input.content as string).split("\n"));
+  }
+
+  return null;
 }

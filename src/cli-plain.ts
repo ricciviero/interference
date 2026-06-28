@@ -12,6 +12,7 @@ import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
 import { dispatch, isSlashCommand } from "./commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
+import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -133,15 +134,15 @@ ${args ? `Additional context: ${args}` : ""}`;
         await finalizeSnapshots();
         await saveSession(session);
 
-        if (shouldCompact(messages, currentModel())) {
-          const pct = getUsagePercent(messages, currentModel());
+        if (shouldCompact(messages)) {
+          const pct = getUsagePercent(messages);
           stdout.write(`${DIM}Context at ${pct}%, compacting...${RESET}\n`);
           const compacted = await compactMessages(messages);
           messages.length = 0;
           messages.push(...compacted);
           session.messages = messages;
           await saveSession(session);
-          stdout.write(`${DIM}Compacted. ${getUsagePercent(messages, currentModel())}% context used.${RESET}\n`);
+          stdout.write(`${DIM}Compacted. ${getUsagePercent(messages)}% context used.${RESET}\n`);
         }
       } catch (err) {
         messages.pop();
@@ -161,7 +162,7 @@ ${args ? `Additional context: ${args}` : ""}`;
 async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
   let sawReasoning = false;
   let inText = false;
-  let activeTool: { name: string; args: string } | null = null;
+  let activeTool: { name: string; args: string; input: unknown } | null = null;
 
   for await (const chunk of chunks) {
     switch (chunk.type) {
@@ -180,12 +181,29 @@ async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
         if (sawReasoning && !inText) { stdout.write(`\n${DIM}┄${RESET}\n\n`); inText = true; }
         else if (activeTool || !inText) { stdout.write("\n"); }
         stdout.write(`${DIM}· ${chunk.toolName}${RESET}(${args})`);
-        activeTool = { name: chunk.toolName, args };
+        activeTool = { name: chunk.toolName, args, input: chunk.input };
         break;
       }
       case "tool-result":
         if (chunk.isError) {
           stdout.write(`\n${RED}  → error${RESET}: ${chunk.output.slice(0, 200)}`);
+        } else if (activeTool && (activeTool.name === "write" || activeTool.name === "edit")) {
+          const input = activeTool.input as Record<string, unknown> | undefined;
+          let diffText = "";
+          if (activeTool.name === "edit" && input && typeof input.oldString === "string" && typeof input.newString === "string") {
+            diffText = formatDiff(computeDiff(
+              (input.oldString as string).split("\n"),
+              (input.newString as string).split("\n"),
+            ));
+          } else if (activeTool.name === "write" && input && typeof input.content === "string") {
+            diffText = formatDiff(computeDiff([], (input.content as string).split("\n")));
+          }
+          if (diffText) {
+            stdout.write(`\n${DIM}  → diff:${RESET}\n${diffText}`);
+          } else {
+            const p = chunk.output.length > 120 ? chunk.output.slice(0, 120).replace(/\n/g, " ") + "…" : chunk.output.replace(/\n/g, " ");
+            stdout.write(`\n${DIM}  →${RESET} ${p}`);
+          }
         } else {
           const p = chunk.output.length > 120 ? chunk.output.slice(0, 120).replace(/\n/g, " ") + "…" : chunk.output.replace(/\n/g, " ");
           stdout.write(`\n${DIM}  →${RESET} ${p}`);
