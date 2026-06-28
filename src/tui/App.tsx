@@ -14,7 +14,13 @@ import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts"
 import { dispatch, isSlashCommand } from "../commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "../agent/compaction.ts";
-import { computeDiff, formatDiff, type DiffLine } from "./DiffView.tsx";
+import { computeDiff, type DiffLine } from "./DiffView.tsx";
+import { StatusFooter } from "./StatusFooter.tsx";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
+import { SessionList } from "./SessionList.tsx";
+import { useToast, ToastContainer } from "./Toast.tsx";
+import { listCommands } from "../commands/index.ts";
 
 type HistoryItem = {
   id: number;
@@ -43,6 +49,9 @@ export default function App({ session }: { session: Session }) {
   const [confirmPreview, setConfirmPreview] = useState<string | null>(null);
   const [confirmTool, setConfirmTool] = useState<string>("");
   const [statusText, setStatusText] = useState<string>("");
+  const [showSessions, setShowSessions] = useState(false);
+  const [draft, setDraft] = useState("");
+  const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const messagesRef = useRef<ModelMessage[]>(session.messages);
   const aborterRef = useRef<AbortController | null>(null);
@@ -63,21 +72,20 @@ export default function App({ session }: { session: Session }) {
   }, []);
 
   useInput((input, key) => {
-    if (confirmResolveRef.current) {
-      const c = input.toLowerCase();
-      if (c === "y" || key.return) {
-        const r = confirmResolveRef.current;
-        confirmResolveRef.current = null;
-        setConfirmTool("");
-        setConfirmPreview(null);
-        r(true);
-      } else if (c === "n" || key.escape) {
-        const r = confirmResolveRef.current;
-        confirmResolveRef.current = null;
-        setConfirmTool("");
-        setConfirmPreview(null);
-        r(false);
-      }
+    if (!confirmResolveRef.current || confirmPreview) return;
+    const c = input.toLowerCase();
+    if (c === "y" || key.return) {
+      const r = confirmResolveRef.current;
+      confirmResolveRef.current = null;
+      setConfirmTool("");
+      setConfirmPreview(null);
+      r(true);
+    } else if (c === "n" || key.escape) {
+      const r = confirmResolveRef.current;
+      confirmResolveRef.current = null;
+      setConfirmTool("");
+      setConfirmPreview(null);
+      r(false);
     }
   });
 
@@ -163,6 +171,7 @@ export default function App({ session }: { session: Session }) {
       sessionRef.current.meta.turnCount++;
       await finalizeSnapshots();
       await saveSession(sessionRef.current);
+      addToast("Session saved", "success");
 
       if (shouldCompact(messagesRef.current)) {
         const pct = getUsagePercent(messagesRef.current);
@@ -173,6 +182,7 @@ export default function App({ session }: { session: Session }) {
         sessionRef.current.messages = messagesRef.current;
         await saveSession(sessionRef.current);
         setStatusText(`Compacted (${getUsagePercent(messagesRef.current)}%)`);
+        addToast(`Compacted to ${getUsagePercent(messagesRef.current)}%`, "info");
       }
     } catch (err) {
       messagesRef.current.pop();
@@ -199,6 +209,7 @@ export default function App({ session }: { session: Session }) {
       if (!v || busy) return;
       setInputKey((k) => k + 1);
       if (v === "/exit" || v === "/quit") return exit();
+      if (v === "/sessions") { setShowSessions(true); return; }
 
       if (isSlashCommand(v)) {
         dispatch(v, {
@@ -283,65 +294,109 @@ ${args ? `Additional context: ${args}` : ""}`;
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Static items={history}>
-        {(m) => (
-          <Box key={m.id} flexDirection="column" marginBottom={1}>
-            <Box>
-              <Text color={m.role === "user" ? "cyan" : "green"} bold>
-                {m.role === "user" ? "› " : "· "}
-              </Text>
-              <Text>{m.content}</Text>
+      {showSessions && (
+        <SessionList
+          onSelect={(id) => {
+            setShowSessions(false);
+            addToast(`Session ${id.slice(0, 12)} selected (reload to resume)`);
+          }}
+          onCancel={() => setShowSessions(false)}
+        />
+      )}
+
+      {!showSessions && (
+        <>
+          <ToastContainer toasts={toasts} />
+
+          <Static items={history}>
+            {(m) => (
+              <Box key={m.id} flexDirection="column" marginBottom={1}>
+                <Box>
+                  <Text color={m.role === "user" ? "cyan" : "green"} bold>
+                    {m.role === "user" ? "› " : "· "}
+                  </Text>
+                  <Text>{m.content}</Text>
+                </Box>
+                {m.reasoning && (
+                  <Text dimColor>┄ {m.reasoning.slice(0, 120)}</Text>
+                )}
+              </Box>
+            )}
+          </Static>
+
+          {reasoning && (
+            <Text dimColor>┄ {reasoning}</Text>
+          )}
+
+          {streaming && (
+            <Box marginBottom={1}>
+              <Text color="green" bold>· </Text>
+              <Text>{streaming}</Text>
             </Box>
-            {m.reasoning && (
-              <Text dimColor>┄ {m.reasoning.slice(0, 120)}</Text>
+          )}
+
+          {toolSteps.map((t) => (
+            <ToolStepRow key={t.id} tool={t} />
+          ))}
+
+          {busy && !streaming && toolSteps.length === 0 && !confirmPreview && (
+            <Box marginBottom={1}>
+              <Spinner label="thinking" />
+            </Box>
+          )}
+
+          {confirmPreview && (
+            <ConfirmDialog
+              tool={confirmTool}
+              preview={confirmPreview}
+              onResolve={(allowed) => {
+                if (confirmResolveRef.current) {
+                  confirmResolveRef.current(allowed);
+                  confirmResolveRef.current = null;
+                }
+                setConfirmTool("");
+                setConfirmPreview(null);
+              }}
+            />
+          )}
+
+          {draft.startsWith("/") && (
+            <SlashAutocomplete
+              filter={draft.slice(1)}
+              commands={listCommands()}
+              onSelect={(name) => {
+                setDraft("/" + name + " ");
+                setInputKey((k) => k + 1);
+              }}
+              onCancel={() => {
+                setDraft("");
+                setInputKey((k) => k + 1);
+              }}
+            />
+          )}
+
+          <Box>
+            {!confirmPreview && !showSessions && (
+              <TextInput
+                key={inputKey}
+                placeholder={busy ? "waiting…" : "Type a message (/help for commands)"}
+                onChange={setDraft}
+                onSubmit={onSubmit}
+              />
             )}
           </Box>
-        )}
-      </Static>
 
-      {statusText && (
-        <Text dimColor>{statusText}</Text>
-      )}
-
-      {reasoning && (
-        <Text dimColor>┄ {reasoning}</Text>
-      )}
-
-      {streaming && (
-        <Box marginBottom={1}>
-          <Text color="green" bold>· </Text>
-          <Text>{streaming}</Text>
-        </Box>
-      )}
-
-      {toolSteps.map((t) => (
-        <ToolStepRow key={t.id} tool={t} />
-      ))}
-
-      {busy && !streaming && toolSteps.length === 0 && !confirmPreview && (
-        <Box marginBottom={1}>
-          <Spinner label="thinking" />
-        </Box>
-      )}
-
-      {confirmPreview && (
-        <Box marginBottom={1} flexDirection="column">
-          <Text color="yellow">{confirmPreview}</Text>
-          <Text color="yellow" bold>
-            Allow {confirmTool}? [y/N]
-          </Text>
-        </Box>
-      )}
-
-      <Box>
-        {!confirmPreview && (
-          <TextInput
-            key={inputKey}
-            placeholder={busy ? "waiting…" : "Type a message (/exit to quit)"}
-            onSubmit={onSubmit}
+          <StatusFooter
+            mode={sessionRef.current.meta.mode}
+            model={sessionRef.current.meta.model}
+            provider={sessionRef.current.meta.provider}
+            contextPct={messagesRef.current.length > 0 ? getUsagePercent(messagesRef.current) : 0}
+            busy={busy}
+            statusLine={statusText}
+            turnCount={sessionRef.current.meta.turnCount}
           />
-        )}
-      </Box>
+        </>
+      )}
     </Box>
   );
 }

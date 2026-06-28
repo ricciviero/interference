@@ -114,6 +114,10 @@ register("compact", "Compact conversation context to save tokens", () => {
   return "Compaction will run at the end of this turn if context is > 90% full.";
 });
 
+register("sessions", "List and resume previous sessions", () => {
+  return "Opening session list...";
+});
+
 export async function initSkillCommands(): Promise<void> {
   const skills = getCachedRegistry();
   for (const skill of skills) {
