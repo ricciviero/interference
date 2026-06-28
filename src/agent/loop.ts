@@ -1,36 +1,30 @@
-// Agent loop minimo (RF-AGT, RF-CORE-04). In questa iterazione: una singola
-// chiamata in streaming, senza tool, con REASONING/thinking abilitato al massimo
-// per provider (opzioni da config.ts). Il multi-step con `stopWhen` e i tool
-// arrivano nell'it. 02.
-//
-// Si consuma `fullStream` perché (a) in `streamText` gli errori NON vengono
-// lanciati dal for-await ma arrivano come `part.type==='error'`, e (b) i token di
-// reasoning arrivano come `part.type==='reasoning-delta'`, distinti dal testo.
-
-import { streamText, type ModelMessage } from "ai";
+import { streamText, stepCountIs, type ModelMessage } from "ai";
 import { resolveModel } from "../provider.ts";
-import { currentProvider } from "../config.ts";
-import { SYSTEM_PROMPT } from "./prompt.ts";
+import { currentProvider, currentMode, type AgentMode } from "../config.ts";
+import { systemPrompt } from "./prompt.ts";
+import { toolsForMode } from "../tools/index.ts";
 
-export type Chunk = { type: "text" | "reasoning"; text: string };
+export type Chunk =
+  | { type: "text" | "reasoning"; text: string }
+  | { type: "tool-call"; toolName: string; input: unknown }
+  | { type: "tool-result"; toolName: string; output: string; isError: boolean };
 
-/**
- * Esegue un turno e produce i chunk (testo + reasoning). A fine turno accoda alla
- * history le response message (incluso il reasoning, necessario al round-trip su
- * alcuni provider). Solleva MissingApiKeyError o l'errore del provider.
- */
 export async function* runTurn(
   messages: ModelMessage[],
   signal?: AbortSignal,
+  mode?: AgentMode,
 ): AsyncGenerator<Chunk> {
   const def = currentProvider();
+  const effectiveMode = mode ?? currentMode();
+  const tools = toolsForMode(effectiveMode);
+
   const result = streamText({
     model: resolveModel(),
-    system: SYSTEM_PROMPT,
+    system: systemPrompt(effectiveMode),
     messages,
+    tools,
+    stopWhen: stepCountIs(20),
     abortSignal: signal,
-    // L'onError di default di streamText fa console.error(error) (stack rumoroso):
-    // lo silenziamo, l'errore arriva comunque come part 'error' qui sotto.
     onError: () => {},
     ...(def.providerOptions
       ? {
@@ -43,16 +37,45 @@ export async function* runTurn(
   });
 
   for await (const part of result.fullStream) {
-    if (part.type === "text-delta") {
-      yield { type: "text", text: part.text };
-    } else if (part.type === "reasoning-delta") {
-      yield { type: "reasoning", text: part.text };
-    } else if (part.type === "error") {
-      throw part.error;
+    switch (part.type) {
+      case "text-delta":
+        yield { type: "text", text: part.text };
+        break;
+
+      case "reasoning-delta":
+        yield { type: "reasoning", text: part.text };
+        break;
+
+      case "tool-call":
+        yield { type: "tool-call", toolName: part.toolName, input: part.input };
+        break;
+
+      case "tool-result": {
+        const tr = part as unknown as {
+          toolName: string;
+          output: unknown;
+          error?: unknown;
+        };
+        const err = tr.error;
+        const out = tr.output;
+        yield {
+          type: "tool-result",
+          toolName: tr.toolName,
+          output: err
+            ? String(err)
+            : typeof out === "string"
+              ? out
+              : JSON.stringify(out),
+          isError: !!err,
+        };
+        break;
+      }
+
+      case "error":
+        throw part.error;
     }
   }
 
-  // Round-trip: accoda le message dell'assistente (con reasoning) alla history.
   const response = await result.response;
   messages.push(...response.messages);
 }

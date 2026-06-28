@@ -87,3 +87,15 @@ export function currentProvider(): ProviderDef {
 export function currentModel(): string {
   return config.modelOverride ?? currentProvider().defaultModel;
 }
+
+export type AgentMode = "plan" | "build";
+
+let _mode: AgentMode = "plan";
+
+export function currentMode(): AgentMode {
+  return _mode;
+}
+
+export function setMode(mode: AgentMode) {
+  _mode = mode;
+}
