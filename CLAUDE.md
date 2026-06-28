@@ -145,6 +145,7 @@ Registro di **fatti vivi non-decisionali** (stato di integrazioni, env, gotcha, 
 - 🟢 **Iterazione 05 (sessioni-persistenza)** completata: storico sessioni persistito localmente in `~/.interference/<hash>/sessions/*.json`, ripresa via `--continue` o `--continue <id>`. Snapshot before/after dei file toccati pre-write/edit, undo/redo via `/undo` `/redo` (CLI+TUI). `finalizeSnapshots()` cattura after-state a fine turno. Retention automatica (cleanup). 11 nuovi test, 69 totali pass.
 - 🟢 **Iterazione 06 (comandi-e-contesto)** completata: registry slash command centralizzato (`/help`, `/clear`, `/undo`, `/redo`, `/init`, `/model`, `/plan`, `/build`). `/init` delega all'agente (template LLM analizza project → scrive AGENTS.md). Caricamento AGENTS.md/CLAUDE.md nel system prompt (walk up da cwd, first-match-wins). System prompt con `<environment>` e `<instructions>` blocks. Pattern adottati da opencode (command registry, instruction loading). 69 test, typecheck pulito.
 - 🟢 **Iterazione 07 (skill-invocation)** completata: 38 skill in `~/.interference/skills/` (copiate da `.claude/skills/`). Invocazione **esplicita** (`/skill-name` carica SKILL.md e lo inietta via `<skill_context>` nel system prompt) e **automatica** (keyword match pre-turno: tokenizza messaggio utente, matcha description, top 3). Skill auto-registrate come slash command. Bootstrap di 3 skill interne (agents-setup, iterations-planner, interference-tool). `prompt.ts` delegato a `skills.ts` come modulo unico. 69 test, typecheck pulito.
+- 🟢 **Iterazione 09 (subagent)** completata: tool `task` con tipi `explore` (solo tool read-only) e `general` (tutti i tool). Subagent gira con contesto isolato e system prompt dedicato. Anti-recursion: subagent non può spawnare sub-subagent (`task` non esposto). Risultato XML-wrapped. Circolare `tools/index.ts` → `task.ts` → `subagent.ts` risolto con `tools/registry.ts` separato. 69 test, typecheck pulito.
 
 ---
 
@@ -182,8 +183,13 @@ Le feature del progetto sono organizzate come **iterazioni** in [`iterazioni/`](
 
 *Fase 3 — Estensione*
 7. `07-skill-invocation/` — invocazione skill esplicita (/skill-name) + auto-match (keyword su description)
-8. `08-provider-locale/` — provider OpenAI-compatible per modelli locali
+8. `08-provider-locale/` — provider OpenAI-compatible per modelli locali **(skippata, non necessaria)**
 9. `09-subagent/` — delega task a subagent isolato
+
+*Fase 4 — Robustezza e UX*
+10. `10-compaction/` — compattazione automatica del contesto (riassumi turni vecchi, preserva recenti)
+11. `11-config-file/` — file `interference.json` per progetto (model, permessi, mode, instructions)
+12. `12-diff-tui/` — diff view nella TUI per edit/write (mostra cosa è cambiato)
 
 **Workflow**: leggi `task.md` poi `plan.md` → se serve aggiorna `plan.md` prima del codice → implementa → **pass di completezza** (§6.8) → aggiorna `CLAUDE.md`/`docs/` se cambia architettura → stato `task.md` a 🟢.
 
