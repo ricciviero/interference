@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { resolveInWorkspace } from "./_fs.ts";
 import { decide, requestConfirmation } from "../permissions.ts";
+import { snapshotFile } from "../session/snapshot.ts";
 import * as path from "node:path";
 
 export const edit = tool({
@@ -64,6 +65,7 @@ export const edit = tool({
       ? content.replaceAll(oldString, newString)
       : content.replace(oldString, newString);
 
+    await snapshotFile(filePath);
     await Bun.write(abs, replaced);
 
     const label = replaceAll ? ` (${count} occurrences)` : "";

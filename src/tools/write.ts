@@ -2,6 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { resolveInWorkspace } from "./_fs.ts";
 import { decide, requestConfirmation } from "../permissions.ts";
+import { snapshotFile } from "../session/snapshot.ts";
 import { mkdir } from "node:fs/promises";
 import * as path from "node:path";
 
@@ -32,6 +33,7 @@ export const write = tool({
       }
     }
 
+    await snapshotFile(filePath);
     await mkdir(path.dirname(abs), { recursive: true });
     await Bun.write(abs, content);
 
