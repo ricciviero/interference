@@ -1,0 +1,61 @@
+# =============================================================================
+# Interference — .gitignore (Python toolkit, uv)
+# =============================================================================
+
+# --- Environment / secrets ---------------------------------------------------
+.env
+.env.local
+*.env.local
+# `.env.example` IS committed (template, no real secrets).
+
+# --- Python / uv -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# uv.lock IS committed (riproducibilità).
+
+# --- Modelli & cache (mai nel repo; comunque stanno sull'SSD esterno) --------
+*.gguf
+*.safetensors
+*.npz
+/models/
+hf/
+
+# --- Local working notes (per-developer iterations) --------------------------
+/iterazioni
+/.claude
+/docs
+/logo
+
+# --- Packaging ----------------------------------------------------------------
+/dist/
+*.pyz
+
+# --- Legacy stack Rust/Tauri (in attesa di rimozione) ------------------------
+/target/
+**/target/
+
+# --- Logs --------------------------------------------------------------------
+logs/
+*.log
+
+# --- OS / editor -------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+
+# Note: `.claude/` IS committed (it's the project constitution).
+
+# --- Misc secrets ------------------------------------------------------------
+*.pem
+*.key
+*.p12

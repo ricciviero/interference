@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8" />
+<title>Interference — Local LLM Toolkit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Discover, download, and run local coding LLMs on Apple Silicon. No cloud. Pure interference." />
+<meta name="theme-color" content="#0a0a0a" />
+<meta property="og:title" content="Interference — Local LLM Toolkit" />
+<meta property="og:description" content="Local LLMs for coding on Apple Silicon. Scout → Pull → Serve → Code." />
+<meta property="og:image" content="interference-og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.ico" sizes="any" />
+<link rel="icon" type="image/svg+xml" href="interference-favicon.svg" />
+<link rel="apple-touch-icon" href="interference-apple-touch-icon.png" />
+<link rel="manifest" href="site.webmanifest" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="cursor"></div>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-brand" aria-label="Interference home">
+      <img src="interference-mark-white.svg" alt="Interference logomark" class="nav-mark" width="28" height="28" />
+      <span class="nav-wordmark">INTERFERENCE</span>
+    </a>
+    <div class="nav-links">
+      <a href="#what">Modules</a>
+      <a href="#how">Pipeline</a>
+      <a href="#models">Models</a>
+      <a href="#why">Why</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <!-- ── Hero ──────────────────────────────────── -->
+  <section id="hero" class="hero">
+    <div class="interference-bg" aria-hidden="true">
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" class="interference-waves">
+        <defs>
+          <radialGradient id="wg1" cx="35%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="rgba(250,250,247,0.12)" />
+            <stop offset="100%" stop-color="rgba(250,250,247,0)" />
+          </radialGradient>
+          <radialGradient id="wg2" cx="65%" cy="50%" r="55%">
+            <stop offset="0%" stop-color="rgba(250,250,247,0.12)" />
+            <stop offset="100%" stop-color="rgba(250,250,247,0)" />
+          </radialGradient>
+        </defs>
+        <g opacity="0.6">
+          <circle cx="280" cy="300" r="30" fill="none" stroke="rgba(250,250,247,0.06)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="70" fill="none" stroke="rgba(250,250,247,0.05)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="110" fill="none" stroke="rgba(250,250,247,0.04)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="150" fill="none" stroke="rgba(250,250,247,0.03)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="190" fill="none" stroke="rgba(250,250,247,0.02)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="230" fill="none" stroke="rgba(250,250,247,0.015)" stroke-width="0.5" />
+          <circle cx="280" cy="300" r="270" fill="none" stroke="rgba(250,250,247,0.01)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="30" fill="none" stroke="rgba(250,250,247,0.06)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="70" fill="none" stroke="rgba(250,250,247,0.05)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="110" fill="none" stroke="rgba(250,250,247,0.04)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="150" fill="none" stroke="rgba(250,250,247,0.03)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="190" fill="none" stroke="rgba(250,250,247,0.02)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="230" fill="none" stroke="rgba(250,250,247,0.015)" stroke-width="0.5" />
+          <circle cx="520" cy="300" r="270" fill="none" stroke="rgba(250,250,247,0.01)" stroke-width="0.5" />
+        </g>
+        <rect width="800" height="600" fill="url(#wg1)" />
+        <rect width="800" height="600" fill="url(#wg2)" style="mix-blend-mode: screen;" />
+      </svg>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-mark-wrap reveal">
+        <img src="interference-mark-white.svg" alt="Interference — two-source wave interference pattern" class="hero-mark" width="180" height="180" />
+      </div>
+      <h1 class="hero-title reveal-s1">
+        <span class="hero-wordmark">INTERFERENCE</span>
+      </h1>
+      <p class="hero-tagline reveal-s2">Local LLM Toolkit</p>
+      <p class="hero-desc reveal-s3">
+        Discover, download, and run local coding LLMs on Apple Silicon.<br />
+        <strong>Everything lives on your external SSD.</strong> Zero bytes on your internal disk.<br />
+        Scout &rarr; Pull &rarr; Serve &rarr; Code. No cloud, no API keys.
+      </p>
+      <div class="hero-actions reveal-s4">
+        <a href="#cta" class="btn btn-primary">
+          <span>Get Started</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <code class="hero-cmd">pip install interference</code>
+      </div>
+    </div>
+
+    <div class="hero-scroll" aria-hidden="true">
+      <span class="hero-scroll-line"></span>
+    </div>
+  </section>
+
+  <!-- ── What It Does ──────────────────────────── -->
+  <section id="what" class="section">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Modules</span>
+        <h2 class="section-title">A toolkit in four acts</h2>
+        <p class="section-sub">From discovery to inference, everything stays on your machine.</p>
+      </div>
+
+      <div class="cards-grid">
+        <article class="card reveal-s1">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><circle cx="11" cy="11" r="3" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Scout</h3>
+          <p class="card-desc">Search Hugging Face for coding models. Fit-check estimates RAM usage against your machine before you download a single byte.</p>
+          <code class="card-cmd">interference scout "qwen coder"</code>
+          <div class="card-badge">RF-SCOUT</div>
+        </article>
+
+        <article class="card reveal-s1">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Manager</h3>
+          <p class="card-desc">Download models exclusively to your external SSD. Golden-rule enforcement: internal disk is off-limits. Resume and integrity built-in.</p>
+          <code class="card-cmd">interference pull mlx-community/Qwen2.5-Coder-14B-4bit</code>
+          <div class="card-badge">RF-MGR</div>
+        </article>
+
+        <article class="card reveal-s1">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><circle cx="12" cy="10" r="3" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Orchestrator</h3>
+          <p class="card-desc">OpenAI-compatible server on localhost. MLX-powered inference with hot-swap multi-model &mdash; fast model for completions, strong model for reasoning.</p>
+          <code class="card-cmd">interference serve</code>
+          <div class="card-badge">RF-ORK</div>
+        </article>
+
+        <article class="card reveal-s1">
+          <div class="card-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22" opacity="0.4"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Glue</h3>
+          <p class="card-desc">One command wires opencode to your local orchestrator. Zero configuration &mdash; start coding with local models immediately.</p>
+          <code class="card-cmd">interference opencode-config</code>
+          <div class="card-badge">RF-OC</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ───────────────────────────── -->
+  <section id="how" class="section section-alt">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Pipeline</span>
+        <h2 class="section-title">Four commands from zero to inference</h2>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-step reveal-s1">
+          <div class="pipe-num">01</div>
+          <div class="pipe-body">
+            <h4>Discover</h4>
+            <p>Search Hugging Face for coding models with automatic fit-check against your machine's RAM.</p>
+          </div>
+        </div>
+        <div class="pipe-arrow" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="pipe-step reveal-s2">
+          <div class="pipe-num">02</div>
+          <div class="pipe-body">
+            <h4>Pull</h4>
+            <p>Download to external SSD only. Golden rule enforced: internal disk stays untouched.</p>
+          </div>
+        </div>
+        <div class="pipe-arrow" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="pipe-step reveal-s3">
+          <div class="pipe-num">03</div>
+          <div class="pipe-body">
+            <h4>Serve</h4>
+            <p>Start the OpenAI-compatible server. MLX runs native on Apple Silicon with hot-swap multi-model.</p>
+          </div>
+        </div>
+        <div class="pipe-arrow" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="pipe-step reveal-s4">
+          <div class="pipe-num">04</div>
+          <div class="pipe-body">
+            <h4>Code</h4>
+            <p>Wire opencode and start coding. Claude Code experience, fully local, zero cloud.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal reveal-s4">
+        <div class="terminal-bar">
+          <span class="terminal-dot dot-red"></span>
+          <span class="terminal-dot dot-yellow"></span>
+          <span class="terminal-dot dot-green"></span>
+          <span class="terminal-title">Terminal — interference</span>
+        </div>
+        <pre class="terminal-body"><span class="t-prompt">$</span> <span class="t-cmd">interference doctor</span>
+<span class="t-out">SSD esterno (regola d'oro) ✅ /Volumes/SSD/interference-models</span>
+<span class="t-out">Runtime MLX              ✅ installato</span>
+<span class="t-out">Token HF                 ✅ presente</span>
+<span class="t-out">Budget RAM               20 GB</span>
+
+<span class="t-prompt">$</span> <span class="t-cmd">interference scout "qwen coder"</span>
+<span class="t-out">┌──────────────────────────────────────────────────────────┐</span>
+<span class="t-out">│ Modello                     │ RAM stim. │ Verdetto       │</span>
+<span class="t-out">│ Qwen2.5-Coder-14B-4bit      │ 10.2 GB   │ ✅ usabile      │</span>
+<span class="t-out">│ Qwen3-Coder-30B-A3B-MoE     │  5.8 GB   │ ✅ usabile      │</span>
+<span class="t-out">│ Qwen2.5-Coder-32B-Q4        │ 19.1 GB   │ ⚠️ al limite    │</span>
+<span class="t-out">└──────────────────────────────────────────────────────────┘</span>
+
+<span class="t-prompt">$</span> <span class="t-cmd">interference pull mlx-community/Qwen2.5-Coder-14B-4bit</span>
+<span class="t-out">Scaricato su /Volumes/SSD/interference-models/Qwen2.5-Coder-14B-4bit</span>
+
+<span class="t-prompt">$</span> <span class="t-cmd">interference serve</span>
+<span class="t-out">Orchestratore su http://127.0.0.1:8080/v1</span>
+
+<span class="t-prompt">$</span> <span class="t-cmd">interference opencode-config</span>
+<span class="t-out">Config opencode aggiornata ✓</span>
+<span class="t-prompt blink">█</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Constraints ───────────────────────────── -->
+  <section id="stack" class="section section-alt">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Specs</span>
+        <h2 class="section-title">Built for the machine you have</h2>
+        <p class="section-sub">No cloud GPU, no API keys, no telemetry. Everything runs on your hardware.</p>
+      </div>
+
+      <div class="specs">
+        <div class="spec-card reveal-s1">
+          <div class="spec-label">Platform</div>
+          <div class="spec-value">Apple Silicon</div>
+          <div class="spec-meta">M1 / M2 / M3 / M4 &middot; 16&ndash;48 GB unified RAM</div>
+        </div>
+        <div class="spec-card reveal-s1">
+          <div class="spec-label">Storage</div>
+          <div class="spec-value">External SSD</div>
+          <div class="spec-meta">Golden rule enforced &middot; internal disk off-limits</div>
+        </div>
+        <div class="spec-card reveal-s1">
+          <div class="spec-label">Inference</div>
+          <div class="spec-value">MLX / mlx-lm</div>
+          <div class="spec-meta">Apple-native Metal &middot; zero-copy &middot; no CUDA</div>
+        </div>
+        <div class="spec-card reveal-s1">
+          <div class="spec-label">Privacy</div>
+          <div class="spec-value">100% local</div>
+          <div class="spec-meta">No cloud &middot; no telemetry &middot; no API keys</div>
+        </div>
+      </div>
+
+      <div class="stack-badges reveal-s2">
+        <span class="badge">Python 3.12</span>
+        <span class="badge">FastAPI</span>
+        <span class="badge">MLX</span>
+        <span class="badge">mlx-lm</span>
+        <span class="badge">opencode</span>
+        <span class="badge">Typer</span>
+        <span class="badge">Rich</span>
+        <span class="badge">uv</span>
+        <span class="badge">Hugging Face</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Recommended Models ─────────────────────── -->
+  <section id="models" class="section">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Models</span>
+        <h2 class="section-title">Start here</h2>
+        <p class="section-sub">Curated coding models that run well on Apple Silicon. The scout finds what fits your specific machine.</p>
+      </div>
+
+      <div class="models-grid">
+        <div class="model-row reveal-s1">
+          <div class="model-name">Qwen3-Coder-30B-A3B</div>
+          <div class="model-meta">MoE &middot; ~3B active</div>
+          <div class="model-ram">~6 GB</div>
+          <div class="model-badge model-badge-fast">Fast</div>
+          <div class="model-desc">Best speed/quality ratio. MoE: 3B active per token, 30B total knowledge. Ideal for everyday coding.</div>
+        </div>
+        <div class="model-row reveal-s2">
+          <div class="model-name">DeepSeek-Coder-V2-Lite</div>
+          <div class="model-meta">MoE &middot; 16B total</div>
+          <div class="model-ram">~9 GB</div>
+          <div class="model-badge model-badge-balanced">Balanced</div>
+          <div class="model-desc">Strong alternative to Qwen. MoE architecture, excellent at multi-file edits and complex reasoning.</div>
+        </div>
+        <div class="model-row reveal-s3">
+          <div class="model-name">Qwen2.5-Coder-14B</div>
+          <div class="model-meta">Q4 quantized</div>
+          <div class="model-ram">~9 GB</div>
+          <div class="model-badge model-badge-balanced">Balanced</div>
+          <div class="model-desc">The sweet spot. Fits comfortably on 16&ndash;32 GB, long context, strong reasoning across languages.</div>
+        </div>
+        <div class="model-row reveal-s4">
+          <div class="model-name">Qwen2.5-Coder-7B</div>
+          <div class="model-meta">Q4 / Q8 quantized</div>
+          <div class="model-ram">~4&ndash;7 GB</div>
+          <div class="model-badge model-badge-light">Light</div>
+          <div class="model-desc">Minimal footprint. Great for autocomplete and quick edits. Runs comfortably on any Apple Silicon Mac.</div>
+        </div>
+        <div class="model-row reveal-s4">
+          <div class="model-name">Phi-4-Mini</div>
+          <div class="model-meta">3.8B params</div>
+          <div class="model-ram">~3 GB</div>
+          <div class="model-badge model-badge-light">Light</div>
+          <div class="model-desc">Microsoft. Tiny but surprisingly capable for inline completions. Instant load, near-zero latency.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why Interference ───────────────────────── -->
+  <section id="why" class="section section-alt">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Why</span>
+        <h2 class="section-title">Not just another model runner</h2>
+        <p class="section-sub">Ollama and LM Studio solve part of the problem. Interference solves the whole pipeline — from discovery to the coding agent.</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-feature">
+          <div class="compare-icon check">&#10003;</div>
+          <div class="compare-text">
+            <strong>Scout with fit-check</strong>
+            <span>Know if a model fits your RAM <em>before</em> downloading. No more guessing, no more wasted bandwidth.</span>
+          </div>
+        </div>
+        <div class="compare-feature">
+          <div class="compare-icon check">&#10003;</div>
+          <div class="compare-text">
+            <strong>Golden rule: external SSD only</strong>
+            <span>Models are large. Your internal disk is small. Interference refuses to touch it — enforced at every layer.</span>
+          </div>
+        </div>
+        <div class="compare-feature">
+          <div class="compare-icon check">&#10003;</div>
+          <div class="compare-text">
+            <strong>opencode integration</strong>
+            <span>One command wires your local models to a Claude Code&ndash;style coding agent. Not just an API — a complete workflow.</span>
+          </div>
+        </div>
+        <div class="compare-feature">
+          <div class="compare-icon check">&#10003;</div>
+          <div class="compare-text">
+            <strong>Hot-swap multi-model</strong>
+            <span>Fast model for completions, strong model for reasoning. Switch on the fly without restarting the server.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-table reveal-s2">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="tc-interference">Interference</th>
+              <th>Ollama</th>
+              <th>LM Studio</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Scout / fit-check</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>SSD enforcement</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>opencode glue</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>Hot-swap routing</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+              <td><span class="cross-mark">&mdash;</span></td>
+            </tr>
+            <tr>
+              <td>OpenAI-compatible API</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="check-mark">&#10003;</span></td>
+              <td><span class="check-mark">&#10003;</span></td>
+            </tr>
+            <tr>
+              <td>MLX-native (Apple Silicon)</td>
+              <td class="tc-interference"><span class="check-mark">&#10003;</span></td>
+              <td><span class="check-mark">&#10003;</span></td>
+              <td><span class="check-mark">&#10003;</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Developer Experience ───────────────────── -->
+  <section id="dx" class="section">
+    <div class="section-inner">
+      <div class="section-head reveal">
+        <span class="section-label">Experience</span>
+        <h2 class="section-title">Terminal to agent in four commands</h2>
+      </div>
+
+      <div class="dx-flow">
+        <div class="dx-step reveal-s1">
+          <div class="dx-num">1</div>
+          <div class="dx-cmd">interference scout "qwen coder"</div>
+          <div class="dx-desc">See what fits your machine. No download yet.</div>
+        </div>
+        <div class="dx-step reveal-s2">
+          <div class="dx-num">2</div>
+          <div class="dx-cmd">interference pull &lt;model&gt;</div>
+          <div class="dx-desc">Download lands on your external SSD. Internal disk: untouched.</div>
+        </div>
+        <div class="dx-step reveal-s3">
+          <div class="dx-num">3</div>
+          <div class="dx-cmd">interference serve</div>
+          <div class="dx-desc">OpenAI-compatible endpoint on localhost. MLX runs natively.</div>
+        </div>
+        <div class="dx-step reveal-s4">
+          <div class="dx-num">4</div>
+          <div class="dx-cmd">interference opencode-config</div>
+          <div class="dx-desc">One command wires opencode. Start coding with your local model.</div>
+        </div>
+      </div>
+
+      <div class="dx-quote reveal-s4">
+        <p>That's it. No config files, no port forwarding, no cloud sign-up. From zero to local coding agent in under a minute.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ────────────────────────────────────── -->
+  <section id="cta" class="section">
+    <div class="section-inner cta-inner">
+      <div class="cta-content reveal">
+        <h2 class="cta-title">Ready to run local?</h2>
+        <p class="cta-desc">Install the toolkit, scout for models, and start coding with local LLMs — all from the terminal.</p>
+
+        <div class="cta-install">
+          <div class="install-tabs">
+            <button class="install-tab active" data-method="pip">pip</button>
+            <button class="install-tab" data-method="uv">uv</button>
+          </div>
+          <div class="install-block" data-method="pip">
+            <pre><code>pip install interference[serve]
+interference doctor
+interference scout "qwen coder"
+interference pull &lt;model&gt;
+interference serve</code></pre>
+          </div>
+          <div class="install-block hidden" data-method="uv">
+            <pre><code>git clone https://github.com/.../interference
+cd interference
+uv sync --extra serve
+uv run interference doctor
+uv run interference scout "qwen coder"</code></pre>
+          </div>
+        </div>
+
+        <div class="cta-links">
+          <a href="https://github.com" class="btn btn-primary" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.604-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span>View on GitHub</span>
+          </a>
+          <a href="https://github.com" class="btn btn-ghost" target="_blank" rel="noopener">
+            <span>Read the docs</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="cta-pattern" aria-hidden="true">
+        <svg viewBox="0 0 200 200" class="cta-svg">
+          <circle cx="80" cy="100" r="10" fill="none" stroke="rgba(250,250,247,0.08)" stroke-width="0.5"/>
+          <circle cx="80" cy="100" r="25" fill="none" stroke="rgba(250,250,247,0.06)" stroke-width="0.5"/>
+          <circle cx="80" cy="100" r="40" fill="none" stroke="rgba(250,250,247,0.04)" stroke-width="0.5"/>
+          <circle cx="80" cy="100" r="55" fill="none" stroke="rgba(250,250,247,0.03)" stroke-width="0.5"/>
+          <circle cx="80" cy="100" r="70" fill="none" stroke="rgba(250,250,247,0.02)" stroke-width="0.5"/>
+          <circle cx="120" cy="100" r="10" fill="none" stroke="rgba(250,250,247,0.08)" stroke-width="0.5"/>
+          <circle cx="120" cy="100" r="25" fill="none" stroke="rgba(250,250,247,0.06)" stroke-width="0.5"/>
+          <circle cx="120" cy="100" r="40" fill="none" stroke="rgba(250,250,247,0.04)" stroke-width="0.5"/>
+          <circle cx="120" cy="100" r="55" fill="none" stroke="rgba(250,250,247,0.03)" stroke-width="0.5"/>
+          <circle cx="120" cy="100" r="70" fill="none" stroke="rgba(250,250,247,0.02)" stroke-width="0.5"/>
+          <circle cx="80" cy="100" r="3" fill="rgba(250,250,247,0.3)"/>
+          <circle cx="120" cy="100" r="3" fill="rgba(250,250,247,0.3)"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="interference-mark-white.svg" alt="" width="20" height="20" />
+        <span>INTERFERENCE</span>
+      </div>
+      <div class="footer-links">
+        <a href="#hero">Home</a>
+        <a href="#what">Modules</a>
+        <a href="#how">Pipeline</a>
+        <a href="#models">Models</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script src="main.js"></script>
+</body>
+</html>
