@@ -11,6 +11,7 @@ import { currentMode, setMode } from "../config.ts";
 import { saveSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
+import { dispatch, isSlashCommand } from "../commands/index.ts";
 
 type HistoryItem = {
   id: number;
@@ -182,28 +183,54 @@ export default function App({ session }: { session: Session }) {
       if (!v || busy) return;
       setInputKey((k) => k + 1);
       if (v === "/exit" || v === "/quit") return exit();
-      if (v === "/plan") { setMode("plan"); sessionRef.current.meta.mode = "plan"; return; }
-      if (v === "/build") { setMode("build"); sessionRef.current.meta.mode = "build"; return; }
-      if (v === "/undo") {
-        undo().then((files) => {
-          if (files.length > 0) {
-            setHistory((h) => [...h, { id: nextId(), role: "assistant", content: `Undo: restored ${files.join(", ")}` }]);
-          } else {
-            setStatusText("Nothing to undo");
-          }
+
+      if (isSlashCommand(v)) {
+        dispatch(v, {
+          setMode: (m) => { setMode(m); sessionRef.current.meta.mode = m; },
+          clearMessages: () => {
+            messagesRef.current = [];
+            setHistory([]);
+            setStatusText("Conversation cleared.");
+          },
+          doInit: async (args) => {
+            const template = `Generate or update the AGENTS.md file at the project root.
+
+Follow the bundled agents-setup skill (see system prompt). Key sections:
+- Project overview, stack, directory structure
+- Build/test commands, code conventions
+- Agent skills and triggers
+- Non-negotiable rules
+
+How to proceed:
+1. Use ls, glob, grep, and read to explore the project thoroughly
+2. Identify languages, frameworks, build system, test setup, conventions
+3. Write AGENTS.md at the project root using the write tool
+4. Confirm the file was created and summarize its contents
+
+${args ? `Additional context: ${args}` : ""}`;
+            nextTurn();
+            messagesRef.current.push({ role: "user" as const, content: template });
+            const aborter = new AbortController();
+            try {
+              const chunks = runTurn(messagesRef.current, aborter.signal);
+              for await (const chunk of chunks) {
+                // consume silently — the history will show the result
+              }
+              sessionRef.current.meta.turnCount++;
+              await finalizeSnapshots();
+              await saveSession(sessionRef.current);
+              return "AGENTS.md generated successfully.";
+            } catch (err) {
+              messagesRef.current.pop();
+              return `Init failed: ${err instanceof Error ? err.message : String(err)}`;
+            }
+          },
+        }).then((result) => {
+          if (result) setStatusText(result);
         });
         return;
       }
-      if (v === "/redo") {
-        redo().then((files) => {
-          if (files.length > 0) {
-            setHistory((h) => [...h, { id: nextId(), role: "assistant", content: `Redo: restored ${files.join(", ")}` }]);
-          } else {
-            setStatusText("Nothing to redo");
-          }
-        });
-        return;
-      }
+
       doTurn(v);
     },
     [busy, exit],

@@ -4,6 +4,7 @@ import { currentModel, currentProvider } from "./config.ts";
 import { MissingApiKeyError } from "./provider.ts";
 import { createSession, latestSession, loadSession, saveSession, initStore } from "./session/store.ts";
 import { initSnapshot } from "./session/snapshot.ts";
+import { initInstructions, bootstrapSkills } from "./agent/prompt.ts";
 import type { Session } from "./session/store.ts";
 
 async function main(): Promise<void> {
@@ -15,6 +16,8 @@ async function main(): Promise<void> {
   }
 
   await initStore();
+  await bootstrapSkills();
+  await initInstructions();
 
   const args = Bun.argv.slice(2);
   const resumeId = args.includes("--continue")

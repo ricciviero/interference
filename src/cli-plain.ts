@@ -9,6 +9,7 @@ import { setConfirmHandler } from "./permissions.ts";
 import { saveSession } from "./session/store.ts";
 import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
+import { dispatch, isSlashCommand } from "./commands/index.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -54,24 +55,44 @@ export default async function plain(session: Session): Promise<void> {
       try { input = (await rl.question(`${BOLD}›${RESET} `)).trim(); } catch { break; }
       if (input.length === 0) continue;
       if (input === "/exit" || input === "/quit") break;
-      if (input === "/plan") { setMode("plan"); session.meta.mode = "plan"; stdout.write(`${DIM}Plan mode${RESET}\n\n`); continue; }
-      if (input === "/build") { setMode("build"); session.meta.mode = "build"; stdout.write(`${DIM}Build mode${RESET}\n\n`); continue; }
-      if (input === "/undo") {
-        const files = await undo();
-        if (files.length > 0) {
-          stdout.write(`${DIM}Undo: restored ${files.join(", ")}${RESET}\n\n`);
-        } else {
-          stdout.write(`${DIM}Nothing to undo${RESET}\n\n`);
-        }
-        continue;
-      }
-      if (input === "/redo") {
-        const files = await redo();
-        if (files.length > 0) {
-          stdout.write(`${DIM}Redo: restored ${files.join(", ")}${RESET}\n\n`);
-        } else {
-          stdout.write(`${DIM}Nothing to redo${RESET}\n\n`);
-        }
+
+      if (isSlashCommand(input)) {
+        const result = await dispatch(input, {
+          setMode: (m) => { setMode(m); session.meta.mode = m; },
+          clearMessages: () => { messages.length = 0; },
+          doInit: async (args) => {
+            // /init delegates to the agent — run a turn with the init template
+            const template = `Generate or update the AGENTS.md file at the project root.
+
+Follow the bundled agents-setup skill (see system prompt). Key sections:
+- Project overview, stack, directory structure
+- Build/test commands, code conventions  
+- Agent skills and triggers
+- Non-negotiable rules
+
+How to proceed:
+1. Use ls, glob, grep, and read to explore the project thoroughly
+2. Identify languages, frameworks, build system, test setup, conventions
+3. Write AGENTS.md at the project root using the write tool
+4. Confirm the file was created and summarize its contents
+
+${args ? `Additional context: ${args}` : ""}`;
+            nextTurn();
+            messages.push({ role: "user", content: template });
+            aborter = new AbortController();
+            try {
+              await consumeTurn(runTurn(messages, aborter.signal));
+              session.meta.turnCount++;
+              await finalizeSnapshots();
+              await saveSession(session);
+              return "AGENTS.md generated successfully.";
+            } catch (err) {
+              messages.pop();
+              return `Init failed: ${err instanceof Error ? err.message : String(err)}`;
+            } finally { aborter = null; }
+          },
+        });
+        if (result) stdout.write(`${DIM}${result}${RESET}\n\n`);
         continue;
       }
 
