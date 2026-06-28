@@ -149,6 +149,7 @@ Registro di **fatti vivi non-decisionali** (stato di integrazioni, env, gotcha, 
 - 🟢 **Iterazione 10 (compaction)** completata: compattazione automatica a ~90% del contesto. Stima token (chars/3.5), soglie per-modello (DeepSeek 1M, Claude 200K, default 128K). Summary via `generateText`, preservati ultimi 2 turni. Trigger automatico a fine turno in CLI e TUI, comando `/compact`. 69 test, typecheck pulito.
 - 🟢 **Iterazione 11 (config-file)** completata: file `interference.json` per progetto (walk up da cwd, first-match-wins). Schema: `model`, `mode`, `permissions` (allow/ask/deny con pattern), `instructions`. Env vars sovrascrivono config. Permission rules mergiate coi defaults. `PermRule` type esportato. 69 test, typecheck pulito.
 - 🟢 **Iterazione 12 (diff-tui)** completata: diff view nella TUI per edit/write. Algoritmo line-based diff, colori (+ verde, - rosso) in TUI, markers +/- in CLI plain. Write mostra contenuto come linee aggiunte, edit mostra oldString→newString. 69 test, typecheck pulito.
+- 🟢 **Iterazione 13 (ux-tui)** completata: UX/UI completa: status footer con model/mode/contesto/turn count, ConfirmDialog con navigazione frecce (sostituisce prompt testuale), SlashAutocomplete con fuzzy search su `/`, SessionList con navigazione j/k, Toast notifications con auto-dismiss. 69 test, typecheck pulito.
 
 ---
 
