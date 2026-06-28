@@ -3,7 +3,7 @@
 <p align="center"><strong>The open-source coding agent that lives in your terminal.</strong></p>
 
 <p align="center">
-  TypeScript&nbsp;+&nbsp;Bun · Plan&nbsp;/&nbsp;Build&nbsp;modes · file&nbsp;&amp;&nbsp;shell&nbsp;tools · permissions · sessions&nbsp;with&nbsp;undo · local&nbsp;&amp;&nbsp;cloud&nbsp;models
+  TypeScript + Bun · Plan / Build modes · 9 tools · permissions · sessions with undo · 38 skills · subagents · TUI
 </p>
 
 ---
@@ -12,41 +12,55 @@
 codebase and edits files or runs commands through an agentic tool-calling loop — with explicit
 permissions and a read-only **Plan** mode so nothing happens without your say-so.
 
-```
-you ask  →  it calls tools (read/grep/edit/bash)  →  you approve  →  undo anytime
-```
+## Features
+
+- **9 tools**: `read` · `ls` · `glob` · `grep` · `webfetch` · `write` · `edit` · `bash` · `task` (subagent)
+- **Plan & Build** modes — explore read-only, switch to full access when ready
+- **Permissioned by design** — allow / ask / deny enforced in code, not in the prompt; dangerous commands auto-blocked (`rm -rf`, `sudo`, `curl | sh`)
+- **38 skills** — auto-detected by keyword matching, or invoked explicitly via `/skill-name`; full Agent Skills format support
+- **Subagents** — delegate complex tasks to isolated agents (`explore` for read-only, `general` for full access)
+- **Atomic edit** — unique-match string replacement with `replaceAll` support
+- **Safe bash** — timeout, output truncation, exit code, dangerous-command deny list
+- **Session persistence** — messages saved per-project, resume with `--continue`; `/sessions` picker
+- **Undo / redo** — file snapshots before every mutation; `/undo` `/redo`
+- **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename`
+- **`/init`** — analyzes your project and generates `AGENTS.md`
+- **Skill invocation** — explicit `/skill-name` + automatic keyword matching on description
+- **Context compaction** — auto-summarizes conversation at ~90% context limit
+- **Config file** — per-project `interference.json` (model, permissions, mode, instructions)
+- **Diff view** — color-coded (+/-, green/red) in TUI for every edit/write
+- **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, confirm dialog with arrow nav, slash autocomplete, session list, toast notifications, status footer (model / mode / context% / cost)
+- **Multi-provider** — DeepSeek, Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi) + any OpenAI-compatible endpoint
+- **Reasoning/thinking** — distinct `┄ thinking` blocks for every provider, enabled at max
+- **Cost tracking** — real-time cost estimation per model
+- **AGENTS.md & CLAUDE.md** — auto-loaded from project tree into system prompt
+- **Italian** — made in Italy, MIT licensed, European
 
 ## Why
 
 - **Terminal-native** — no editor lock-in, no web UI; just your shell
-- **Permissioned by design** — allow / ask / deny enforced in code, not in the prompt
-- **Plan & Build** — explore read-only, then switch to full access when you're ready
-- **Local & cloud** — Anthropic / OpenAI, or any OpenAI-compatible local endpoint
-- **Bun-fast** — one toolchain; ships as a single standalone executable
+- **Permissioned by design** — allow / ask / deny enforced in code
+- **European / by choice** — Italian, MIT, GDPR-native, no vendor lock-in
+- **Radically transparent** — every tool call, reasoning step, and API cost shown live
 
 ## Stack
 
-[Bun](https://bun.sh) · TypeScript · [Vercel AI SDK](https://ai-sdk.dev) (`ai` v7) · [zod](https://zod.dev) · [Ink](https://github.com/vadimdemedes/ink) (TUI)
+[Bun](https://bun.sh) · TypeScript · [Vercel AI SDK](https://ai-sdk.dev) (`ai` v7) · [zod](https://zod.dev) · [Ink 7.1](https://github.com/vadimdemedes/ink) + React 19.2 (TUI)
 
 ## Quickstart
 
 ```bash
 bun install
-export ANTHROPIC_API_KEY="sk-..."   # or point at a local OpenAI-compatible endpoint
+# Set API key in .env (Bun auto-loads it)
+echo 'DEEPSEEK_API_KEY=sk-...' > .env
 bun run interference
 ```
 
-> Requires **Bun 1.3+** (and Node ≥22 / React ≥19.2 for the Ink TUI).
-
-## Status
-
-Early development — the agent is being built iteration by iteration: core loop → tools →
-permissions → TUI → sessions → commands → local providers → subagents.
+> Requires **Bun 1.3+** (Node ≥22 / React ≥19.2 for the Ink TUI).
 
 ## Landing page
 
-A static landing page lives in [`site/`](site/) (plain HTML/CSS/JS, self-contained). Open
-`site/index.html` in a browser, or serve it with `bunx serve site`.
+A static landing page lives in [`site/`](site/).
 
 ## License
 
