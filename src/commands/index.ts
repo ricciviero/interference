@@ -110,6 +110,10 @@ register("redo", "Redo previously undone file modifications", async () => {
   return "Nothing to redo.";
 });
 
+register("compact", "Compact conversation context to save tokens", () => {
+  return "Compaction will run at the end of this turn if context is > 90% full.";
+});
+
 export async function initSkillCommands(): Promise<void> {
   const skills = getCachedRegistry();
   for (const skill of skills) {

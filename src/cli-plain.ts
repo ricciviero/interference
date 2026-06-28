@@ -11,6 +11,7 @@ import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
 import { dispatch, isSlashCommand } from "./commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
+import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -131,6 +132,17 @@ ${args ? `Additional context: ${args}` : ""}`;
         session.meta.turnCount++;
         await finalizeSnapshots();
         await saveSession(session);
+
+        if (shouldCompact(messages, currentModel())) {
+          const pct = getUsagePercent(messages, currentModel());
+          stdout.write(`${DIM}Context at ${pct}%, compacting...${RESET}\n`);
+          const compacted = await compactMessages(messages);
+          messages.length = 0;
+          messages.push(...compacted);
+          session.messages = messages;
+          await saveSession(session);
+          stdout.write(`${DIM}Compacted. ${getUsagePercent(messages, currentModel())}% context used.${RESET}\n`);
+        }
       } catch (err) {
         messages.pop();
         if (err instanceof MissingApiKeyError) {
