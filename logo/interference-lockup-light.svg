@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 110" width="460" height="110" role="img" aria-label="Interference — Scientific Coding Agent">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 110" width="460" height="110" role="img" aria-label="Interference">
   <title>Interference</title>
   <defs>
     <clipPath id="lk-clip-l"><circle cx="50" cy="50" r="48"/></clipPath>
@@ -37,6 +37,6 @@
     <text x="1" y="78"
       font-family="'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace"
       font-weight="500" font-size="10" letter-spacing="2.2"
-      opacity="0.6">SCIENTIFIC CODING AGENT</text>
+      opacity="0.6">LOCAL CODING LLM TOOLKIT</text>
   </g>
 </svg>
