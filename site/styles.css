@@ -98,6 +98,25 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-links a:hover { color: var(--ink); }
 .nav-cta { color: var(--ink) !important; border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
+
+.lang-switch { display: inline-flex; align-items: center; gap: 0; margin-left: 2px; }
+.lang-btn {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  background: none; border: none;
+  color: var(--dim);
+  cursor: pointer; padding: 2px 0;
+  transition: color 0.2s var(--ease);
+}
+.lang-btn:hover { color: var(--ink); }
+.lang-btn.is-active { color: var(--ink); font-weight: 500; }
+.lang-sep {
+  font-family: var(--mono);
+  font-size: 10.5px; color: var(--line);
+  margin: 0 3px; user-select: none;
+}
+
 @media (max-width: 620px) { .nav-links a:not(.nav-cta) { display: none; } }
 
 /* ── HERO ────────────────────────────────────────────── */
@@ -216,6 +235,23 @@ a { color: inherit; text-decoration: none; }
 .feat p { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin: 0; }
 @media (max-width: 860px) { .feat-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .feat-grid { grid-template-columns: 1fr; } }
+
+/* ── WHY ────────────────────────────────────────────── */
+.why-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.why-card {
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: clamp(28px, 3.4vw, 40px);
+}
+.why-n {
+  display: block; margin-bottom: 18px;
+  font-family: var(--mono); font-size: 42px; font-weight: 500;
+  letter-spacing: -0.02em; color: var(--line-soft); line-height: 1;
+}
+.why-card h3 {
+  font-size: 18px; font-weight: 500; letter-spacing: -0.01em; margin: 0 0 10px;
+}
+.why-card p { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin: 0; }
+@media (max-width: 820px) { .why-grid { grid-template-columns: 1fr; } }
 
 /* ── INSTALL ─────────────────────────────────────────── */
 .install { max-width: 720px; margin: 0 auto; }

@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>interference — the open-source terminal coding agent</title>
+<title data-i18n="meta.title">interference — the open-source terminal coding agent</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="interference is an open-source AI coding agent that lives in your terminal. Plan and Build modes, file & shell tools, permissions, sessions with undo — built on TypeScript + Bun." />
+<meta name="description" data-i18n-content="meta.desc" content="interference is an Italian open-source AI coding agent that lives in your terminal. Plan and Build modes, file & shell tools, permissions, sessions with undo — built on TypeScript + Bun." />
 
 <link rel="icon" href="assets/favicon.ico" sizes="any" />
 <link rel="icon" type="image/svg+xml" href="assets/interference-favicon.svg" />
 <link rel="apple-touch-icon" href="assets/interference-apple-touch-icon.png" />
 <meta name="theme-color" content="#0a0a0a" />
 
-<meta property="og:title" content="interference — the open-source terminal coding agent" />
-<meta property="og:description" content="An AI coding agent that lives in your terminal. TypeScript + Bun." />
+<meta property="og:title" data-i18n-content="og.title" content="interference — the open-source terminal coding agent" />
+<meta property="og:description" data-i18n-content="og.desc" content="An Italian open-source AI coding agent that lives in your terminal. TypeScript + Bun." />
 <meta property="og:image" content="assets/interference-og.png" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -25,7 +25,6 @@
 </head>
 <body>
 
-<!-- grain + grid atmosphere -->
 <div class="grain" aria-hidden="true"></div>
 
 <!-- ── NAV ───────────────────────────────────────────── -->
@@ -35,10 +34,15 @@
     <span class="brand-word">interference</span>
   </a>
   <nav class="nav-links">
-    <a href="#how">How&nbsp;it&nbsp;works</a>
-    <a href="#features">Features</a>
-    <a href="#start">Quickstart</a>
-    <a class="nav-cta" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="#how" data-i18n="nav.how">How it works</a>
+    <a href="#features" data-i18n="nav.features">Features</a>
+    <a href="#start" data-i18n="nav.start">Quickstart</a>
+    <a class="nav-cta" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener" data-i18n="nav.github">GitHub ↗</a>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+      <span class="lang-sep" aria-hidden="true">·</span>
+      <button class="lang-btn" data-lang="it" aria-pressed="false">IT</button>
+    </div>
   </nav>
 </header>
 
@@ -48,20 +52,14 @@
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow reveal">Open-source · TypeScript + Bun</p>
-        <h1 class="reveal" style="--d:1">
-          The coding agent<br />that lives in your<br /><span class="ital">terminal.</span>
-        </h1>
-        <p class="lede reveal" style="--d:2">
-          interference reads your code, edits files and runs commands through an
-          agentic loop — with explicit permissions and a read-only Plan mode.
-          No editor lock-in. Just the terminal.
-        </p>
+        <p class="eyebrow reveal" data-i18n="hero.eyebrow">Open-source · TypeScript + Bun · Italian</p>
+        <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The coding agent<br />that lives in your<br /><span class="ital">terminal.</span></h1>
+        <p class="lede reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.</p>
         <div class="hero-actions reveal" style="--d:3">
-          <a class="btn btn-ink" href="#start">Get started</a>
-          <a class="btn btn-ghost" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">View source ↗</a>
+          <a class="btn btn-ink" href="#start" data-i18n="hero.cta_start">Get started</a>
+          <a class="btn btn-ghost" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener" data-i18n="hero.cta_source">View source ↗</a>
         </div>
-        <p class="hero-foot eyebrow reveal" style="--d:4">MIT&nbsp;licensed · Plan&nbsp;/&nbsp;Build&nbsp;modes · Local&nbsp;&amp;&nbsp;cloud&nbsp;models</p>
+        <p class="hero-foot eyebrow reveal" style="--d:4" data-i18n-html="hero.foot">MIT&nbsp;licensed · Plan&nbsp;/&nbsp;Build&nbsp;modes · Transparent&nbsp;API&nbsp;pricing</p>
       </div>
 
       <div class="hero-mark reveal" style="--d:2" aria-hidden="true">
@@ -76,7 +74,7 @@
     <div class="term reveal-up">
       <div class="term-bar">
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="term-title">interference — ~/project</span>
+        <span class="term-title" data-i18n="term.title">interference — ~/project</span>
       </div>
       <pre class="term-body"><code id="typed" aria-label="example session"></code><span class="caret" id="caret">▋</span></pre>
     </div>
@@ -85,29 +83,29 @@
   <!-- ── HOW IT WORKS ────────────────────────────────── -->
   <section id="how" class="section">
     <div class="sec-head">
-      <span class="eyebrow">/ 01 — the loop</span>
-      <h2>An agent loop you can watch and trust.</h2>
+      <span class="eyebrow" data-i18n="how.eyebrow">/ 01 — the loop</span>
+      <h2 data-i18n="how.title">An agent loop you can watch and trust.</h2>
     </div>
     <ol class="steps">
       <li class="reveal-up">
         <span class="step-n">01</span>
-        <h3>You ask</h3>
-        <p>Describe a task in plain language. interference plans before it touches anything.</p>
+        <h3 data-i18n="how.step1_title">You ask</h3>
+        <p data-i18n="how.step1_desc">Describe a task in plain language. interference plans before it touches anything.</p>
       </li>
       <li class="reveal-up" style="--d:1">
         <span class="step-n">02</span>
-        <h3>It calls tools</h3>
-        <p><code>read · ls · glob · grep</code> to explore, <code>write · edit · bash</code> to act — multi-step, streamed live.</p>
+        <h3 data-i18n="how.step2_title">It calls tools</h3>
+        <p data-i18n-html="how.step2_desc"><code>read · ls · glob · grep</code> to explore, <code>write · edit · bash</code> to act — multi-step, streamed live.</p>
       </li>
       <li class="reveal-up" style="--d:2">
         <span class="step-n">03</span>
-        <h3>You stay in control</h3>
-        <p>Every mutating action is gated by <em>allow / ask / deny</em>. Approve with a diff in front of you.</p>
+        <h3 data-i18n="how.step3_title">You stay in control</h3>
+        <p data-i18n-html="how.step3_desc">Every mutating action is gated by <em>allow / ask / deny</em>. Approve with a diff in front of you.</p>
       </li>
       <li class="reveal-up" style="--d:3">
         <span class="step-n">04</span>
-        <h3>Undo anything</h3>
-        <p>Sessions are persisted and snapshotted. Roll back a change the agent made, instantly.</p>
+        <h3 data-i18n="how.step4_title">Undo anything</h3>
+        <p data-i18n="how.step4_desc">Sessions are persisted and snapshotted. Roll back a change the agent made, instantly.</p>
       </li>
     </ol>
   </section>
@@ -115,23 +113,23 @@
   <!-- ── MODES ───────────────────────────────────────── -->
   <section class="section modes">
     <div class="mode-card reveal-up">
-      <span class="eyebrow">mode · read-only</span>
-      <h3>Plan</h3>
-      <p>The agent explores and reasons — never writes. Perfect for understanding a codebase or scoping a change before committing to it.</p>
+      <span class="eyebrow" data-i18n="modes.plan_eyebrow">mode · read-only</span>
+      <h3 data-i18n="modes.plan_title">Plan</h3>
+      <p data-i18n="modes.plan_desc">The agent explores and reasons — never writes. Perfect for understanding a codebase or scoping a change before committing to it.</p>
       <ul class="ticks">
-        <li>Filesystem read &amp; search only</li>
-        <li>Cites <code>file:line</code> evidence</li>
-        <li>Zero side effects</li>
+        <li data-i18n-html="modes.plan_tick1">Filesystem read &amp; search only</li>
+        <li data-i18n-html="modes.plan_tick2">Cites <code>file:line</code> evidence</li>
+        <li data-i18n="modes.plan_tick3">Zero side effects</li>
       </ul>
     </div>
     <div class="mode-card mode-card--ink reveal-up" style="--d:1">
-      <span class="eyebrow">mode · full access</span>
-      <h3>Build</h3>
-      <p>The agent writes files, applies atomic edits and runs commands — each behind your permission rules, with destructive actions denied by default.</p>
+      <span class="eyebrow" data-i18n="modes.build_eyebrow">mode · full access</span>
+      <h3 data-i18n="modes.build_title">Build</h3>
+      <p data-i18n="modes.build_desc">The agent writes files, applies atomic edits and runs commands — each behind your permission rules, with destructive actions denied by default.</p>
       <ul class="ticks">
-        <li>Atomic <code>edit</code> (unique-match)</li>
-        <li>Sandboxed paths, timed <code>bash</code></li>
-        <li>Approve-with-preview</li>
+        <li data-i18n-html="modes.build_tick1">Atomic <code>edit</code> (unique-match)</li>
+        <li data-i18n-html="modes.build_tick2">Sandboxed paths, timed <code>bash</code></li>
+        <li data-i18n="modes.build_tick3">Approve-with-preview</li>
       </ul>
     </div>
   </section>
@@ -139,58 +137,78 @@
   <!-- ── FEATURES ────────────────────────────────────── -->
   <section id="features" class="section">
     <div class="sec-head">
-      <span class="eyebrow">/ 02 — what's inside</span>
-      <h2>Small surface. Serious capability.</h2>
+      <span class="eyebrow" data-i18n="features.eyebrow">/ 02 — what's inside</span>
+      <h2 data-i18n="features.title">Small surface. Serious capability.</h2>
     </div>
     <div class="feat-grid">
       <article class="feat reveal-up">
         <span class="feat-i">⌘</span>
-        <h3>Native tool-calling</h3>
-        <p>A typed tool registry over the Vercel AI SDK — multi-step, with tool errors fed back for self-correction.</p>
+        <h3 data-i18n="feat.1_title">Native tool-calling</h3>
+        <p data-i18n="feat.1_desc">A typed tool registry over the Vercel AI SDK — multi-step, with tool errors fed back for self-correction.</p>
       </article>
       <article class="feat reveal-up" style="--d:1">
         <span class="feat-i">⛨</span>
-        <h3>Permissions by design</h3>
-        <p>allow / ask / deny rules enforced in code, not in the prompt. The model can't talk its way past them.</p>
+        <h3 data-i18n="feat.2_title">Permissions by design</h3>
+        <p data-i18n="feat.2_desc">allow / ask / deny rules enforced in code, not in the prompt. The model can't talk its way past them.</p>
       </article>
       <article class="feat reveal-up" style="--d:2">
         <span class="feat-i">◫</span>
-        <h3>A real TUI</h3>
-        <p>Streaming output, spinners and live tool steps in a flicker-free terminal interface built with Ink.</p>
+        <h3 data-i18n="feat.3_title">A real TUI</h3>
+        <p data-i18n="feat.3_desc">Streaming output, spinners and live tool steps in a flicker-free terminal interface built with Ink.</p>
       </article>
       <article class="feat reveal-up" style="--d:3">
         <span class="feat-i">↺</span>
-        <h3>Sessions &amp; undo</h3>
-        <p>Resume where you left off. Snapshots before every mutation mean undo/redo on the agent's edits.</p>
+        <h3 data-i18n-html="feat.4_title">Sessions &amp; undo</h3>
+        <p data-i18n="feat.4_desc">Resume where you left off. Snapshots before every mutation mean undo/redo on the agent's edits.</p>
       </article>
       <article class="feat reveal-up" style="--d:4">
         <span class="feat-i">⌥</span>
-        <h3>Local &amp; cloud models</h3>
-        <p>Anthropic and OpenAI out of the box — or point it at any OpenAI-compatible local endpoint.</p>
+        <h3 data-i18n="feat.5_title">Cost transparency</h3>
+        <p data-i18n="feat.5_desc">See exactly what you&rsquo;re spending on API calls — live, per-request, in your terminal. No hidden usage, no surprise bills.</p>
       </article>
       <article class="feat reveal-up" style="--d:5">
         <span class="feat-i">⚡</span>
-        <h3>Bun-fast</h3>
-        <p>One toolchain: runtime, bundler and test runner. Ships as a single standalone executable.</p>
+        <h3 data-i18n="feat.6_title">Bun-fast</h3>
+        <p data-i18n="feat.6_desc">One toolchain: runtime, bundler and test runner. Ships as a single standalone executable.</p>
       </article>
+    </div>
+  </section>
+
+  <!-- ── WHY ─────────────────────────────────────────── -->
+  <section id="why" class="section">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="why.eyebrow">/ 03 — why interference</span>
+      <h2 data-i18n="why.title">Not just another agent.</h2>
+    </div>
+    <div class="why-grid">
+      <div class="why-card reveal-up">
+        <span class="why-n">01</span>
+        <h3 data-i18n="why.1_title">European, by choice</h3>
+        <p data-i18n="why.1_desc">Built in Italy. Open-source, MIT licensed, not VC-funded. Your code never leaves your machine unless you explicitly send it to an API. An independent, GDPR-native alternative to Silicon Valley agents.</p>
+      </div>
+      <div class="why-card reveal-up" style="--d:1">
+        <span class="why-n">02</span>
+        <h3 data-i18n="why.2_title">Radically transparent</h3>
+        <p data-i18n="why.2_desc">Every tool call, every reasoning step, and exactly what you&rsquo;re spending on API costs — live, in your terminal. No hidden usage. No surprise bills.</p>
+      </div>
     </div>
   </section>
 
   <!-- ── QUICKSTART ──────────────────────────────────── -->
   <section id="start" class="band-ink section">
     <div class="sec-head sec-head--center">
-      <span class="eyebrow">/ 03 — quickstart</span>
-      <h2>In your terminal in a minute.</h2>
+      <span class="eyebrow" data-i18n="start.eyebrow">/ 04 — quickstart</span>
+      <h2 data-i18n="start.title">In your terminal in a minute.</h2>
     </div>
     <div class="install reveal-up">
       <div class="install-row">
         <code id="installcmd">bun install &amp;&amp; bun run interference</code>
-        <button class="copy" id="copybtn" type="button" aria-label="Copy command">copy</button>
+        <button class="copy" id="copybtn" type="button" aria-label="Copy command" data-i18n="ui.copy">copy</button>
       </div>
-      <p class="install-note">Requires <strong>Bun&nbsp;1.3+</strong> · set <code>ANTHROPIC_API_KEY</code> or a local endpoint.</p>
+      <p class="install-note" data-i18n-html="start.note">Requires <strong>Bun&nbsp;1.3+</strong> · set your provider API key in <code>.env</code>.</p>
     </div>
     <div class="hero-actions hero-actions--center reveal-up" style="--d:1">
-      <a class="btn btn-paper" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">Read the docs ↗</a>
+      <a class="btn btn-paper" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener" data-i18n="start.cta">Read the docs ↗</a>
     </div>
   </section>
 
@@ -203,11 +221,7 @@
       <img class="brand-mark" src="assets/interference-mark.svg" alt="" width="20" height="20" />
       <span class="brand-word">interference</span>
     </a>
-    <span class="eyebrow">the open-source terminal coding agent</span>
-  </div>
-  <div class="foot-row foot-meta">
-    <span class="eyebrow">Ink #0a0a0a · Paper #fafaf7</span>
-    <span class="eyebrow">MIT · <a href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">github.com/ricciviero/interference</a></span>
+    <span class="eyebrow" data-i18n="footer.builtin">Built in Italy 🇮🇹</span>
   </div>
 </footer>
 
