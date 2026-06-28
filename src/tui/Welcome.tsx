@@ -22,22 +22,24 @@ export function Welcome({ provider, model, sessionCount, onSubmit }: Props) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      {/* Logo */}
       <Box flexDirection="column" marginBottom={1}>
         <Box>
-          <Text bold color={ACCENT}>
-            ┌─┐ ┬┌┐┌┌┬┐┌─┐┬─┐┌─┐┌─┐┬─┐┌─┐┌┐┌┌─┐┌─┐
-          </Text>
+          <Text color={ACCENT}>{"    ◉  ·  ◉"}</Text>
         </Box>
         <Box>
-          <Text bold color={ACCENT}>
-            │  │ ││││ │ ├┤ ├┬┘├┤ ├┤ ├┬┘├┤ ││││  ├┤
-          </Text>
+          <Text color={ACCENT}>{"   ╱ ╲    ╱ ╲"}</Text>
         </Box>
         <Box>
-          <Text bold color={ACCENT}>
-            └─┘ ┴┘└┘ ┴ └  ┴└─└─┘└  ┴└─└─┘┘└┘└─┘└─┘
-          </Text>
+          <Text bold color={ACCENT}>{"  ●   ╳  ╳   ●"}</Text>
+        </Box>
+        <Box>
+          <Text color={ACCENT}>{"   ╲ ╱    ╲ ╱"}</Text>
+        </Box>
+        <Box>
+          <Text color={ACCENT}>{"    ◉  ·  ◉"}</Text>
+        </Box>
+        <Box marginTop={1}>
+          <Text bold>interference</Text>
         </Box>
       </Box>
 
