@@ -11,6 +11,13 @@ import { loadConfig, applyConfig } from "./config-file.ts";
 import type { Session } from "./session/store.ts";
 
 async function main(): Promise<void> {
+  // Titolo + nome-icona della tab del terminale (come Claude Code), solo in TTY
+  // (in pipe/non-TTY le sequenze OSC sporcherebbero l'output).
+  // OSC 1 = icon/tab name, OSC 2 = window title.
+  if (stdout.isTTY) {
+    stdout.write("\x1b]1;◉ interference\x07\x1b]2;◉ interference\x07");
+  }
+
   const provider = currentProvider();
 
   if (!process.env[provider.envKey]) {

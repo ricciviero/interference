@@ -1,4 +1,5 @@
-import type { AgentMode } from "../config.ts";
+import type { AgentMode, ThinkingLevel } from "../config.ts";
+import { currentProvider, currentThinking, setThinking } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
 
@@ -41,6 +42,14 @@ export function getCommand(name: string): CommandInfo | undefined {
 
 export function listCommands(): CommandInfo[] {
   return [...registry.values()];
+}
+
+/** Comandi che matchano un filtro (nome o descrizione). Usato da CLI + autocomplete. */
+export function matchCommands(filter: string): CommandInfo[] {
+  const f = filter.toLowerCase();
+  return listCommands().filter(
+    (c) => c.name.includes(f) || c.description.toLowerCase().includes(f),
+  );
 }
 
 export async function dispatch(
@@ -99,6 +108,28 @@ register("model", "Change the model (usage: /model <model-id>)", (args, _ctx) =>
   process.env.INTERFERENCE_MODEL = args.trim();
   return `Model set to '${args.trim()}' (effective on next turn).`;
 });
+
+register(
+  "thinking",
+  "Set reasoning/thinking level for the current model (usage: /thinking <level>)",
+  (args) => {
+    const p = currentProvider();
+    const levels = p.thinkingLevels;
+    const arg = args.trim().toLowerCase();
+    if (!arg) {
+      return (
+        `Thinking: ${currentThinking()} · model: ${p.label}\n` +
+        `Available levels: ${levels.join(", ")}\n` +
+        `Usage: /thinking <level>`
+      );
+    }
+    if (!levels.includes(arg as ThinkingLevel)) {
+      return `Invalid level '${arg}' for ${p.label}. Available: ${levels.join(", ")}`;
+    }
+    setThinking(arg as ThinkingLevel);
+    return `Thinking set to '${arg}' (effective next turn).`;
+  },
+);
 
 register("undo", "Undo last file modifications", async () => {
   const files = await undo();

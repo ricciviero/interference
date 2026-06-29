@@ -1,58 +1,33 @@
-import { useState } from "react";
-import { Box, Text, useInput } from "ink";
-
-interface CommandInfo {
-  name: string;
-  description: string;
-}
+import { Box, Text } from "ink";
+import { matchCommands } from "../commands/index.ts";
 
 interface Props {
   filter: string;
-  commands: CommandInfo[];
-  onSelect: (name: string) => void;
-  onCancel: () => void;
+  /** Indice selezionato (navigato con ↑↓ da App). */
+  selected: number;
 }
 
-export function SlashAutocomplete({ filter, commands, onSelect, onCancel }: Props) {
-  const matches = commands.filter(
-    (c) =>
-      c.name.includes(filter) ||
-      c.description.toLowerCase().includes(filter),
-  );
-  const [idx, setIdx] = useState(0);
+// Hint con selezione: le frecce (gestite da App) muovono `selected`; l'Invio
+// (gestito dal TextInput) esegue il comando evidenziato. Niente useInput qui
+// per non confliggere col campo di testo sull'Invio.
+export function SlashAutocomplete({ filter, selected }: Props) {
+  const matches = matchCommands(filter);
+  if (matches.length === 0) return null;
 
-  useInput((input, key) => {
-    if (key.upArrow) {
-      setIdx((i) => (i > 0 ? i - 1 : matches.length - 1));
-    } else if (key.downArrow) {
-      setIdx((i) => (i < matches.length - 1 ? i + 1 : 0));
-    } else if (key.return) {
-      const match = matches[idx];
-      if (match) onSelect(match.name);
-    } else if (key.escape) {
-      onCancel();
-    }
-  }, { isActive: true });
-
-  if (matches.length === 0) {
-    return (
-      <Box marginBottom={1}>
-        <Text dimColor>No commands match "{filter}"</Text>
-      </Box>
-    );
-  }
+  const shown = matches.slice(0, 8);
+  const sel = ((selected % matches.length) + matches.length) % matches.length;
 
   return (
-    <Box flexDirection="column" marginBottom={1} borderStyle="round" borderColor="blue" padding={1}>
-      {matches.slice(0, 8).map((c, i) => (
+    <Box flexDirection="column" marginBottom={1} borderStyle="round" borderColor="blue" paddingX={1}>
+      {shown.map((c, i) => (
         <Box key={c.name}>
-          <Text color={i === idx ? "cyan" : undefined} bold={i === idx}>
-            {i === idx ? "▸" : " "} /{c.name}
+          <Text color={i === sel ? "cyan" : undefined} bold={i === sel}>
+            {i === sel ? "▸ " : "  "}/{c.name}
           </Text>
-          <Text dimColor> {c.description.slice(0, 80)}</Text>
+          <Text dimColor> {c.description.slice(0, 70)}</Text>
         </Box>
       ))}
-      <Text dimColor>↑↓ navigate · Enter select · Esc cancel</Text>
+      <Text dimColor>↑↓ navigate · Enter run · type to filter</Text>
     </Box>
   );
 }

@@ -4,6 +4,7 @@ interface Props {
   mode: string;
   model: string;
   provider: string;
+  thinking: string;
   contextPct: number;
   busy: boolean;
   statusLine: string;
@@ -15,6 +16,7 @@ export function StatusFooter({
   mode,
   model,
   provider,
+  thinking,
   contextPct,
   busy,
   statusLine,
@@ -22,6 +24,7 @@ export function StatusFooter({
   cost,
 }: Props) {
   const modeColor = mode === "build" ? "yellow" : "blue";
+  const thinkColor = thinking === "off" ? "gray" : "magenta";
 
   return (
     <Box flexDirection="row" justifyContent="space-between">
@@ -31,6 +34,9 @@ export function StatusFooter({
         </Text>
         <Text color={modeColor} bold>
           {mode.toUpperCase()}
+        </Text>
+        <Text color={thinkColor}>
+          ◇ {thinking}
         </Text>
         {contextPct > 0 && (
           <Text dimColor>
@@ -43,8 +49,8 @@ export function StatusFooter({
         )}
       </Box>
       <Box>
-        {busy && (
-          <Text dimColor>{statusLine || "thinking..."}</Text>
+        {statusLine && (
+          <Text dimColor>{statusLine}</Text>
         )}
       </Box>
     </Box>

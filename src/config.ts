@@ -1,14 +1,18 @@
 // Configurazione centralizzata (RF-CORE-02/03). Letta da env / `.env` (Bun carica
 // `.env` in automatico). Nessun segreto hardcoded: le API key arrivano da env.
 //
-// Multi-provider con REASONING/THINKING attivo al massimo per ogni provider
-// (meccanismo diverso per provider):
+// Multi-provider con REASONING/THINKING a livello selezionabile a runtime
+// (`/thinking`). Il meccanismo differisce per provider:
 //  - dedicati (anthropic/deepseek) → `providerOptions.<id>` passato a streamText
 //  - openai-compatible (glm/kimi)  → campo `thinking` iniettato nel body (extraBody)
+// `reasoningConfig()` traduce il livello corrente nelle opzioni giuste per provider.
 
 export type ProviderId = "anthropic" | "deepseek" | "glm" | "kimi";
 
 export type ProviderKind = "anthropic" | "deepseek" | "openai-compatible";
+
+/** Livello di ragionamento unificato. I provider mappano sul proprio meccanismo. */
+export type ThinkingLevel = "off" | "low" | "medium" | "high" | "max";
 
 export interface ProviderDef {
   label: string;
@@ -19,14 +23,12 @@ export interface ProviderDef {
   kind: ProviderKind;
   /** Per kind "openai-compatible": baseURL ESATTO (non normalizzare). */
   baseURL?: string;
-  /** providerOptions per streamText (provider dedicati: anthropic/deepseek). */
-  providerOptions?: Record<string, unknown>;
-  /** Body params extra per openai-compatible (es. thinking) — glm/kimi. */
-  extraBody?: Record<string, unknown>;
-  /** Tetto output token (serve quando il reasoning ha un budget, es. Anthropic). */
-  maxOutputTokens?: number;
   /** Context window size in tokens (per compaction threshold). Default 200K. */
   contextLimit?: number;
+  /** Livelli di thinking supportati (per /thinking). off = disabilitato. */
+  thinkingLevels: ThinkingLevel[];
+  /** Livello di default del provider. */
+  defaultThinking: ThinkingLevel;
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderDef> = {
@@ -36,9 +38,8 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     defaultModel: "deepseek-v4-pro",
     kind: "deepseek",
     contextLimit: 1_000_000,
-    providerOptions: {
-      deepseek: { thinking: { type: "enabled" }, reasoningEffort: "max" },
-    },
+    thinkingLevels: ["off", "low", "medium", "high", "max"],
+    defaultThinking: "max",
   },
   anthropic: {
     label: "Anthropic (Claude)",
@@ -46,11 +47,8 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     defaultModel: "claude-sonnet-4-6",
     kind: "anthropic",
     contextLimit: 200_000,
-    // Extended thinking (regime 4.x classico): budget alto, maxOutputTokens > budget.
-    providerOptions: {
-      anthropic: { thinking: { type: "enabled", budgetTokens: 32000 } },
-    },
-    maxOutputTokens: 64000,
+    thinkingLevels: ["off", "low", "medium", "high", "max"],
+    defaultThinking: "high",
   },
   glm: {
     label: "Zhipu GLM",
@@ -59,7 +57,8 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     kind: "openai-compatible",
     contextLimit: 200_000,
     baseURL: "https://api.z.ai/api/paas/v4", // path /api/paas/v4, NON /v1
-    extraBody: { thinking: { type: "enabled" } },
+    thinkingLevels: ["off", "max"], // GLM: solo on/off (max = enabled)
+    defaultThinking: "max",
   },
   kimi: {
     label: "Moonshot Kimi",
@@ -68,7 +67,8 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     kind: "openai-compatible",
     contextLimit: 128_000,
     baseURL: "https://api.moonshot.ai/v1",
-    extraBody: { thinking: { type: "enabled", keep: "all" } },
+    thinkingLevels: ["off", "max"], // Kimi: solo on/off (max = enabled, keep all)
+    defaultThinking: "max",
   },
 };
 
@@ -93,6 +93,7 @@ export function currentModel(): string {
   return config.modelOverride ?? currentProvider().defaultModel;
 }
 
+// --- Mode (Plan/Build) ------------------------------------------------------
 export type AgentMode = "plan" | "build";
 
 let _mode: AgentMode = "plan";
@@ -103,4 +104,61 @@ export function currentMode(): AgentMode {
 
 export function setMode(mode: AgentMode) {
   _mode = mode;
+}
+
+// --- Thinking level (runtime, /thinking) ------------------------------------
+let _thinking: ThinkingLevel | null = null;
+
+/** Livello di thinking corrente (override runtime o default del provider). */
+export function currentThinking(): ThinkingLevel {
+  return _thinking ?? currentProvider().defaultThinking;
+}
+
+export function setThinking(level: ThinkingLevel) {
+  _thinking = level;
+}
+
+export interface ReasoningConfig {
+  providerOptions?: Record<string, unknown>;
+  extraBody?: Record<string, unknown>;
+  maxOutputTokens?: number;
+}
+
+// Anthropic: livello → budget token del thinking (maxOutputTokens deve superarlo).
+const ANTHROPIC_BUDGET: Record<Exclude<ThinkingLevel, "off">, number> = {
+  low: 8_000,
+  medium: 16_000,
+  high: 32_000,
+  max: 60_000,
+};
+
+/** Traduce il livello di thinking corrente nelle opzioni del provider attivo. */
+export function reasoningConfig(): ReasoningConfig {
+  const level = currentThinking();
+
+  switch (config.provider) {
+    case "deepseek":
+      if (level === "off") {
+        return { providerOptions: { deepseek: { thinking: { type: "disabled" } } } };
+      }
+      return {
+        providerOptions: { deepseek: { thinking: { type: "enabled" }, reasoningEffort: level } },
+      };
+
+    case "anthropic": {
+      if (level === "off") return {};
+      const budget = ANTHROPIC_BUDGET[level];
+      return {
+        providerOptions: { anthropic: { thinking: { type: "enabled", budgetTokens: budget } } },
+        maxOutputTokens: budget + 8_000,
+      };
+    }
+
+    case "glm":
+      return { extraBody: { thinking: { type: level === "off" ? "disabled" : "enabled" } } };
+
+    case "kimi":
+      if (level === "off") return { extraBody: { thinking: { type: "disabled" } } };
+      return { extraBody: { thinking: { type: "enabled", keep: "all" } } };
+  }
 }

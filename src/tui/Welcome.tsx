@@ -1,119 +1,90 @@
 import { Box, Text } from "ink";
-import { TextInput } from "@inkjs/ui";
-import { useState } from "react";
-import packageJson from "../../package.json";
+import { currentThinking } from "../config.ts";
 
-const GREEN = "#009246";
-const WHITE = "#fafaf7";
-const RED = "#ce2b37";
-const ACCENT = "#0a0a0a";
+// Colori per tema scuro (NON usare #0a0a0a sul testo → invisibile).
+const FG = "white";
+const ACCENT = "cyan";
+const MUTED = "gray";
+const GREEN = "#2e8b57";
+const RED = "#cd5c5c";
+
+// Wordmark "interference" (cfonts font "chrome", 3 righe box-drawing).
+const WORDMARK = [
+  " ╦ ╔╗╔ ╔╦╗ ╔═╗ ╦═╗ ╔═╗ ╔═╗ ╦═╗ ╔═╗ ╔╗╔ ╔═╗ ╔═╗",
+  " ║ ║║║  ║  ║╣  ╠╦╝ ╠╣  ║╣  ╠╦╝ ║╣  ║║║ ║   ║╣ ",
+  " ╩ ╝╚╝  ╩  ╚═╝ ╩╚═ ╚   ╚═╝ ╩╚═ ╚═╝ ╝╚╝ ╚═╝ ╚═╝",
+];
+
+// Mark: due sorgenti (◉) i cui fronti d'onda interferiscono al centro (✕).
+const MARK = "◉ ››› ✕ ‹‹‹ ◉";
 
 interface Props {
   provider: string;
   model: string;
   sessionCount: number;
-  onSubmit: (value: string) => void;
 }
 
-export function Welcome({ provider, model, sessionCount, onSubmit }: Props) {
-  const [hasStarted, setHasStarted] = useState(false);
-
-  if (hasStarted) return null;
-
+function Tip({ cmd, desc }: { cmd: string; desc: string }) {
   return (
-    <Box flexDirection="column" padding={1}>
-      <Box flexDirection="column" marginBottom={1}>
-        <Box>
-          <Text color={ACCENT}>{"    ◉  ·  ◉"}</Text>
-        </Box>
-        <Box>
-          <Text color={ACCENT}>{"   ╱ ╲    ╱ ╲"}</Text>
-        </Box>
-        <Box>
-          <Text bold color={ACCENT}>{"  ●   ╳  ╳   ●"}</Text>
-        </Box>
-        <Box>
-          <Text color={ACCENT}>{"   ╲ ╱    ╲ ╱"}</Text>
-        </Box>
-        <Box>
-          <Text color={ACCENT}>{"    ◉  ·  ◉"}</Text>
+    <Box>
+      <Box width={11}>
+        <Text color={ACCENT}>{cmd}</Text>
+      </Box>
+      <Text color={MUTED}>{desc}</Text>
+    </Box>
+  );
+}
+
+// Branding-only: l'input è condiviso (gestito da App), così gli slash e
+// l'autocomplete funzionano anche dalla home.
+export function Welcome({ provider, model, sessionCount }: Props) {
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      {/* Header centrato: mark + wordmark + tagline */}
+      <Box flexDirection="column" alignItems="center" marginBottom={1}>
+        <Text color={ACCENT}>{MARK}</Text>
+        <Box flexDirection="column" marginTop={1}>
+          {WORDMARK.map((line, i) => (
+            <Text key={i} bold color={FG}>
+              {line}
+            </Text>
+          ))}
         </Box>
         <Box marginTop={1}>
-          <Text bold>interference</Text>
+          <Text color={MUTED}>The open-source coding agent that lives in your terminal.</Text>
         </Box>
       </Box>
 
-      {/* Tagline */}
-      <Box marginBottom={2}>
-        <Text dimColor>
-          The open-source coding agent that lives in your terminal.
+      {/* Stato: provider · model · thinking */}
+      <Box justifyContent="center">
+        <Text color={MUTED}>
+          {provider} · {model} · <Text color="magenta">◇ {currentThinking()}</Text>
         </Text>
       </Box>
-
-      {/* Italian flag */}
-      <Box marginBottom={2}>
-        <Text backgroundColor={GREEN} color={WHITE}>
-          {"  "}
-        </Text>
-        <Text backgroundColor={WHITE} color={ACCENT}>
-          {"  "}
-        </Text>
-        <Text backgroundColor={RED} color={WHITE}>
-          {"  "}
-        </Text>
-        <Text> </Text>
-        <Text dimColor>Made in Italy</Text>
-      </Box>
-
-      {/* Status */}
-      <Box flexDirection="column" marginBottom={2}>
-        <Text dimColor>
-          Provider: <Text>{provider}</Text>
-          {" · "}
-          Model: <Text>{model}</Text>
-        </Text>
-        {sessionCount > 0 && (
-          <Text dimColor>
-            {sessionCount} previous session{sessionCount !== 1 ? "s" : ""} available
-            {" · "}
-            <Text color="cyan">--continue</Text>
-            {" to resume"}
+      {sessionCount > 0 && (
+        <Box justifyContent="center">
+          <Text color={MUTED}>
+            {sessionCount} previous session{sessionCount !== 1 ? "s" : ""} · <Text color={ACCENT}>--continue</Text> to resume
           </Text>
-        )}
-      </Box>
+        </Box>
+      )}
 
-      {/* Quick start */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold>Quick start</Text>
-        <Box flexDirection="row" gap={2}>
-          <Text dimColor>/help</Text>
-          <Text>Show all commands</Text>
-        </Box>
-        <Box flexDirection="row" gap={2}>
-          <Text dimColor>/build</Text>
-          <Text>Switch to Build mode</Text>
-        </Box>
-        <Box flexDirection="row" gap={2}>
-          <Text dimColor>/init</Text>
-          <Text>Initialize AGENTS.md</Text>
-        </Box>
-        <Box flexDirection="row" gap={2}>
-          <Text dimColor>/sessions</Text>
-          <Text>Browse previous sessions</Text>
+      {/* Tips (blocco, centrato) */}
+      <Box flexDirection="column" alignItems="center" marginTop={1}>
+        <Box flexDirection="column">
+          <Tip cmd="/help" desc="show all commands" />
+          <Tip cmd="/build" desc="switch to full-access mode" />
+          <Tip cmd="/thinking" desc="set reasoning level" />
+          <Tip cmd="/init" desc="generate AGENTS.md" />
         </Box>
       </Box>
 
-      {/* Input */}
-      <Box marginTop={1}>
-        <TextInput
-          placeholder="What would you like to build today?"
-          onSubmit={(v) => {
-            if (v.trim()) {
-              setHasStarted(true);
-              onSubmit(v);
-            }
-          }}
-        />
+      {/* Made in Italy (discreto) */}
+      <Box marginTop={1} justifyContent="center">
+        <Text backgroundColor={GREEN}> </Text>
+        <Text backgroundColor="white"> </Text>
+        <Text backgroundColor={RED}> </Text>
+        <Text color={MUTED}> made in Italy · MIT</Text>
       </Box>
     </Box>
   );

@@ -1,6 +1,6 @@
 import { streamText, stepCountIs, type ModelMessage } from "ai";
 import { resolveModel } from "../provider.ts";
-import { currentProvider, currentMode, type AgentMode } from "../config.ts";
+import { currentMode, reasoningConfig, type AgentMode } from "../config.ts";
 import { systemPrompt } from "./prompt.ts";
 import { toolsForMode } from "../tools/index.ts";
 
@@ -16,7 +16,7 @@ export async function* runTurn(
   skillBodies?: string[],
   overrideSystem?: string,
 ): AsyncGenerator<Chunk> {
-  const def = currentProvider();
+  const reasoning = reasoningConfig();
   const effectiveMode = mode ?? currentMode();
   const tools = toolsForMode(effectiveMode);
 
@@ -33,14 +33,14 @@ export async function* runTurn(
     stopWhen: stepCountIs(20),
     abortSignal: signal,
     onError: () => {},
-    ...(def.providerOptions
+    ...(reasoning.providerOptions
       ? {
-          providerOptions: def.providerOptions as Parameters<
+          providerOptions: reasoning.providerOptions as Parameters<
             typeof streamText
           >[0]["providerOptions"],
         }
       : {}),
-    ...(def.maxOutputTokens ? { maxOutputTokens: def.maxOutputTokens } : {}),
+    ...(reasoning.maxOutputTokens ? { maxOutputTokens: reasoning.maxOutputTokens } : {}),
   });
 
   for await (const part of result.fullStream) {

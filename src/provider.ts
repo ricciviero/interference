@@ -8,7 +8,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { extractReasoningMiddleware, wrapLanguageModel, type LanguageModel } from "ai";
-import { currentModel, currentProvider, type ProviderDef } from "./config.ts";
+import { currentModel, currentProvider, reasoningConfig, type ProviderDef } from "./config.ts";
 
 export class MissingApiKeyError extends Error {
   constructor(provider: ProviderDef) {
@@ -36,13 +36,15 @@ export function resolveModel(): LanguageModel {
       return createDeepSeek({ apiKey })(model);
 
     case "openai-compatible": {
+      // Opzioni di thinking per il livello corrente (/thinking), calcolate ad ogni turno.
+      const extraBody = reasoningConfig().extraBody;
       const provider = createOpenAICompatible({
         name: def.label,
         baseURL: def.baseURL ?? "",
         apiKey,
         // Inietta i campi non-OpenAI-standard (es. `thinking`) nel body grezzo.
-        transformRequestBody: def.extraBody
-          ? (body: Record<string, unknown>) => ({ ...body, ...def.extraBody })
+        transformRequestBody: extraBody
+          ? (body: Record<string, unknown>) => ({ ...body, ...extraBody })
           : undefined,
       });
       // Fallback: se il modello inlinea il reasoning tra <think>...</think>, estrailo
