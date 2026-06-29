@@ -8,6 +8,8 @@ import { initInstructions } from "./agent/prompt.ts";
 import { bootstrapSkills } from "./skills.ts";
 import { initSkillCommands } from "./commands/index.ts";
 import { loadConfig, applyConfig } from "./config-file.ts";
+import { loadAuth, applyAuthToEnv } from "./auth.ts";
+import { PROVIDERS } from "./config.ts";
 import type { Session } from "./session/store.ts";
 
 async function main(): Promise<void> {
@@ -27,6 +29,11 @@ async function main(): Promise<void> {
 
   await initStore();
   await bootstrapSkills();
+
+  const auth = await loadAuth();
+  applyAuthToEnv(auth, Object.fromEntries(
+    Object.entries(PROVIDERS).map(([pid, def]) => [pid, { label: def.label, envKey: def.envKey }])
+  ));
 
   const config = await loadConfig();
   if (config) applyConfig(config);

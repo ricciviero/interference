@@ -147,6 +147,10 @@ register("compact", "Compact conversation context to save tokens", () => {
   return "Compaction will run at the end of this turn if context is > 90% full.";
 });
 
+register("provider", "Manage connected AI providers and API keys", () => {
+  return "Opening provider settings...";
+});
+
 register("sessions", "List and resume previous sessions", (_args, ctx) => {
   if (ctx.doSessions) return ctx.doSessions();
   return "Session list not available in this context.";
