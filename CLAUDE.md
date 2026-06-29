@@ -204,6 +204,9 @@ Le feature del progetto sono organizzate come **iterazioni** in [`iterazioni/`](
 16. `16-websearch/` — ricerca web in tempo reale (Exa/Brave API)
 17. `17-mcp/` — Model Context Protocol client (tool discovery da server esterni)
 
+*Fase 7 — Esperienza*
+18. `18-chat-ux-opencode/` — allineamento UX chat a opencode (messaggi, tool icons, reasoning collassabile, footer, indentazioni)
+
 **Workflow**: leggi `task.md` poi `plan.md` → se serve aggiorna `plan.md` prima del codice → implementa → **pass di completezza** (§6.8) → aggiorna `CLAUDE.md`/`docs/` se cambia architettura → stato `task.md` a 🟢.
 
 <!-- Sezione "Fix in coda" gestita da `iterations-planner` al primo bug non banale (cartella `fix/`). -->
