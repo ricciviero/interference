@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Box, Text, Static, useInput, useApp } from "ink";
-import { TextInput, Spinner } from "@inkjs/ui";
+import { Spinner } from "@inkjs/ui";
+import TextInput from "ink-text-input";
 import type { ModelMessage } from "ai";
 import { runTurn } from "../agent/loop.ts";
 import type { Chunk } from "../agent/loop.ts";
 import { MissingApiKeyError } from "../provider.ts";
 import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
-import { currentMode, setMode } from "../config.ts";
+import { currentMode, setMode, currentThinking, setThinking } from "../config.ts";
+import { ThinkingPicker } from "./ThinkingPicker.tsx";
 import { saveSession, loadSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
@@ -22,7 +24,7 @@ import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
 import { SessionList } from "./SessionList.tsx";
 import { useToast, ToastContainer } from "./Toast.tsx";
 import { Welcome } from "./Welcome.tsx";
-import { listCommands } from "../commands/index.ts";
+import { matchCommands } from "../commands/index.ts";
 
 type HistoryItem = {
   id: number;
@@ -47,12 +49,14 @@ export default function App({ session }: { session: Session }) {
   const [reasoning, setReasoning] = useState("");
   const [toolSteps, setToolSteps] = useState<ToolEntry[]>([]);
   const [busy, setBusy] = useState(false);
-  const [inputKey, setInputKey] = useState(0);
   const [confirmPreview, setConfirmPreview] = useState<string | null>(null);
   const [confirmTool, setConfirmTool] = useState<string>("");
   const [statusText, setStatusText] = useState<string>("");
   const [showSessions, setShowSessions] = useState(false);
+  const [showThinking, setShowThinking] = useState(false);
+  const [acIdx, setAcIdx] = useState(0);
   const [draft, setDraft] = useState("");
+  const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const messagesRef = useRef<ModelMessage[]>(session.messages);
@@ -89,6 +93,21 @@ export default function App({ session }: { session: Session }) {
       setConfirmPreview(null);
       r(false);
     }
+  });
+
+  // Navigazione autocomplete: frecce ↑↓ muovono la selezione quando il draft è "/…".
+  // L'Invio (TextInput.onSubmit) esegue il comando evidenziato → niente conflitto.
+  const acLastKey = useRef(0);
+  useInput((_input, key) => {
+    if (confirmPreview || showThinking || showSessions) return;
+    if (!draft.startsWith("/")) return;
+    const ms = matchCommands(draft.slice(1));
+    if (ms.length === 0) return;
+    const now = Date.now();
+    if (now - acLastKey.current < 120) return;
+    acLastKey.current = now;
+    if (key.upArrow) setAcIdx((i) => (i > 0 ? i - 1 : ms.length - 1));
+    else if (key.downArrow) setAcIdx((i) => (i < ms.length - 1 ? i + 1 : 0));
   });
 
   const nextId = (): number => Date.now() + Math.random();
@@ -202,16 +221,38 @@ export default function App({ session }: { session: Session }) {
       setToolSteps([]);
       setBusy(false);
       aborterRef.current = null;
+
+      if (messageQueue.length > 0) {
+        const next = messageQueue[0];
+        setMessageQueue((q) => q.slice(1));
+        if (next) setTimeout(() => doTurn(next), 0);
+      }
     }
   }
 
   const onSubmit = useCallback(
     (value: string) => {
-      const v = value.trim();
-      if (!v || busy) return;
-      setInputKey((k) => k + 1);
+      let v = value.trim();
+      if (!v) return;
+      setDraft("");
+      if (busy) {
+        setMessageQueue((q) => [...q, v]);
+        addToast(`Queued (${messageQueue.length + 1} pending)`, "info");
+        return;
+      }
+      // Se è uno slash parziale senza argomenti, esegui il comando EVIDENZIATO
+      // nell'autocomplete (frecce) invece di richiedere il nome completo.
+      if (v.startsWith("/") && !v.includes(" ")) {
+        const ms = matchCommands(v.slice(1));
+        if (ms.length > 0) {
+          const sel = ms[((acIdx % ms.length) + ms.length) % ms.length];
+          if (sel) v = "/" + sel.name;
+        }
+      }
+      setAcIdx(0);
       if (v === "/exit" || v === "/quit") return exit();
       if (v === "/sessions") { setShowSessions(true); return; }
+      if (v === "/thinking") { setShowThinking(true); return; }
 
       if (isSlashCommand(v)) {
         dispatch(v, {
@@ -300,7 +341,7 @@ ${args ? `Additional context: ${args}` : ""}`;
 
       runWithSkills();
     },
-    [busy, exit],
+    [busy, exit, acIdx],
   );
 
   return (
@@ -335,47 +376,36 @@ ${args ? `Additional context: ${args}` : ""}`;
         />
       )}
 
-      {!showSessions && history.length === 0 && !busy && !confirmPreview && (
-        <Welcome
-          provider={sessionRef.current.meta.provider}
-          model={sessionRef.current.meta.model}
-          sessionCount={0}
-          onSubmit={(v) => {
-            doTurn(v, undefined);
+      {showThinking && (
+        <ThinkingPicker
+          onSelect={(level) => {
+            setShowThinking(false);
+            setThinking(level);
+            addToast(`Thinking set to ${level}`, "success");
           }}
+          onCancel={() => setShowThinking(false)}
         />
       )}
 
-      {!showSessions && (history.length > 0 || busy || confirmPreview) && (
+      {!showThinking && !showSessions && (
         <>
           <ToastContainer toasts={toasts} />
 
+          {history.length === 0 && !busy && (
+            <Welcome
+              provider={sessionRef.current.meta.provider}
+              model={sessionRef.current.meta.model}
+              sessionCount={0}
+            />
+          )}
+
           <Static items={history}>
-            {(m) => (
-              <Box key={m.id} flexDirection="column" marginBottom={1}>
-                <Box>
-                  <Text color={m.role === "user" ? "cyan" : "green"} bold>
-                    {m.role === "user" ? "› " : "· "}
-                  </Text>
-                  <Text>{m.content}</Text>
-                </Box>
-                {m.reasoning && (
-                  <Text dimColor>┄ {m.reasoning.slice(0, 120)}</Text>
-                )}
-              </Box>
-            )}
+            {(m) => <MsgBlock key={m.id} item={m} />}
           </Static>
 
-          {reasoning && (
-            <Text dimColor>┄ {reasoning}</Text>
-          )}
+          {reasoning && <ReasoningBlock text={reasoning} live />}
 
-          {streaming && (
-            <Box marginBottom={1}>
-              <Text color="green" bold>· </Text>
-              <Text>{streaming}</Text>
-            </Box>
-          )}
+          {streaming && <RoleBlock role="interference" color="green" content={streaming} />}
 
           {toolSteps.map((t) => (
             <ToolStepRow key={t.id} tool={t} />
@@ -403,35 +433,29 @@ ${args ? `Additional context: ${args}` : ""}`;
           )}
 
           {draft.startsWith("/") && (
-            <SlashAutocomplete
-              filter={draft.slice(1)}
-              commands={listCommands()}
-              onSelect={(name) => {
-                setDraft("/" + name + " ");
-                setInputKey((k) => k + 1);
-              }}
-              onCancel={() => {
-                setDraft("");
-                setInputKey((k) => k + 1);
-              }}
-            />
+            <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
-          <Box>
-            {!confirmPreview && !showSessions && (
+          {!confirmPreview && !showSessions && (
+            <Box borderStyle="round" borderColor="gray" paddingX={1}>
+              <Text color="cyan" bold>{"› "}</Text>
               <TextInput
-                key={inputKey}
-                placeholder={busy ? "waiting…" : "Type a message (/help for commands)"}
-                onChange={setDraft}
+                value={draft}
+                onChange={(val: string) => {
+                  if (val !== draft) setAcIdx(0);
+                  setDraft(val);
+                }}
+                placeholder={busy ? `working… (${messageQueue.length} queued)` : "Type a message (/ for commands)"}
                 onSubmit={onSubmit}
               />
-            )}
-          </Box>
+            </Box>
+          )}
 
           <StatusFooter
             mode={sessionRef.current.meta.mode}
             model={sessionRef.current.meta.model}
             provider={sessionRef.current.meta.provider}
+            thinking={currentThinking()}
             contextPct={messagesRef.current.length > 0 ? getUsagePercent(messagesRef.current) : 0}
             busy={busy}
             statusLine={statusText}
@@ -440,6 +464,70 @@ ${args ? `Additional context: ${args}` : ""}`;
           />
         </>
       )}
+    </Box>
+  );
+}
+
+// Blocco con barra laterale (stile opencode): bordo solo a sinistra.
+function RoleBlock({
+  role,
+  color,
+  content,
+}: {
+  role: string;
+  color: string;
+  content: string;
+}) {
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={color}
+      borderTop={false}
+      borderRight={false}
+      borderBottom={false}
+      paddingLeft={1}
+      marginBottom={1}
+    >
+      <Text color={color} bold>
+        {role}
+      </Text>
+      <Text>{content}</Text>
+    </Box>
+  );
+}
+
+function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
+  const shown = live ? text : text.length > 600 ? text.slice(0, 600) + " …" : text;
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="gray"
+      borderTop={false}
+      borderRight={false}
+      borderBottom={false}
+      paddingLeft={1}
+      marginBottom={1}
+    >
+      <Text dimColor bold>
+        ┄ thinking
+      </Text>
+      <Text dimColor>{shown}</Text>
+    </Box>
+  );
+}
+
+function MsgBlock({ item }: { item: HistoryItem }) {
+  const isUser = item.role === "user";
+  return (
+    <Box flexDirection="column">
+      {item.reasoning && <ReasoningBlock text={item.reasoning} />}
+      <RoleBlock
+        role={isUser ? "you" : "interference"}
+        color={isUser ? "cyan" : "green"}
+        content={item.content}
+      />
     </Box>
   );
 }

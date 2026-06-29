@@ -13,7 +13,7 @@
     "dev": "bun run --watch src/cli.ts",
     "typecheck": "bunx tsc --noEmit",
     "build": "bun build src/cli.ts --compile --minify --sourcemap --outfile dist/interference",
-    "test": "bun test"
+    "test": "bun test ./src"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.1",
@@ -22,6 +22,7 @@
     "@inkjs/ui": "^2.0.0",
     "ai": "^7.0.4",
     "ink": "^7.1.0",
+    "ink-text-input": "^6.0.0",
     "react": "^19.2.7",
     "zod": "^4.4.3"
   },
