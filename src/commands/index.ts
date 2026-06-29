@@ -1,5 +1,5 @@
 import type { AgentMode, ThinkingLevel } from "../config.ts";
-import { currentProvider, currentThinking, setThinking } from "../config.ts";
+import { currentProvider, currentThinking, setThinking, currentModel, setModel } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
 
@@ -104,9 +104,9 @@ register(
 );
 
 register("model", "Change the model (usage: /model <model-id>)", (args, _ctx) => {
-  if (!args.trim()) return "Usage: /model <model-id>\nCurrent model is set via INTERFERENCE_MODEL env var.";
-  process.env.INTERFERENCE_MODEL = args.trim();
-  return `Model set to '${args.trim()}' (effective on next turn).`;
+  if (!args.trim()) return `Usage: /model <model-id>\nCurrent model: ${currentModel()}`;
+  setModel(args.trim());
+  return `Model set to '${args.trim()}'. Effective on next turn.`;
 });
 
 register(

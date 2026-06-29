@@ -263,6 +263,8 @@ export default function App({ session }: { session: Session }) {
             setStatusText("Conversation cleared.");
           },
           doInit: async (args) => {
+            setBusy(true);
+            try {
             const template = `Generate or update the AGENTS.md file at the project root.
 
 Follow the bundled agents-setup skill (see system prompt). Key sections:
@@ -281,25 +283,25 @@ ${args ? `Additional context: ${args}` : ""}`;
             nextTurn();
             messagesRef.current.push({ role: "user" as const, content: template });
             const aborter = new AbortController();
-            try {
-              const chunks = runTurn(messagesRef.current, aborter.signal);
-              for await (const chunk of chunks) {
-                // consume silently — the history will show the result
-              }
-              sessionRef.current.meta.turnCount++;
-              await finalizeSnapshots();
-              await saveSession(sessionRef.current);
-              return "AGENTS.md generated successfully.";
+            const chunks = runTurn(messagesRef.current, aborter.signal);
+            for await (const chunk of chunks) {}
+            sessionRef.current.meta.turnCount++;
+            await finalizeSnapshots();
+            await saveSession(sessionRef.current);
+            return "AGENTS.md generated successfully.";
             } catch (err) {
               messagesRef.current.pop();
               return `Init failed: ${err instanceof Error ? err.message : String(err)}`;
+            } finally {
+              setBusy(false);
             }
           },
           doSkill: async (name, body) => {
-            nextTurn();
-            messagesRef.current.push({ role: "user" as const, content: v });
-            const aborter = new AbortController();
+            setBusy(true);
             try {
+              nextTurn();
+              messagesRef.current.push({ role: "user" as const, content: `Help with this task. Use the skill context provided in the system prompt.` });
+              const aborter = new AbortController();
               const chunks = runTurn(messagesRef.current, aborter.signal, undefined, [body]);
               for await (const chunk of chunks) {}
               sessionRef.current.meta.turnCount++;
@@ -309,6 +311,8 @@ ${args ? `Additional context: ${args}` : ""}`;
             } catch (err) {
               messagesRef.current.pop();
               return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
+            } finally {
+              setBusy(false);
             }
           },
           doSessions: async () => {

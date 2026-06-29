@@ -88,9 +88,19 @@ export function currentProvider(): ProviderDef {
   return PROVIDERS[config.provider];
 }
 
-/** Model id effettivo (override o default del provider). */
+/** Model id effettivo (override runtime > env var > default del provider). */
+let _modelOverride: string | null = null;
+
 export function currentModel(): string {
-  return config.modelOverride ?? currentProvider().defaultModel;
+  return _modelOverride ?? config.modelOverride ?? currentProvider().defaultModel;
+}
+
+export function setModel(modelId: string) {
+  _modelOverride = modelId;
+}
+
+export function resetModel() {
+  _modelOverride = null;
 }
 
 // --- Mode (Plan/Build) ------------------------------------------------------
