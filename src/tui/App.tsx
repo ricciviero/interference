@@ -301,12 +301,21 @@ ${args ? `Additional context: ${args}` : ""}`;
           },
           doSkill: async (name, body) => {
             setBusy(true);
+            setStreaming("");
+            setReasoning("");
+            setToolSteps([]);
             try {
               nextTurn();
               messagesRef.current.push({ role: "user" as const, content: `Help with this task. Use the skill context provided in the system prompt.` });
               const aborter = new AbortController();
               const chunks = runTurn(messagesRef.current, aborter.signal, undefined, [body]);
-              for await (const chunk of chunks) {}
+              let acc = "";
+              for await (const chunk of chunks) {
+                if (chunk.type === "text") { acc += chunk.text; setStreaming(acc); }
+              }
+              if (acc) {
+                setHistory((h) => [...h, { id: nextId(), role: "assistant", content: acc }]);
+              }
               sessionRef.current.meta.turnCount++;
               await finalizeSnapshots();
               await saveSession(sessionRef.current);
@@ -315,6 +324,9 @@ ${args ? `Additional context: ${args}` : ""}`;
               messagesRef.current.pop();
               return `Skill failed: ${err instanceof Error ? err.message : String(err)}`;
             } finally {
+              setStreaming("");
+              setReasoning("");
+              setToolSteps([]);
               setBusy(false);
             }
           },
