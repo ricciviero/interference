@@ -555,7 +555,19 @@ function RoleBlock({
 }
 
 function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
-  const shown = live ? text : text.length > 600 ? text.slice(0, 600) + " …" : text;
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!live) return;
+    const start = Date.now();
+    const timer = setInterval(() => setElapsed(Math.round((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [live]);
+
+  const shown = live
+    ? text.length > 500 ? "…" + text.slice(-500) : text
+    : text.length > 600 ? text.slice(0, 600) + " …" : text;
+
   return (
     <Box
       flexDirection="column"
@@ -568,7 +580,7 @@ function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
       marginBottom={1}
     >
       <Text dimColor bold>
-        ┄ thinking
+        ┄ thinking{live && elapsed > 0 ? ` ${elapsed}s` : ""}
       </Text>
       <Text dimColor>{shown}</Text>
     </Box>
