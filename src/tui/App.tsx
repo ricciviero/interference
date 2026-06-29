@@ -32,12 +32,18 @@ import { TodoList } from "./TodoList.tsx";
 import { getTodos, setTodos, subscribeTodos, type Todo } from "../tools/todowrite.ts";
 import { QuestionDialog } from "./QuestionDialog.tsx";
 import { setAnswerHandler, type QuestionSpec, type Answers } from "../tools/question.ts";
+import { ToolStep } from "./ToolStep.tsx";
+import { MarkdownText } from "./MarkdownText.tsx";
 
 type HistoryItem = {
   id: number;
   role: "user" | "assistant";
   content: string;
   reasoning?: string;
+  reasoningMs?: number;
+  durationMs?: number;
+  mode?: string;
+  model?: string;
 };
 
 type ToolEntry = {
@@ -213,6 +219,9 @@ export default function App({ session }: { session: Session }) {
     let acc = "";
     let reasoningAcc = "";
     let currentToolId = 0;
+    const turnStart = Date.now();
+    let reasoningStart = 0;
+    let reasoningMs = 0;
 
     try {
       const chunks = runTurn(messagesRef.current, aborterRef.current.signal, undefined, skillBodies);
@@ -220,11 +229,13 @@ export default function App({ session }: { session: Session }) {
       for await (const chunk of chunks) {
         switch (chunk.type) {
           case "reasoning":
+            if (!reasoningStart) reasoningStart = Date.now();
             reasoningAcc += chunk.text;
             setReasoning(reasoningAcc);
             break;
 
           case "text":
+            if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
             acc += chunk.text;
             setStreaming(acc);
             break;
@@ -259,6 +270,7 @@ export default function App({ session }: { session: Session }) {
       }
 
       if (acc || reasoningAcc) {
+        if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
         setHistory((h) => [
           ...h,
           {
@@ -266,6 +278,10 @@ export default function App({ session }: { session: Session }) {
             role: "assistant",
             content: acc,
             reasoning: reasoningAcc || undefined,
+            reasoningMs: reasoningMs || undefined,
+            durationMs: Date.now() - turnStart,
+            mode: currentMode(),
+            model: currentModel(),
           },
         ]);
       }
@@ -530,10 +546,10 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {reasoning && <ReasoningBlock text={reasoning} live />}
 
-          {streaming && <RoleBlock role="interference" color="green" content={streaming} />}
+          {streaming && <RoleBlock color="green" content={streaming} markdown />}
 
           {toolSteps.map((t) => (
-            <ToolStepRow key={t.id} tool={t} />
+            <ToolStep key={t.id} tool={t} />
           ))}
 
           {busy && !streaming && toolSteps.length === 0 && !confirmPreview && (
@@ -610,14 +626,17 @@ ${args ? `Additional context: ${args}` : ""}`;
 }
 
 // Blocco con barra laterale (stile opencode): bordo solo a sinistra.
+// user = barra cyan (testo grezzo), assistant = barra verde (markdown + footer).
 function RoleBlock({
-  role,
   color,
   content,
+  markdown,
+  footer,
 }: {
-  role: string;
   color: string;
   content: string;
+  markdown?: boolean;
+  footer?: string;
 }) {
   return (
     <Box
@@ -630,10 +649,8 @@ function RoleBlock({
       paddingLeft={1}
       marginBottom={1}
     >
-      <Text color={color} bold>
-        {role}
-      </Text>
-      <Text>{content}</Text>
+      {markdown ? <MarkdownText content={content} /> : <Text>{content}</Text>}
+      {footer && <Text dimColor>{footer}</Text>}
     </Box>
   );
 }
@@ -673,57 +690,26 @@ function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
 
 function MsgBlock({ item }: { item: HistoryItem }) {
   const isUser = item.role === "user";
+  const secs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}s` : "");
+  const footer =
+    !isUser && item.model
+      ? `▣ ${item.mode ?? ""} · ${item.model}${item.durationMs ? ` · ${secs(item.durationMs)}` : ""}`
+      : undefined;
   return (
     <Box flexDirection="column">
-      {item.reasoning && <ReasoningBlock text={item.reasoning} />}
+      {item.reasoning && (
+        <Text dimColor>┄ thought{item.reasoningMs ? ` · ${secs(item.reasoningMs)}` : ""}</Text>
+      )}
       <RoleBlock
-        role={isUser ? "you" : "interference"}
         color={isUser ? "cyan" : "green"}
         content={item.content}
+        markdown={!isUser}
+        footer={footer}
       />
     </Box>
   );
 }
 
-function ToolStepRow({ tool }: { tool: ToolEntry }) {
-  const args =
-    typeof tool.input === "string" ? tool.input : JSON.stringify(tool.input);
-
-  return (
-    <Box flexDirection="column" marginBottom={0}>
-      <Box>
-        <Text dimColor>· {tool.toolName}</Text>
-        <Text>({args})</Text>
-        {!tool.output && <Spinner label="" />}
-      </Box>
-      {tool.diff && tool.diff.length > 0 && (
-        <Box flexDirection="column" marginBottom={0}>
-          {tool.diff.slice(0, 15).map((d, i) => (
-            <Text
-              key={i}
-              color={d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined}
-              dimColor={d.type !== "add" && d.type !== "remove"}
-            >
-              {d.type === "add" ? "+ " : d.type === "remove" ? "- " : "  "}
-              {d.text.slice(0, 100)}
-            </Text>
-          ))}
-          {tool.diff.length > 15 && (
-            <Text dimColor>… {tool.diff.length - 15} more lines</Text>
-          )}
-        </Box>
-      )}
-      {tool.output && !tool.diff && (
-        <Text dimColor color={tool.isError ? "red" : undefined}>
-          {"  → "}
-          {tool.output.length > 150
-            ? tool.output.slice(0, 150).replace(/\n/g, " ") + "…"
-            : tool.output.replace(/\n/g, " ")}
-        </Text>
-      )}
-    </Box>
-  );
-}
 
 function computeToolDiff(
   toolName: string,
