@@ -102,8 +102,37 @@ export default function App({ session }: { session: Session }) {
   // Navigazione autocomplete: frecce ↑↓ muovono la selezione quando il draft è "/…".
   // L'Invio (TextInput.onSubmit) esegue il comando evidenziato → niente conflitto.
   const acLastKey = useRef(0);
+  const cmdHistory = useRef<string[]>([]);
+  const cmdHistoryIdx = useRef(-1);
+
   useInput((_input, key) => {
     if (confirmPreview || showThinking || showSessions || showModel || showProvider) return;
+
+    // Command history: freccia su/giù senza slash attivo
+    if (!draft.startsWith("/")) {
+      if (key.upArrow && cmdHistory.current.length > 0) {
+        cmdHistoryIdx.current = Math.min(
+          cmdHistoryIdx.current + 1,
+          cmdHistory.current.length - 1,
+        );
+        setDraft(cmdHistory.current[cmdHistoryIdx.current]!);
+        setAcIdx(0);
+        return;
+      }
+      if (key.downArrow) {
+        if (cmdHistoryIdx.current > 0) {
+          cmdHistoryIdx.current--;
+          setDraft(cmdHistory.current[cmdHistoryIdx.current]!);
+        } else {
+          cmdHistoryIdx.current = -1;
+          setDraft("");
+        }
+        setAcIdx(0);
+        return;
+      }
+    }
+
+    // Autocomplete: frecce quando draft è "/…"
     if (!draft.startsWith("/")) return;
     const ms = matchCommands(draft.slice(1));
     if (ms.length === 0) return;
@@ -273,6 +302,11 @@ export default function App({ session }: { session: Session }) {
         }
       }
       setAcIdx(0);
+      if (!v.startsWith("/")) {
+        cmdHistory.current.unshift(v);
+        if (cmdHistory.current.length > 100) cmdHistory.current.pop();
+      }
+      cmdHistoryIdx.current = -1;
       if (v === "/exit" || v === "/quit") return exit();
       if (v === "/sessions") { setShowSessions(true); return; }
       if (v === "/thinking") { setShowThinking(true); return; }
