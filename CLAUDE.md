@@ -198,6 +198,12 @@ Le feature del progetto sono organizzate come **iterazioni** in [`iterazioni/`](
 *Fase 5 — Esperienza utente*
 13. `13-ux-tui/` — UX/UI completa: status footer, confirm dialog, slash autocomplete, toast, session list, vim keybindings
 
+*Fase 6 — Ecologia strumenti*
+14. `14-todowrite/` — task list strutturata per l'agente (pending/in_progress/completed)
+15. `15-question-tool/` — l'agente può fare domande all'utente durante l'esecuzione
+16. `16-websearch/` — ricerca web in tempo reale (Exa/Brave API)
+17. `17-mcp/` — Model Context Protocol client (tool discovery da server esterni)
+
 **Workflow**: leggi `task.md` poi `plan.md` → se serve aggiorna `plan.md` prima del codice → implementa → **pass di completezza** (§6.8) → aggiorna `CLAUDE.md`/`docs/` se cambia architettura → stato `task.md` a 🟢.
 
 <!-- Sezione "Fix in coda" gestita da `iterations-planner` al primo bug non banale (cartella `fix/`). -->
