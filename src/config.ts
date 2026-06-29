@@ -7,7 +7,7 @@
 //  - openai-compatible (glm/kimi)  → campo `thinking` iniettato nel body (extraBody)
 // `reasoningConfig()` traduce il livello corrente nelle opzioni giuste per provider.
 
-export type ProviderId = "anthropic" | "deepseek" | "glm" | "kimi";
+export type ProviderId = "anthropic" | "deepseek" | "openai" | "glm" | "kimi";
 
 export type ProviderKind = "anthropic" | "deepseek" | "openai-compatible";
 
@@ -47,43 +47,57 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
       { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
     ],
   },
-  anthropic: {
-    label: "Anthropic (Claude)",
-    envKey: "ANTHROPIC_API_KEY",
-    defaultModel: "claude-sonnet-4-6",
-    kind: "anthropic",
-    contextLimit: 200_000,
+  openai: {
+    label: "OpenAI",
+    envKey: "OPENAI_API_KEY",
+    defaultModel: "gpt-5.5",
+    kind: "openai-compatible",
+    baseURL: "https://api.openai.com/v1",
+    contextLimit: 1_000_000,
     thinkingLevels: ["off", "low", "medium", "high", "max"],
     defaultThinking: "high",
     models: [
-      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (200K ctx)" },
-      { id: "claude-opus-4-5", label: "Claude Opus 4.5" },
+      { id: "gpt-5.5", label: "GPT-5.5 (1M ctx)" },
+      { id: "gpt-5.4", label: "GPT-5.4 (1M ctx)" },
+    ],
+  },
+  anthropic: {
+    label: "Anthropic (Claude)",
+    envKey: "ANTHROPIC_API_KEY",
+    defaultModel: "claude-opus-4-8",
+    kind: "anthropic",
+    contextLimit: 1_000_000,
+    thinkingLevels: ["off", "low", "medium", "high", "max"],
+    defaultThinking: "high",
+    models: [
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8 (1M ctx)" },
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (1M ctx)" },
     ],
   },
   glm: {
     label: "Zhipu GLM",
     envKey: "GLM_API_KEY",
-    defaultModel: "glm-4.6",
+    defaultModel: "glm-5.2",
     kind: "openai-compatible",
-    contextLimit: 200_000,
+    contextLimit: 1_000_000,
     baseURL: "https://api.z.ai/api/paas/v4",
     thinkingLevels: ["off", "max"],
     defaultThinking: "max",
     models: [
-      { id: "glm-4.6", label: "GLM-4.6 (200K ctx)" },
+      { id: "glm-5.2", label: "GLM-5.2 (1M ctx)" },
     ],
   },
   kimi: {
     label: "Moonshot Kimi",
     envKey: "KIMI_API_KEY",
-    defaultModel: "kimi-k2.6",
+    defaultModel: "kimi-k2.7",
     kind: "openai-compatible",
-    contextLimit: 128_000,
+    contextLimit: 1_000_000,
     baseURL: "https://api.moonshot.ai/v1",
     thinkingLevels: ["off", "max"],
     defaultThinking: "max",
     models: [
-      { id: "kimi-k2.6", label: "Kimi K2.6 (128K ctx)" },
+      { id: "kimi-k2.7", label: "Kimi K2.7 (1M ctx)" },
     ],
   },
 };
@@ -180,6 +194,7 @@ export function reasoningConfig(): ReasoningConfig {
       };
     }
 
+    case "openai":
     case "glm":
       return { extraBody: { thinking: { type: level === "off" ? "disabled" : "enabled" } } };
 
