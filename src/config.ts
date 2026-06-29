@@ -113,9 +113,16 @@ export const config = {
   modelOverride: process.env.INTERFERENCE_MODEL,
 };
 
-/** Definizione del provider attualmente selezionato. */
+/** Definizione del provider attualmente selezionato (override runtime > env var > default). */
+let _providerOverride: ProviderId | null = null;
+
 export function currentProvider(): ProviderDef {
-  return PROVIDERS[config.provider];
+  const id = (_providerOverride ?? config.provider) as ProviderId;
+  return PROVIDERS[id] ?? PROVIDERS.deepseek;
+}
+
+export function setProvider(providerId: ProviderId) {
+  _providerOverride = providerId;
 }
 
 /** Model id effettivo (override runtime > env var > default del provider). */
