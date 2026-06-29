@@ -42,7 +42,10 @@ You have access to these tools:
 - todowrite: maintain a structured task list. Use for multi-step work (3+ distinct steps):
        create the plan up front, then update statuses in real time. Keep exactly ONE task
        'in_progress' at a time and mark tasks 'completed' as soon as they are done. Skip it
-       for trivial single-step tasks.`;
+       for trivial single-step tasks.
+- question: ask the user one or more multiple-choice questions when a decision is genuinely
+       ambiguous and you cannot resolve it from the request, the code, or sensible defaults.
+       Execution pauses until the user answers. Use sparingly; prefer sensible defaults.`;
 
   if (mode === "build") {
     return (

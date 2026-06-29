@@ -8,8 +8,9 @@ import { edit } from "./edit.ts";
 import { bash } from "./bash.ts";
 import { webfetch } from "./webfetch.ts";
 import { todowrite } from "./todowrite.ts";
+import { question } from "./question.ts";
 
-export { read, ls, glob, grep, write, edit, bash, webfetch, todowrite };
+export { read, ls, glob, grep, write, edit, bash, webfetch, todowrite, question };
 
 export const readonlyTools: ToolSet = {
   read,
@@ -18,6 +19,7 @@ export const readonlyTools: ToolSet = {
   grep,
   webfetch,
   todowrite,
+  question,
 };
 
 export const allToolsWithoutTask: ToolSet = {
@@ -30,4 +32,5 @@ export const allToolsWithoutTask: ToolSet = {
   bash,
   webfetch,
   todowrite,
+  question,
 };

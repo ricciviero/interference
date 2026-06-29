@@ -1,10 +1,10 @@
 import type { ToolSet } from "ai";
 import { readonlyTools, allToolsWithoutTask } from "../tools/registry.ts";
 
-// I subagent NON gestiscono la todo list dell'utente (stato globale condiviso):
-// la escludono dai loro toolset per non sovrascrivere i todos del turno principale.
-const { todowrite: _roTodo, ...readonlyForSub } = readonlyTools;
-const { todowrite: _allTodo, ...allForSub } = allToolsWithoutTask;
+// I subagent girano in autonomia: niente todowrite (stato globale condiviso, sovrascriverebbe
+// la lista del turno principale) né question (non hanno una UI per interpellare l'utente).
+const { todowrite: _roTodo, question: _roQ, ...readonlyForSub } = readonlyTools;
+const { todowrite: _allTodo, question: _allQ, ...allForSub } = allToolsWithoutTask;
 
 export type SubagentType = "explore" | "general";
 

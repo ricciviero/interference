@@ -6,6 +6,7 @@ import { runTurn } from "./agent/loop.ts";
 import type { Chunk } from "./agent/loop.ts";
 import { MissingApiKeyError } from "./provider.ts";
 import { setConfirmHandler } from "./permissions.ts";
+import { setAnswerHandler, type Answers } from "./tools/question.ts";
 import { saveSession, loadSession, listSessions } from "./session/store.ts";
 import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
@@ -53,6 +54,26 @@ export default async function plain(session: Session): Promise<void> {
     const ok = ans === "y" || ans === "yes";
     stdout.write(ok ? `${DIM}  → executing…${RESET}\n` : `${DIM}  → refused${RESET}\n`);
     return ok;
+  });
+
+  setAnswerHandler(async (qs) => {
+    const answers: Answers = [];
+    for (const q of qs) {
+      stdout.write(`\n${BOLD}${q.header ? `[${q.header}] ` : ""}${q.question}${RESET}\n`);
+      q.options.forEach((o, i) => {
+        stdout.write(`  ${i + 1}. ${o.label}${o.description ? `${DIM} — ${o.description}${RESET}` : ""}\n`);
+      });
+      const hint = q.multiple ? "numbers separated by comma (e.g. 1,3)" : "a number";
+      let raw: string;
+      try { raw = (await rl.question(`${DIM}  choose ${hint} (Enter to skip): ${RESET}`)).trim(); } catch { raw = ""; }
+      const idxs = raw
+        .split(",")
+        .map((s) => parseInt(s.trim(), 10) - 1)
+        .filter((n) => Number.isInteger(n) && n >= 0 && n < q.options.length);
+      const picked = (q.multiple ? idxs : idxs.slice(0, 1)).map((n) => q.options[n]!.label);
+      answers.push(picked);
+    }
+    return answers;
   });
 
   rl.on("SIGINT", () => {

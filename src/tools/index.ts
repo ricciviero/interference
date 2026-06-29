@@ -1,8 +1,8 @@
-import { read, ls, glob, grep, write, edit, bash, todowrite, readonlyTools, allToolsWithoutTask } from "./registry.ts";
+import { read, ls, glob, grep, write, edit, bash, todowrite, question, readonlyTools, allToolsWithoutTask } from "./registry.ts";
 import { task } from "./task.ts";
 import type { ToolSet } from "ai";
 
-export { read, ls, glob, grep, write, edit, bash, todowrite, task };
+export { read, ls, glob, grep, write, edit, bash, todowrite, question, task };
 export { readonlyTools };
 
 export const allTools: ToolSet = {

@@ -30,6 +30,8 @@ import { Welcome } from "./Welcome.tsx";
 import { matchCommands } from "../commands/index.ts";
 import { TodoList } from "./TodoList.tsx";
 import { getTodos, setTodos, subscribeTodos, type Todo } from "../tools/todowrite.ts";
+import { QuestionDialog } from "./QuestionDialog.tsx";
+import { setAnswerHandler, type QuestionSpec, type Answers } from "../tools/question.ts";
 
 type HistoryItem = {
   id: number;
@@ -66,8 +68,10 @@ export default function App({ session }: { session: Session }) {
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const [gitBranch, setGitBranch] = useState("");
   const [todos, setTodosState] = useState<Todo[]>(session.todos ?? []);
+  const [questions, setQuestions] = useState<QuestionSpec[] | null>(null);
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
+  const answerResolveRef = useRef<((a: Answers) => void) | null>(null);
   const messagesRef = useRef<ModelMessage[]>(session.messages);
   const aborterRef = useRef<AbortController | null>(null);
   const sessionRef = useRef(session);
@@ -94,7 +98,19 @@ export default function App({ session }: { session: Session }) {
     return () => setConfirmHandler(null);
   }, []);
 
+  // Question tool (RF-15): handler event-driven, stesso pattern della conferma.
+  useEffect(() => {
+    setAnswerHandler(async (qs) => {
+      setQuestions(qs);
+      return new Promise<Answers>((resolve) => {
+        answerResolveRef.current = resolve;
+      });
+    });
+    return () => setAnswerHandler(null);
+  }, []);
+
   useInput((input, key) => {
+    if (questions) return;
     if (!confirmResolveRef.current || confirmPreview) return;
     const c = input.toLowerCase();
     if (c === "y" || key.return) {
@@ -119,7 +135,7 @@ export default function App({ session }: { session: Session }) {
   const cmdHistoryIdx = useRef(-1);
 
   useInput((_input, key) => {
-    if (confirmPreview || showThinking || showSessions || showModel || showProvider) return;
+    if (confirmPreview || questions || showThinking || showSessions || showModel || showProvider) return;
 
     // Command history: freccia su/giù senza slash attivo
     if (!draft.startsWith("/")) {
@@ -541,11 +557,24 @@ ${args ? `Additional context: ${args}` : ""}`;
             />
           )}
 
-          {draft.startsWith("/") && (
+          {questions && (
+            <QuestionDialog
+              questions={questions}
+              onResolve={(answers) => {
+                if (answerResolveRef.current) {
+                  answerResolveRef.current(answers);
+                  answerResolveRef.current = null;
+                }
+                setQuestions(null);
+              }}
+            />
+          )}
+
+          {draft.startsWith("/") && !questions && (
             <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
-          {!confirmPreview && !showSessions && (
+          {!confirmPreview && !questions && !showSessions && (
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
               <Text color="cyan" bold>{"› "}</Text>
               <TextInput
