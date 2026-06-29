@@ -29,6 +29,9 @@ export function StatusFooter({
   return (
     <Box flexDirection="row" justifyContent="space-between">
       <Box gap={1}>
+        {busy && (
+          <Text color="yellow">◉</Text>
+        )}
         <Text dimColor>
           {provider} · {model}
         </Text>

@@ -74,8 +74,7 @@ export function decide(toolName: string, subject: string): Decision {
     return rule.decision;
   }
 
-  if (toolName === "bash") return "allow";
-  return "ask";
+  return "allow";
 }
 
 function matchBashPattern(pattern: string, command: string): boolean {

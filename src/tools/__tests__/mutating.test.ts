@@ -49,10 +49,10 @@ describe("permissions engine", () => {
     expect(decide("grep", "hello")).toBe("allow");
   });
 
-  test("mutating tools default ask", () => {
-    expect(decide("write", "src/foo.ts")).toBe("ask");
-    expect(decide("edit", "src/foo.ts")).toBe("ask");
-    expect(decide("bash", "git status")).toBe("ask");
+  test("mutating tools default allow", () => {
+    expect(decide("write", "src/foo.ts")).toBe("allow");
+    expect(decide("edit", "src/foo.ts")).toBe("allow");
+    expect(decide("bash", "git status")).toBe("allow");
   });
 
   test("dangerous bash commands denied", () => {
@@ -65,10 +65,10 @@ describe("permissions engine", () => {
     expect(decide("bash", "mkfs.ext4 /dev/sda")).toBe("deny");
   });
 
-  test("safe bash commands are ask (not denied)", () => {
-    expect(decide("bash", "git status")).toBe("ask");
-    expect(decide("bash", "npm test")).toBe("ask");
-    expect(decide("bash", "ls -la")).toBe("ask");
+  test("safe bash commands are allow (not denied)", () => {
+    expect(decide("bash", "git status")).toBe("allow");
+    expect(decide("bash", "npm test")).toBe("allow");
+    expect(decide("bash", "ls -la")).toBe("allow");
   });
 
   test("secret files denied for write/edit", () => {
@@ -87,7 +87,7 @@ describe("permissions engine", () => {
     expect(decide("bash", "git push")).toBe("allow");
     expect(decide("bash", "git push --force origin main")).toBe("allow");
     expect(decide("write", "src/foo.ts")).toBe("allow");
-    expect(decide("edit", "src/foo.ts")).toBe("ask");
+    expect(decide("edit", "src/foo.ts")).toBe("allow");
     expect(decide("bash", "rm -rf /")).toBe("deny");
   });
 
