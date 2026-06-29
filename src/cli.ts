@@ -63,7 +63,7 @@ async function main(): Promise<void> {
     session = s;
   } else {
     session = createSession({
-      mode: "plan",
+      mode: "build",
       provider: provider.label,
       model: currentModel(),
     });

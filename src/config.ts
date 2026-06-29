@@ -143,7 +143,7 @@ export function resetModel() {
 // --- Mode (Plan/Build) ------------------------------------------------------
 export type AgentMode = "plan" | "build";
 
-let _mode: AgentMode = "plan";
+let _mode: AgentMode = "build";
 
 export function currentMode(): AgentMode {
   return _mode;
