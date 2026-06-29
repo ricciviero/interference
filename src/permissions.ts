@@ -53,9 +53,7 @@ export function resetRules() {
 }
 
 export function decide(toolName: string, subject: string): Decision {
-  let decision: Decision = "ask";
-
-  if (toolName === "read" || toolName === "ls" || toolName === "glob" || toolName === "grep") {
+  if (toolName === "read" || toolName === "ls" || toolName === "glob" || toolName === "grep" || toolName === "webfetch") {
     return "allow";
   }
 
@@ -76,7 +74,8 @@ export function decide(toolName: string, subject: string): Decision {
     return rule.decision;
   }
 
-  return decision;
+  if (toolName === "bash") return "allow";
+  return "ask";
 }
 
 function matchBashPattern(pattern: string, command: string): boolean {
