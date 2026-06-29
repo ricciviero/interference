@@ -14,6 +14,7 @@ import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
 import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
 import { estimateCost, formatCost } from "./cost.ts";
+import { estimateMessagesTokens } from "./agent/compaction.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -31,7 +32,7 @@ export default async function plain(session: Session): Promise<void> {
   stdout.write(`${DIM}  ______________________________${RESET}\n`);
   stdout.write(`\n`);
   stdout.write(
-    `${DIM}  ${modeSymbol} ${modeLabel}${RESET}  ${DIM}·${RESET}  ${provider.label}  ${DIM}·${RESET}  ${currentModel()}  ${DIM}·${RESET}  ${getUsagePercent(session.messages)}% ctx  ${DIM}·${RESET}  ${formatCost(estimateCost(session.messages))}${RESET}\n`,
+    `${DIM}  ${modeSymbol} ${modeLabel}${RESET}  ${DIM}·${RESET}  ${provider.label}  ${DIM}·${RESET}  ${currentModel()}  ${DIM}·${RESET}  ${getUsagePercent(session.messages)}% ctx  ${DIM}·${RESET}  ${formatCost(estimateCost(estimateMessagesTokens(session.messages)))}${RESET}\n`,
   );
   stdout.write(`\n`);
 

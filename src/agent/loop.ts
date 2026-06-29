@@ -3,6 +3,7 @@ import { resolveModel } from "../provider.ts";
 import { currentMode, reasoningConfig, type AgentMode } from "../config.ts";
 import { systemPrompt } from "./prompt.ts";
 import { toolsForMode } from "../tools/index.ts";
+import { trackUsage } from "../cost.ts";
 
 export type Chunk =
   | { type: "text" | "reasoning"; text: string }
@@ -85,4 +86,9 @@ export async function* runTurn(
 
   const response = await result.response;
   messages.push(...response.messages);
+
+  const usage = await result.usage;
+  if (usage) {
+    trackUsage(usage.inputTokens ?? 0, usage.outputTokens ?? 0);
+  }
 }
