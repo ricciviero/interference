@@ -1,6 +1,11 @@
 import type { ToolSet } from "ai";
 import { readonlyTools, allToolsWithoutTask } from "../tools/registry.ts";
 
+// I subagent NON gestiscono la todo list dell'utente (stato globale condiviso):
+// la escludono dai loro toolset per non sovrascrivere i todos del turno principale.
+const { todowrite: _roTodo, ...readonlyForSub } = readonlyTools;
+const { todowrite: _allTodo, ...allForSub } = allToolsWithoutTask;
+
 export type SubagentType = "explore" | "general";
 
 export interface SubagentDef {
@@ -26,7 +31,7 @@ Rules:
 - Do NOT suggest edits, create files, or run commands
 - If you can't find something after reasonable search, say so explicitly
 - Return your findings as a concise report`,
-    tools: readonlyTools,
+    tools: readonlyForSub,
   },
 
   general: {
@@ -42,7 +47,7 @@ Rules:
 - Report results clearly with file:line references
 - If you encounter errors, try to correct them before giving up
 - Do NOT spawn other subagents (the task tool is not available to you)`,
-    tools: allToolsWithoutTask,
+    tools: allForSub,
   },
 };
 

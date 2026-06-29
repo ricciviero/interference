@@ -28,6 +28,8 @@ import { SessionList } from "./SessionList.tsx";
 import { useToast, ToastContainer } from "./Toast.tsx";
 import { Welcome } from "./Welcome.tsx";
 import { matchCommands } from "../commands/index.ts";
+import { TodoList } from "./TodoList.tsx";
+import { getTodos, setTodos, subscribeTodos, type Todo } from "../tools/todowrite.ts";
 
 type HistoryItem = {
   id: number;
@@ -63,6 +65,7 @@ export default function App({ session }: { session: Session }) {
   const [draft, setDraft] = useState("");
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const [gitBranch, setGitBranch] = useState("");
+  const [todos, setTodosState] = useState<Todo[]>(session.todos ?? []);
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const messagesRef = useRef<ModelMessage[]>(session.messages);
@@ -70,6 +73,14 @@ export default function App({ session }: { session: Session }) {
   const sessionRef = useRef(session);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Todos: ripristina dalla sessione e ri-renderizza ad ogni update del tool.
+  useEffect(() => {
+    setTodos(session.todos ?? []);
+    setTodosState(session.todos ?? []);
+    const unsub = subscribeTodos((t) => setTodosState([...t]));
+    return unsub;
+  }, []);
 
   useEffect(() => {
     const handler: ConfirmHandler = async (tool, preview) => {
@@ -244,6 +255,7 @@ export default function App({ session }: { session: Session }) {
       }
 
       sessionRef.current.meta.turnCount++;
+      sessionRef.current.todos = getTodos();
       await finalizeSnapshots();
       await saveSession(sessionRef.current);
       addToast("Session saved", "success");
@@ -325,6 +337,7 @@ export default function App({ session }: { session: Session }) {
           clearMessages: () => {
             messagesRef.current = [];
             setHistory([]);
+            setTodos([]);
             setStatusText("Conversation cleared.");
           },
           doInit: async (args) => {
@@ -439,6 +452,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             if (loaded) {
               messagesRef.current = loaded.messages;
               sessionRef.current = loaded;
+              setTodos(loaded.todos ?? []);
               // Rebuild history from messages
               const items: HistoryItem[] = [];
               let nid = Date.now();
@@ -495,6 +509,8 @@ ${args ? `Additional context: ${args}` : ""}`;
           <Static items={history}>
             {(m) => <MsgBlock key={m.id} item={m} />}
           </Static>
+
+          <TodoList todos={todos} />
 
           {reasoning && <ReasoningBlock text={reasoning} live />}
 

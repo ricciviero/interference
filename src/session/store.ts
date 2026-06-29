@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile, readdir, rm } from "node:fs/promises";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import type { ModelMessage } from "ai";
+import type { Todo } from "../tools/todowrite.ts";
 
 export interface SessionMeta {
   id: string;
@@ -17,6 +18,7 @@ export interface SessionMeta {
 export interface Session {
   meta: SessionMeta;
   messages: ModelMessage[];
+  todos?: Todo[];
 }
 
 function projectDir(): string {

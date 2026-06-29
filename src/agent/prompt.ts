@@ -38,7 +38,11 @@ You have access to these tools:
 - ls: list files and directories
 - glob: find files by pattern (e.g. "src/**/*.ts")
 - grep: search file contents with regex
-- webfetch: fetch a URL and return its text content (for documentation, API references, research)`;
+- webfetch: fetch a URL and return its text content (for documentation, API references, research)
+- todowrite: maintain a structured task list. Use for multi-step work (3+ distinct steps):
+       create the plan up front, then update statuses in real time. Keep exactly ONE task
+       'in_progress' at a time and mark tasks 'completed' as soon as they are done. Skip it
+       for trivial single-step tasks.`;
 
   if (mode === "build") {
     return (
