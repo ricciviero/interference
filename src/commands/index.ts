@@ -20,6 +20,7 @@ export type CommandHandler = (
     doSkill?: (name: string, body: string) => Promise<string>;
     doSessions?: () => Promise<string>;
     doRename?: (name: string) => Promise<string>;
+    doCompact?: () => Promise<string>;
   },
 ) => string | void | Promise<string | void>;
 
@@ -143,7 +144,8 @@ register("redo", "Redo previously undone file modifications", async () => {
   return "Nothing to redo.";
 });
 
-register("compact", "Compact conversation context to save tokens", () => {
+register("compact", "Compact conversation context to save tokens", (args, ctx) => {
+  if (ctx.doCompact) return ctx.doCompact();
   return "Compaction will run at the end of this turn if context is > 90% full.";
 });
 

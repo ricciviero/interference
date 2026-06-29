@@ -8,7 +8,7 @@ import type { Chunk } from "../agent/loop.ts";
 import { MissingApiKeyError } from "../provider.ts";
 import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
-import { currentMode, setMode, currentThinking, setThinking } from "../config.ts";
+import { currentMode, setMode, currentThinking, setThinking, currentModel, currentProvider } from "../config.ts";
 import { ThinkingPicker } from "./ThinkingPicker.tsx";
 import { ModelPicker } from "./ModelPicker.tsx";
 import { ProviderPicker } from "./ProviderPicker.tsx";
@@ -116,6 +116,25 @@ export default function App({ session }: { session: Session }) {
 
   const nextId = (): number => Date.now() + Math.random();
 
+  async function doCompact() {
+    const pct = getUsagePercent(messagesRef.current);
+    if (!shouldCompact(messagesRef.current)) {
+      setStatusText(`Context at ${pct}%. No compaction needed.`);
+      return;
+    }
+    setStatusText(`Compacting…`);
+    setBusy(true);
+    const compacted = await compactMessages(messagesRef.current);
+    messagesRef.current.length = 0;
+    messagesRef.current.push(...compacted);
+    sessionRef.current.messages = messagesRef.current;
+    await saveSession(sessionRef.current);
+    setBusy(false);
+    const newPct = getUsagePercent(messagesRef.current);
+    setStatusText(`${pct}% → ${newPct}%`);
+    addToast(`Compacted: ${pct}% → ${newPct}%`, "info");
+  }
+
   async function doTurn(userText: string, skillBodies?: string[]) {
     setStatusText("");
     setBusy(true);
@@ -200,14 +219,14 @@ export default function App({ session }: { session: Session }) {
 
       if (shouldCompact(messagesRef.current)) {
         const pct = getUsagePercent(messagesRef.current);
-        setStatusText(`Compacting context (${pct}%)`);
+        setStatusText(`Compacting…`);
+        setBusy(true);
         const compacted = await compactMessages(messagesRef.current);
         messagesRef.current.length = 0;
         messagesRef.current.push(...compacted);
-        sessionRef.current.messages = messagesRef.current;
-        await saveSession(sessionRef.current);
-        setStatusText(`Compacted (${getUsagePercent(messagesRef.current)}%)`);
-        addToast(`Compacted to ${getUsagePercent(messagesRef.current)}%`, "info");
+        setBusy(false);
+        setStatusText(`${pct}% → ${getUsagePercent(messagesRef.current)}%`);
+        addToast(`Compacted: ${pct}% → ${getUsagePercent(messagesRef.current)}%`, "info");
       }
     } catch (err) {
       messagesRef.current.pop();
@@ -259,6 +278,10 @@ export default function App({ session }: { session: Session }) {
       if (v === "/thinking") { setShowThinking(true); return; }
       if (v === "/model") { setShowModel(true); return; }
       if (v === "/provider") { setShowProvider(true); return; }
+      if (v === "/compact") {
+        doCompact();
+        return;
+      }
 
       if (isSlashCommand(v)) {
         dispatch(v, {
@@ -342,6 +365,10 @@ ${args ? `Additional context: ${args}` : ""}`;
             await saveSession(sessionRef.current);
             return `Session renamed to '${name}'.`;
           },
+          doCompact: async () => {
+            doCompact();
+            return "";
+          },
         }).then((result) => {
           if (result) setStatusText(result);
         });
@@ -423,8 +450,8 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {history.length === 0 && !busy && (
             <Welcome
-              provider={sessionRef.current.meta.provider}
-              model={sessionRef.current.meta.model}
+              provider={currentProvider().label}
+              model={currentModel()}
               sessionCount={0}
             />
           )}
@@ -483,8 +510,8 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           <StatusFooter
             mode={sessionRef.current.meta.mode}
-            model={sessionRef.current.meta.model}
-            provider={sessionRef.current.meta.provider}
+            model={currentModel()}
+            provider={currentProvider().label}
             thinking={currentThinking()}
             contextPct={messagesRef.current.length > 0 ? getUsagePercent(messagesRef.current) : 0}
             busy={busy}
