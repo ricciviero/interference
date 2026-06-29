@@ -10,6 +10,7 @@ import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
 import { currentMode, setMode, currentThinking, setThinking } from "../config.ts";
 import { ThinkingPicker } from "./ThinkingPicker.tsx";
+import { ModelPicker } from "./ModelPicker.tsx";
 import { saveSession, loadSession } from "../session/store.ts";
 import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
@@ -54,6 +55,7 @@ export default function App({ session }: { session: Session }) {
   const [statusText, setStatusText] = useState<string>("");
   const [showSessions, setShowSessions] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
+  const [showModel, setShowModel] = useState(false);
   const [acIdx, setAcIdx] = useState(0);
   const [draft, setDraft] = useState("");
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
@@ -99,7 +101,7 @@ export default function App({ session }: { session: Session }) {
   // L'Invio (TextInput.onSubmit) esegue il comando evidenziato → niente conflitto.
   const acLastKey = useRef(0);
   useInput((_input, key) => {
-    if (confirmPreview || showThinking || showSessions) return;
+    if (confirmPreview || showThinking || showSessions || showModel) return;
     if (!draft.startsWith("/")) return;
     const ms = matchCommands(draft.slice(1));
     if (ms.length === 0) return;
@@ -253,6 +255,7 @@ export default function App({ session }: { session: Session }) {
       if (v === "/exit" || v === "/quit") return exit();
       if (v === "/sessions") { setShowSessions(true); return; }
       if (v === "/thinking") { setShowThinking(true); return; }
+      if (v === "/model") { setShowModel(true); return; }
 
       if (isSlashCommand(v)) {
         dispatch(v, {
@@ -391,7 +394,11 @@ ${args ? `Additional context: ${args}` : ""}`;
         />
       )}
 
-      {!showThinking && !showSessions && (
+      {showModel && (
+        <ModelPicker onCancel={() => setShowModel(false)} />
+      )}
+
+      {!showThinking && !showSessions && !showModel && (
         <>
           <ToastContainer toasts={toasts} />
 

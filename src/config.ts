@@ -29,6 +29,8 @@ export interface ProviderDef {
   thinkingLevels: ThinkingLevel[];
   /** Livello di default del provider. */
   defaultThinking: ThinkingLevel;
+  /** Modelli conosciuti per questo provider (per /model picker). */
+  models: { id: string; label: string }[];
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderDef> = {
@@ -40,6 +42,10 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     contextLimit: 1_000_000,
     thinkingLevels: ["off", "low", "medium", "high", "max"],
     defaultThinking: "max",
+    models: [
+      { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro (1M ctx)" },
+      { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+    ],
   },
   anthropic: {
     label: "Anthropic (Claude)",
@@ -49,6 +55,10 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     contextLimit: 200_000,
     thinkingLevels: ["off", "low", "medium", "high", "max"],
     defaultThinking: "high",
+    models: [
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (200K ctx)" },
+      { id: "claude-opus-4-5", label: "Claude Opus 4.5" },
+    ],
   },
   glm: {
     label: "Zhipu GLM",
@@ -56,9 +66,12 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     defaultModel: "glm-4.6",
     kind: "openai-compatible",
     contextLimit: 200_000,
-    baseURL: "https://api.z.ai/api/paas/v4", // path /api/paas/v4, NON /v1
-    thinkingLevels: ["off", "max"], // GLM: solo on/off (max = enabled)
+    baseURL: "https://api.z.ai/api/paas/v4",
+    thinkingLevels: ["off", "max"],
     defaultThinking: "max",
+    models: [
+      { id: "glm-4.6", label: "GLM-4.6 (200K ctx)" },
+    ],
   },
   kimi: {
     label: "Moonshot Kimi",
@@ -67,8 +80,11 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     kind: "openai-compatible",
     contextLimit: 128_000,
     baseURL: "https://api.moonshot.ai/v1",
-    thinkingLevels: ["off", "max"], // Kimi: solo on/off (max = enabled, keep all)
+    thinkingLevels: ["off", "max"],
     defaultThinking: "max",
+    models: [
+      { id: "kimi-k2.6", label: "Kimi K2.6 (128K ctx)" },
+    ],
   },
 };
 
