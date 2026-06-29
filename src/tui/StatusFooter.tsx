@@ -10,6 +10,15 @@ interface Props {
   statusLine: string;
   turnCount: number;
   cost: string;
+  gitBranch: string;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
 }
 
 export function StatusFooter({
@@ -22,39 +31,40 @@ export function StatusFooter({
   statusLine,
   turnCount,
   cost,
+  gitBranch,
+  inputTokens,
+  outputTokens,
 }: Props) {
   const modeColor = mode === "build" ? "yellow" : "blue";
-  const thinkColor = thinking === "off" ? "gray" : "magenta";
+  const tokenTotal = inputTokens + outputTokens;
+  const contextColor = contextPct > 80 ? "yellow" : contextPct > 60 ? undefined : undefined;
 
   return (
-    <Box flexDirection="row" justifyContent="space-between">
-      <Box gap={1}>
-        {busy && (
-          <Text color="yellow">◉</Text>
-        )}
-        <Text dimColor>
-          {provider} · {model}
-        </Text>
-        <Text color={modeColor} bold>
-          {mode.toUpperCase()}
-        </Text>
-        <Text color={thinkColor}>
-          ◇ {thinking}
-        </Text>
-        {contextPct > 0 && (
-          <Text dimColor>
-            {contextPct}% ctx
+    <Box flexDirection="column">
+      <Box flexDirection="row" justifyContent="space-between">
+        <Box gap={1}>
+          {busy && <Text color="yellow">◉</Text>}
+          <Text dimColor>{provider}</Text>
+          <Text dimColor>·</Text>
+          <Text>{model}</Text>
+          <Text dimColor>·</Text>
+          <Text color={modeColor} bold>{mode.toUpperCase()}</Text>
+          {thinking && thinking !== "off" && (
+            <Text dimColor>◇ {thinking}</Text>
+          )}
+          <Text dimColor>·</Text>
+          <Text dimColor color={contextColor}>
+            {fmt(tokenTotal)} tok {contextPct}%
           </Text>
-        )}
-        <Text dimColor>#{turnCount}</Text>
-        {cost && (
+          <Text dimColor>·</Text>
           <Text dimColor>{cost}</Text>
-        )}
-      </Box>
-      <Box>
-        {statusLine && (
-          <Text dimColor>{statusLine}</Text>
-        )}
+          <Text dimColor>·</Text>
+          <Text dimColor>#{turnCount}</Text>
+          {gitBranch && <Text dimColor>⎇ {gitBranch}</Text>}
+        </Box>
+        <Box>
+          {statusLine && <Text dimColor>{statusLine}</Text>}
+        </Box>
       </Box>
     </Box>
   );

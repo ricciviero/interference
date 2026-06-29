@@ -19,7 +19,8 @@ import { dispatch, isSlashCommand } from "../commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "../agent/compaction.ts";
 import { computeDiff, type DiffLine } from "./DiffView.tsx";
-import { formatCost, getTotalCost } from "../cost.ts";
+import { formatCost, getTotalCost, getUsageStats } from "../cost.ts";
+import { getGitBranch } from "../git.ts";
 import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
@@ -61,6 +62,7 @@ export default function App({ session }: { session: Session }) {
   const [acIdx, setAcIdx] = useState(0);
   const [draft, setDraft] = useState("");
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
+  const [gitBranch, setGitBranch] = useState("");
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const messagesRef = useRef<ModelMessage[]>(session.messages);
@@ -552,6 +554,9 @@ ${args ? `Additional context: ${args}` : ""}`;
             statusLine={statusText}
             turnCount={sessionRef.current.meta.turnCount}
             cost={formatCost(getTotalCost())}
+            gitBranch={gitBranch}
+            inputTokens={getUsageStats().inputTokens}
+            outputTokens={getUsageStats().outputTokens}
           />
         </>
       )}

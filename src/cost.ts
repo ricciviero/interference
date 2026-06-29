@@ -46,3 +46,10 @@ export function formatCost(cost: number): string {
   if (cost < 0.0001) return "<$0.01";
   return `$${cost.toFixed(4)}`;
 }
+
+export function getUsageStats() {
+  return {
+    inputTokens: totalInputTokens,
+    outputTokens: totalOutputTokens,
+  };
+}
