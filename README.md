@@ -61,6 +61,25 @@ interference stores its state in `~/.interference/` — sessions, skills, snapsh
 
 > Requires **Bun 1.3+**.
 
+## Updating
+
+```bash
+bun install -g interference-agent@latest   # or: npm i -g interference-agent@latest
+```
+
+interference checks npm for new versions and shows a discreet notice when one is available; run `/update` from inside the app to upgrade.
+
+## Releasing (maintainers)
+
+Releases publish to npm automatically on tag push:
+
+```bash
+npm version minor        # runs typecheck+test, bumps, tags
+git push --follow-tags   # the `publish` GitHub Action publishes to npm
+```
+
+Requires the `NPM_TOKEN` repo secret. See `CHANGELOG.md`.
+
 ## Screenshot
 
 ![interference CLI](assets/screenshot.png)

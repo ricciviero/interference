@@ -11,8 +11,16 @@ import { loadConfig, applyConfig } from "./config-file.ts";
 import { loadAuth, applyAuthToEnv } from "./auth.ts";
 import { PROVIDERS } from "./config.ts";
 import type { Session } from "./session/store.ts";
+import { CURRENT_VERSION } from "./version.ts";
 
 async function main(): Promise<void> {
+  // --version / -v: stampa la versione ed esce (prima di tutto).
+  const cliArgs = Bun.argv.slice(2);
+  if (cliArgs.includes("--version") || cliArgs.includes("-v")) {
+    stdout.write(`${CURRENT_VERSION}\n`);
+    return;
+  }
+
   // Titolo + nome-icona della tab del terminale (come Claude Code), solo in TTY
   // (in pipe/non-TTY le sequenze OSC sporcherebbero l'output).
   // OSC 1 = icon/tab name, OSC 2 = window title.

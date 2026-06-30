@@ -2,6 +2,7 @@ import type { AgentMode, ThinkingLevel } from "../config.ts";
 import { currentProvider, currentThinking, setThinking, currentModel, setModel } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
+import { CURRENT_VERSION } from "../version.ts";
 
 export interface CommandInfo {
   name: string;
@@ -73,6 +74,23 @@ export async function dispatch(
 export function isSlashCommand(input: string): boolean {
   return /^\//.test(input);
 }
+
+register("version", "Show the interference version", () => {
+  return `interference v${CURRENT_VERSION}`;
+});
+
+register("update", "Update interference to the latest version", async () => {
+  const proc = Bun.spawn(["npm", "i", "-g", "interference-agent@latest"], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const code = await proc.exited;
+  if (code === 0) {
+    return "Updated to the latest version. Restart interference to use it.";
+  }
+  const err = (await new Response(proc.stderr).text()).trim().slice(0, 300);
+  return `Update failed (exit ${code}).${err ? `\n${err}` : ""}\nTry manually: npm i -g interference-agent@latest`;
+});
 
 register("help", "Show available commands", () => {
   const lines = ["Available commands:"];
