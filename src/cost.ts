@@ -6,6 +6,8 @@ interface Pricing {
 }
 
 const PRICING: Record<string, Pricing> = {
+  // Sonnet 5: standard $3/$15 (intro $2/$10 fino al 2026-08-31).
+  "claude-sonnet-5": { inputPer1M: 3.0, outputPer1M: 15.0 },
   "deepseek-v4-pro": { inputPer1M: 2.0, outputPer1M: 8.0 },
   "deepseek-v4-flash": { inputPer1M: 0.27, outputPer1M: 1.10 },
   "gpt-5.5": { inputPer1M: 5.0, outputPer1M: 30.0 },

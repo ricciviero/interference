@@ -70,6 +70,7 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     thinkingLevels: ["off", "low", "medium", "high", "max"],
     defaultThinking: "high",
     models: [
+      { id: "claude-sonnet-5", label: "Claude Sonnet 5 (1M ctx)" },
       { id: "claude-opus-4-8", label: "Claude Opus 4.8 (1M ctx)" },
       { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (1M ctx)" },
     ],
@@ -90,14 +91,16 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   kimi: {
     label: "Moonshot Kimi",
     envKey: "KIMI_API_KEY",
-    defaultModel: "kimi-k2.7",
+    defaultModel: "kimi-k2.7-code",
     kind: "openai-compatible",
     contextLimit: 1_000_000,
     baseURL: "https://api.moonshot.ai/v1",
     thinkingLevels: ["off", "max"],
     defaultThinking: "max",
     models: [
-      { id: "kimi-k2.7", label: "Kimi K2.7 (1M ctx)" },
+      { id: "kimi-k2.7-code", label: "Kimi K2.7 Code (thinking always on)" },
+      { id: "kimi-k2.6", label: "Kimi K2.6 (thinking opzionale)" },
+      { id: "kimi-k2.5", label: "Kimi K2.5" },
     ],
   },
 };
@@ -171,19 +174,13 @@ export interface ReasoningConfig {
   maxOutputTokens?: number;
 }
 
-// Anthropic: livello → budget token del thinking (maxOutputTokens deve superarlo).
-const ANTHROPIC_BUDGET: Record<Exclude<ThinkingLevel, "off">, number> = {
-  low: 8_000,
-  medium: 16_000,
-  high: 32_000,
-  max: 60_000,
-};
-
 /** Traduce il livello di thinking corrente nelle opzioni del provider attivo. */
 export function reasoningConfig(): ReasoningConfig {
   const level = currentThinking();
 
-  switch (config.provider) {
+  // Provider EFFETTIVO: rispetta l'override runtime (`/provider`, `/model`),
+  // non solo `config.provider` (statico da env all'avvio).
+  switch (_providerOverride ?? config.provider) {
     case "deepseek":
       if (level === "off") {
         return { providerOptions: { deepseek: { thinking: { type: "disabled" } } } };
@@ -193,11 +190,18 @@ export function reasoningConfig(): ReasoningConfig {
       };
 
     case "anthropic": {
-      if (level === "off") return {};
-      const budget = ANTHROPIC_BUDGET[level];
+      // Modelli Anthropic moderni (Sonnet 5, Opus 4.8/4.7, Fable 5) NON supportano
+      // `thinking.type: "enabled"` (→ HTTP 400): si usa adaptive thinking + effort.
+      // `off` → solo effort basso (niente adaptive): il modello resta veloce/economico.
+      // (Senza inviare effort, il default lato server è `high` → "off" non spegnerebbe nulla.)
+      if (level === "off") {
+        return { providerOptions: { anthropic: { effort: "low" } } };
+      }
+      // display:"summarized" rende visibile il ragionamento (di default è omesso).
       return {
-        providerOptions: { anthropic: { thinking: { type: "enabled", budgetTokens: budget } } },
-        maxOutputTokens: budget + 8_000,
+        providerOptions: {
+          anthropic: { thinking: { type: "adaptive", display: "summarized" }, effort: level },
+        },
       };
     }
 
@@ -205,8 +209,15 @@ export function reasoningConfig(): ReasoningConfig {
     case "glm":
       return { extraBody: { thinking: { type: level === "off" ? "disabled" : "enabled" } } };
 
-    case "kimi":
-      if (level === "off") return { extraBody: { thinking: { type: "disabled" } } };
-      return { extraBody: { thinking: { type: "enabled", keep: "all" } } };
+    case "kimi": {
+      // Reasoning Moonshot (campo `reasoning_content`, letto nativamente da @ai-sdk/openai-compatible).
+      // max_tokens ≥ 16000 richiesto: la somma reasoning+content non deve superare max_tokens.
+      // I modelli `*-code` hanno il thinking SEMPRE ON e NON accettano il param `thinking`.
+      const alwaysOn = currentModel().includes("k2.7-code");
+      if (alwaysOn) return { maxOutputTokens: 16_000 };
+      if (level === "off")
+        return { extraBody: { thinking: { type: "disabled" } }, maxOutputTokens: 16_000 };
+      return { extraBody: { thinking: { type: "enabled", keep: "all" } }, maxOutputTokens: 16_000 };
+    }
   }
 }
