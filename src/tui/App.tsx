@@ -34,6 +34,8 @@ import { QuestionDialog } from "./QuestionDialog.tsx";
 import { setAnswerHandler, type QuestionSpec, type Answers } from "../tools/question.ts";
 import { ToolStep } from "./ToolStep.tsx";
 import { MarkdownText } from "./MarkdownText.tsx";
+import { USER_BAR, ASSISTANT_BAR } from "./theme.ts";
+import { Panel } from "./Panel.tsx";
 
 type HistoryItem = {
   id: number;
@@ -546,7 +548,7 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {reasoning && <ReasoningBlock text={reasoning} live />}
 
-          {streaming && <RoleBlock color="green" content={streaming} markdown />}
+          {streaming && <RoleBlock color={ASSISTANT_BAR} content={streaming} markdown />}
 
           {toolSteps.map((t) => (
             <ToolStep key={t.id} tool={t} />
@@ -592,7 +594,7 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {!confirmPreview && !questions && !showSessions && (
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Text color="cyan" bold>{"› "}</Text>
+              <Text color="white" bold>{"› "}</Text>
               <TextInput
                 value={draft}
                 onChange={(val: string) => {
@@ -625,8 +627,8 @@ ${args ? `Additional context: ${args}` : ""}`;
   );
 }
 
-// Blocco con barra laterale (stile opencode): bordo solo a sinistra.
-// user = barra cyan (testo grezzo), assistant = barra verde (markdown + footer).
+// Risposta assistant: barra laterale grigia (bordo sinistro) su sfondo nudo.
+// Il contrasto col messaggio utente (pannello pieno) li differenzia.
 function RoleBlock({
   color,
   content,
@@ -695,15 +697,18 @@ function MsgBlock({ item }: { item: HistoryItem }) {
     !isUser && item.model
       ? `▣ ${item.mode ?? ""} · ${item.model}${item.durationMs ? ` · ${secs(item.durationMs)}` : ""}`
       : undefined;
+  if (isUser) {
+    return <Panel content={item.content} bar="▌" barColor={USER_BAR} />;
+  }
   return (
     <Box flexDirection="column">
       {item.reasoning && (
         <Text dimColor>┄ thought{item.reasoningMs ? ` · ${secs(item.reasoningMs)}` : ""}</Text>
       )}
       <RoleBlock
-        color={isUser ? "cyan" : "green"}
+        color={ASSISTANT_BAR}
         content={item.content}
-        markdown={!isUser}
+        markdown
         footer={footer}
       />
     </Box>

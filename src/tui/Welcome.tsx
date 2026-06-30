@@ -1,5 +1,12 @@
 import { Box, Text } from "ink";
 import { currentThinking } from "../config.ts";
+import { WORDMARK } from "./wordmark.ts";
+import { PANEL, padRight } from "./theme.ts";
+
+// Larghezza del pannello wordmark = riga più lunga + margini.
+const WM_W = Math.max(...WORDMARK.map((l) => l.length)) + 4;
+// Righe del pannello: una vuota sopra/sotto + il wordmark, tutte riempite.
+const WM_LINES = ["", ...WORDMARK, ""].map((l) => padRight("  " + l, WM_W));
 
 // Colori per tema scuro (NON usare #0a0a0a sul testo → invisibile).
 const FG = "white";
@@ -7,16 +14,6 @@ const ACCENT = "cyan";
 const MUTED = "gray";
 const GREEN = "#2e8b57";
 const RED = "#cd5c5c";
-
-// Wordmark "interference" (cfonts font "chrome", 3 righe box-drawing).
-const WORDMARK = [
-  " ╦ ╔╗╔ ╔╦╗ ╔═╗ ╦═╗ ╔═╗ ╔═╗ ╦═╗ ╔═╗ ╔╗╔ ╔═╗ ╔═╗",
-  " ║ ║║║  ║  ║╣  ╠╦╝ ╠╣  ║╣  ╠╦╝ ║╣  ║║║ ║   ║╣ ",
-  " ╩ ╝╚╝  ╩  ╚═╝ ╩╚═ ╚   ╚═╝ ╩╚═ ╚═╝ ╝╚╝ ╚═╝ ╚═╝",
-];
-
-// Mark: due sorgenti (◉) i cui fronti d'onda interferiscono al centro (✕).
-const MARK = "◉ ››› ✕ ‹‹‹ ◉";
 
 interface Props {
   provider: string;
@@ -40,12 +37,11 @@ function Tip({ cmd, desc }: { cmd: string; desc: string }) {
 export function Welcome({ provider, model, sessionCount }: Props) {
   return (
     <Box flexDirection="column" marginBottom={1}>
-      {/* Header centrato: mark + wordmark + tagline */}
+      {/* Header centrato: wordmark su pannello (sfondo reale via Text) + tagline */}
       <Box flexDirection="column" alignItems="center" marginBottom={1}>
-        <Text color={ACCENT}>{MARK}</Text>
-        <Box flexDirection="column" marginTop={1}>
-          {WORDMARK.map((line, i) => (
-            <Text key={i} bold color={FG}>
+        <Box flexDirection="column">
+          {WM_LINES.map((line, i) => (
+            <Text key={i} bold color={FG} backgroundColor={PANEL}>
               {line}
             </Text>
           ))}
@@ -84,7 +80,7 @@ export function Welcome({ provider, model, sessionCount }: Props) {
         <Text backgroundColor={GREEN}> </Text>
         <Text backgroundColor="white"> </Text>
         <Text backgroundColor={RED}> </Text>
-        <Text color={MUTED}> made in Italy · MIT</Text>
+        <Text color={MUTED}> made in Italy</Text>
       </Box>
     </Box>
   );
