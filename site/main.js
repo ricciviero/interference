@@ -14,7 +14,6 @@ const I18N = {
     "nav.start": "Quickstart",
     "nav.github": "GitHub ↗",
 
-    "hero.eyebrow": "Open-source · TypeScript + Bun · Italian",
     "hero.title": "The coding agent<br />that lives in your<br /><span class=\"ital\">terminal.</span>",
     "hero.lede": "interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.",
     "hero.cta_start": "Get started",
@@ -91,7 +90,6 @@ const I18N = {
     "nav.start": "Inizia",
     "nav.github": "GitHub ↗",
 
-    "hero.eyebrow": "Open-source · TypeScript + Bun · Italiano",
     "hero.title": "L'agente di coding<br />che vive nel tuo<br /><span class=\"ital\">terminale.</span>",
     "hero.lede": "interference legge il tuo codice, modifica file ed esegue comandi attraverso un agent loop — con permessi espliciti e una modalità Plan in sola lettura. Nessun vincolo all'editor. Solo il terminale.",
     "hero.cta_start": "Inizia",
