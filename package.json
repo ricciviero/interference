@@ -4,6 +4,10 @@
   "description": "The open-source coding agent that lives in your terminal.",
   "type": "module",
   "license": "MIT",
+  "author": "ricciviero",
+  "repository": "github:ricciviero/interference",
+  "homepage": "https://github.com/ricciviero/interference#readme",
+  "keywords": ["ai", "coding-agent", "terminal", "cli", "bun", "typescript", "llm", "open-source"],
   "bin": {
     "interference": "./src/cli.ts"
   },

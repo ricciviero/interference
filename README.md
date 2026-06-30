@@ -23,14 +23,15 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Safe bash** — timeout, output truncation, exit code, dangerous-command deny list
 - **Session persistence** — messages saved per-project, resume with `--continue`; `/sessions` picker
 - **Undo / redo** — file snapshots before every mutation; `/undo` `/redo`
-- **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename`
+- **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename` `/provider` `/thinking`
 - **`/init`** — analyzes your project and generates `AGENTS.md`
+- **`/provider`** — manage API keys interactively (stored in `~/.interference/auth.json`)
 - **Skill invocation** — explicit `/skill-name` + automatic keyword matching on description
 - **Context compaction** — auto-summarizes conversation at ~90% context limit
 - **Config file** — per-project `interference.json` (model, permissions, mode, instructions)
 - **Diff view** — color-coded (+/-, green/red) in TUI for every edit/write
-- **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, confirm dialog with arrow nav, slash autocomplete, session list, toast notifications, status footer (model / mode / context% / cost)
-- **Multi-provider** — DeepSeek, Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi) + any OpenAI-compatible endpoint
+- **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, status footer (model / mode / context% / cost / git branch), pickers (model, provider, thinking), slash autocomplete, session list, toast, welcome screen
+- **Multi-provider** — DeepSeek, OpenAI (GPT-5.5), Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi) + any OpenAI-compatible endpoint
 - **Reasoning/thinking** — distinct `┄ thinking` blocks for every provider, enabled at max
 - **Cost tracking** — real-time cost estimation per model
 - **AGENTS.md & CLAUDE.md** — auto-loaded from project tree into system prompt
