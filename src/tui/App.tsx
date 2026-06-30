@@ -192,6 +192,12 @@ export default function App({ session }: { session: Session }) {
 
   const nextId = (): number => Date.now() + Math.random();
 
+  // Titolo leggibile dal primo messaggio (collassa spazi, cap ~40 char).
+  const deriveTitle = (text: string): string => {
+    const t = text.replace(/\s+/g, " ").trim();
+    return t.length > 40 ? t.slice(0, 40).trimEnd() + "…" : t;
+  };
+
   async function doCompact() {
     const pct = getUsagePercent(messagesRef.current);
     if (!shouldCompact(messagesRef.current)) {
@@ -226,6 +232,10 @@ export default function App({ session }: { session: Session }) {
     setHistory((h) => [...h, userMsg]);
 
     nextTurn();
+    // Auto-title alla prima interazione (se non già rinominata dall'utente).
+    if (!sessionRef.current.meta.title) {
+      sessionRef.current.meta.title = deriveTitle(userText);
+    }
     messagesRef.current.push({ role: "user", content: userText });
     aborterRef.current = new AbortController();
     let acc = "";
@@ -455,7 +465,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             return "";
           },
           doRename: async (name) => {
-            sessionRef.current.meta.id = name;
+            sessionRef.current.meta.title = name;
             await saveSession(sessionRef.current);
             return `Session renamed to '${name}'.`;
           },
@@ -498,20 +508,36 @@ ${args ? `Additional context: ${args}` : ""}`;
               messagesRef.current = loaded.messages;
               sessionRef.current = loaded;
               setTodos(loaded.todos ?? []);
-              // Rebuild history from messages
+              // Ricostruisci la history dai messaggi salvati. Il content può essere
+              // una stringa o un ARRAY di parti ({type:"text"|"reasoning"|...}):
+              // estraiamo testo e reasoning invece di stringificare (era reso come JSON grezzo).
               const items: HistoryItem[] = [];
               let nid = Date.now();
               for (const m of loaded.messages) {
-                if (m.role === "user" || m.role === "assistant") {
-                  const content = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
-                  items.push({ id: nid++, role: m.role as "user" | "assistant", content });
+                if (m.role !== "user" && m.role !== "assistant") continue;
+                let text = "";
+                let reasoning = "";
+                if (typeof m.content === "string") {
+                  text = m.content;
+                } else if (Array.isArray(m.content)) {
+                  for (const p of m.content as Array<{ type?: string; text?: string }>) {
+                    if (p?.type === "text" && p.text) text += p.text;
+                    else if (p?.type === "reasoning" && p.text) reasoning += p.text;
+                  }
                 }
+                if (!text && !reasoning) continue; // salta i messaggi solo-tool
+                items.push({
+                  id: nid++,
+                  role: m.role as "user" | "assistant",
+                  content: text,
+                  reasoning: reasoning || undefined,
+                });
               }
               setHistory(items);
               setStreaming("");
               setReasoning("");
               setToolSteps([]);
-              addToast(`Resumed session ${id.slice(0, 12)} (${loaded.meta.turnCount} turns)`, "success");
+              addToast(`Resumed '${loaded.meta.title || id.slice(0, 12)}' (${loaded.meta.turnCount} turns)`, "success");
             } else {
               addToast(`Session ${id.slice(0, 12)} not found`, "error");
             }
@@ -604,6 +630,13 @@ ${args ? `Additional context: ${args}` : ""}`;
             <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
+          {/* Avviso comandi/stato: subito SOPRA l'input (stile opencode), non nel footer */}
+          {statusText && !confirmPreview && !questions && !showSessions && (
+            <Box paddingLeft={1}>
+              <Text dimColor>{statusText}</Text>
+            </Box>
+          )}
+
           {!confirmPreview && !questions && !showSessions && (
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
               <Text color="white" bold>{"› "}</Text>
@@ -626,7 +659,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             thinking={currentThinking()}
             contextPct={messagesRef.current.length > 0 ? getUsagePercent(messagesRef.current) : 0}
             busy={busy}
-            statusLine={statusText}
+            statusLine=""
             turnCount={sessionRef.current.meta.turnCount}
             cost={formatCost(getTotalCost())}
             gitBranch={gitBranch}

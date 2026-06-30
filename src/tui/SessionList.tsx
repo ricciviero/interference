@@ -59,8 +59,7 @@ export const SessionList: FC<Props> = ({ onSelect, onCancel }) => {
       {sessions.slice(0, PAGE_SIZE).map((s, i) => (
         <SelectRow
           key={s.id}
-          label={s.id.slice(0, 12)}
-          meta={`${s.mode} · ${s.turnCount}t · ${s.updatedAt.slice(0, 10)}`}
+          label={s.title || `(untitled ${s.id.slice(0, 8)})`}
           selected={i === idx}
         />
       ))}
