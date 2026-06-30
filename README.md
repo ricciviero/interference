@@ -59,9 +59,11 @@ bun run interference
 
 > Requires **Bun 1.3+** (Node ≥22 / React ≥19.2 for the Ink TUI).
 
-## Demo
+## Screenshot
 
-![interference CLI demo](assets/demo.gif)
+![interference CLI](assets/screenshot.png)
+
+*(Capture your terminal with Cmd+Shift+4, save as `assets/screenshot.png`)*
 
 ## Landing page
 
