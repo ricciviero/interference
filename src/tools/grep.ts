@@ -58,29 +58,35 @@ async function tryRg(
   args.push("--", pattern);
   args.push(cwd);
 
-  const proc = Bun.spawn(["rg", ...args], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const out = await proc.stdout.text();
-  const err = await proc.stderr.text();
-  await proc.exited;
+  // ripgrep può non essere installato: `Bun.spawn(["rg"])` lancia ENOENT prima
+  // ancora di poter leggere stderr → wrappiamo tutto e torniamo null (→ fallback JS).
+  try {
+    const proc = Bun.spawn(["rg", ...args], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const out = await proc.stdout.text();
+    const err = await proc.stderr.text();
+    await proc.exited;
 
-  if (proc.exitCode === 0) {
-    const cwdName = path.relative(process.cwd(), cwd) || ".";
-    return formatMatches(out, pattern, cwdName);
+    if (proc.exitCode === 0) {
+      const cwdName = path.relative(process.cwd(), cwd) || ".";
+      return formatMatches(out, pattern, cwdName);
+    }
+
+    if (proc.exitCode === 1) {
+      const cwdName = path.relative(process.cwd(), cwd) || ".";
+      return `No matches for '${pattern}' in ${cwdName}`;
+    }
+
+    if (err.includes("command not found") || err.includes("No such file")) {
+      return null; // rg non disponibile → fallback JS
+    }
+
+    return `grep error (exit ${proc.exitCode}): ${err || "unknown error"}`;
+  } catch {
+    return null; // rg non installato (ENOENT) → fallback JS
   }
-
-  if (proc.exitCode === 1) {
-    const cwdName = path.relative(process.cwd(), cwd) || ".";
-    return `No matches for '${pattern}' in ${cwdName}`;
-  }
-
-  if (err.includes("command not found") || err.includes("No such file")) {
-    return null; // rg not available, fallback to JS
-  }
-
-  return `grep error (exit ${proc.exitCode}): ${err || "unknown error"}`;
 }
 
 async function jsGrep(
@@ -95,7 +101,7 @@ async function jsGrep(
   try {
     regex = new RegExp(pattern, flags);
   } catch {
-    return `Invalid regex pattern: ${pattern}`;
+    return `grep error: invalid regex pattern '${pattern}'`;
   }
 
   const matches: string[] = [];
