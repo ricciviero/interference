@@ -3,7 +3,7 @@
 <p align="center"><strong>The open-source coding agent that lives in your terminal.</strong></p>
 
 <p align="center">
-  TypeScript + Bun · Plan / Build modes · 9 tools · permissions · sessions with undo · 38 skills · subagents · TUI
+  TypeScript + Bun · Plan / Build modes · 11 tools · permissions · sessions with undo · extensible skills · subagents · TUI
 </p>
 
 ---
@@ -14,10 +14,10 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 
 ## Features
 
-- **9 tools**: `read` · `ls` · `glob` · `grep` · `webfetch` · `write` · `edit` · `bash` · `task` (subagent)
+- **11 tools**: `read` · `ls` · `glob` · `grep` · `webfetch` · `write` · `edit` · `bash` · `todowrite` · `question` · `task` (subagent)
 - **Plan & Build** modes — explore read-only, switch to full access when ready
 - **Permissioned by design** — allow / ask / deny enforced in code, not in the prompt; dangerous commands auto-blocked (`rm -rf`, `sudo`, `curl | sh`)
-- **38 skills** — auto-detected by keyword matching, or invoked explicitly via `/skill-name`; full Agent Skills format support
+- **Extensible skills** — Agent Skills format (SKILL.md); auto-detected by keyword matching, or invoked via `/skill-name`; 3 skills bundled, user-extensible
 - **Subagents** — delegate complex tasks to isolated agents (`explore` for read-only, `general` for full access)
 - **Atomic edit** — unique-match string replacement with `replaceAll` support
 - **Safe bash** — timeout, output truncation, exit code, dangerous-command deny list
@@ -56,6 +56,8 @@ interference
 ```
 
 On first run, use `/provider` to add your API keys. They're saved in `~/.interference/auth.json`.
+
+interference stores its state in `~/.interference/` — sessions, skills, snapshots, and auth — just like Claude Code uses `~/.claude/`.
 
 > Requires **Bun 1.3+**.
 
