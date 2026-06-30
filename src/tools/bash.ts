@@ -41,31 +41,39 @@ export const bash = tool({
       stderr: "pipe",
     });
 
-    // Timeout esplicito: l'opzione `timeout` di Bun.spawn non è affidabile su
-    // tutte le versioni/piattaforme (es. runner CI) → uccidiamo noi il processo.
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      proc.kill(9); // SIGKILL
-    }, ms);
+    // Esecuzione (lettura stream + exit) in gara col timeout. Allo scadere
+    // uccidiamo il processo e ritorniamo SUBITO senza aspettare l'EOF: un figlio
+    // orfano (es. `sleep`) può tenere la pipe aperta dopo la morte della shell e
+    // bloccherebbe la lettura. (L'opzione `timeout` di Bun.spawn non è affidabile
+    // su tutti i runner.)
+    const finished = (async () => {
+      const [stdout, stderr] = await Promise.all([
+        readStream(proc.stdout, OUTPUT_CAP),
+        readStream(proc.stderr, OUTPUT_CAP),
+      ]);
+      const exitCode = await proc.exited;
+      return { stdout, stderr, exitCode };
+    })().catch(() => ({ stdout: "", stderr: "", exitCode: 1 }));
 
-    const [stdout, stderr] = await Promise.all([
-      readStream(proc.stdout, OUTPUT_CAP),
-      readStream(proc.stderr, OUTPUT_CAP),
+    const result = await Promise.race([
+      finished,
+      new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)),
     ]);
 
-    const exitCode = await proc.exited;
-    clearTimeout(timer);
+    if (result === "timeout") {
+      try {
+        proc.kill(9);
+      } catch {}
+      return `Command timed out after ${ms}ms and was killed.`;
+    }
+
+    const { stdout, stderr, exitCode } = result;
 
     let output = "";
     if (stdout.length > 0) output += stdout;
     if (stderr.length > 0) {
       if (output.length > 0) output += "\n";
       output += "[stderr]\n" + stderr;
-    }
-
-    if (timedOut) {
-      return `Command timed out after ${ms}ms and was killed (exit code: ${exitCode ?? "killed"}).${output ? "\n" + output : ""}`;
     }
 
     const truncated =

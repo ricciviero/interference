@@ -311,7 +311,7 @@ describe("bash tool", () => {
   test("timeout kills process", async () => {
     setRules([{ tool: "bash", decision: "allow" }]);
     const out = await call<string>(bash, { command: "sleep 5", timeout: 500 });
-    expect(out).toContain("exit code");
+    expect(out).toContain("timed out");
   });
 
   test("ask with confirmation", async () => {
