@@ -1,6 +1,7 @@
 import { useState, type FC } from "react";
 import { Box, Text, useInput } from "ink";
 import { currentProvider, currentThinking, type ThinkingLevel } from "../config.ts";
+import { SelectRow } from "./SelectRow.tsx";
 
 interface Props {
   onSelect: (level: ThinkingLevel) => void;
@@ -40,14 +41,13 @@ export const ThinkingPicker: FC<Props> = ({ onSelect, onCancel }) => {
         <Text bold>Thinking level · {provider.label}</Text>
       </Box>
       {levels.map((l, i) => (
-        <Box key={l}>
-          <Text color={i === idx ? "magenta" : undefined} bold={i === idx}>
-            {i === idx ? "▸ " : "  "}
-            {l}
-          </Text>
-          {l === current && <Text dimColor> (current)</Text>}
-          {HINT[l] && <Text dimColor> — {HINT[l]}</Text>}
-        </Box>
+        <SelectRow
+          key={l}
+          label={l}
+          meta={HINT[l]}
+          selected={i === idx}
+          current={l === current}
+        />
       ))}
       <Box marginTop={1}>
         <Text dimColor>↑↓ j/k navigate · Enter select · Esc cancel</Text>

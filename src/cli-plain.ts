@@ -226,18 +226,18 @@ async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
   for await (const chunk of chunks) {
     switch (chunk.type) {
       case "reasoning":
-        if (!sawReasoning) { stdout.write(`${DIM}┄ thinking${RESET}\n`); sawReasoning = true; }
+        if (!sawReasoning) { stdout.write(`${YELLOW}✻ Thinking${RESET}\n`); sawReasoning = true; }
         stdout.write(`${DIM}${chunk.text}${RESET}`);
         break;
       case "text":
         if (activeTool) { stdout.write("\n"); activeTool = null; }
-        if (sawReasoning && !inText) { stdout.write(`\n${DIM}┄${RESET}\n\n`); inText = true; }
+        if (sawReasoning && !inText) { stdout.write(`\n\n`); inText = true; }
         else if (!inText) { inText = true; }
         stdout.write(chunk.text);
         break;
       case "tool-call": {
         const args = typeof chunk.input === "string" ? chunk.input : JSON.stringify(chunk.input);
-        if (sawReasoning && !inText) { stdout.write(`\n${DIM}┄${RESET}\n\n`); inText = true; }
+        if (sawReasoning && !inText) { stdout.write(`\n\n`); inText = true; }
         else if (activeTool || !inText) { stdout.write("\n"); }
         stdout.write(`${DIM}· ${chunk.toolName}${RESET}(${args})`);
         activeTool = { name: chunk.toolName, args, input: chunk.input };

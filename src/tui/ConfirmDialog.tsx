@@ -1,5 +1,6 @@
 import { useState, type FC } from "react";
 import { Box, Text, useInput } from "ink";
+import { BG_ELEMENT } from "./theme.ts";
 
 interface Props {
   tool: string;
@@ -33,11 +34,19 @@ export const ConfirmDialog: FC<Props> = ({ tool, preview, onResolve }) => {
         <Text dimColor>{preview.slice(0, 300)}</Text>
       </Box>
       <Box gap={2}>
-        <Text color={selected === "allow" ? "green" : undefined} bold={selected === "allow"}>
-          {selected === "allow" ? "▸ Allow" : "  Allow"}
+        <Text
+          backgroundColor={selected === "allow" ? BG_ELEMENT : undefined}
+          color={selected === "allow" ? "green" : undefined}
+          bold={selected === "allow"}
+        >
+          {" Allow "}
         </Text>
-        <Text color={selected === "deny" ? "red" : undefined} bold={selected === "deny"}>
-          {selected === "deny" ? "▸ Deny" : "  Deny"}
+        <Text
+          backgroundColor={selected === "deny" ? BG_ELEMENT : undefined}
+          color={selected === "deny" ? "red" : undefined}
+          bold={selected === "deny"}
+        >
+          {" Deny "}
         </Text>
         <Text dimColor>(←→ arrows, Enter, y/n)</Text>
       </Box>

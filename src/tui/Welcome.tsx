@@ -2,6 +2,7 @@ import { Box, Text } from "ink";
 import { currentThinking } from "../config.ts";
 import { WORDMARK } from "./wordmark.ts";
 import { PANEL, padRight } from "./theme.ts";
+import { CURRENT_VERSION } from "../version.ts";
 
 // Larghezza del pannello wordmark = riga più lunga + margini.
 const WM_W = Math.max(...WORDMARK.map((l) => l.length)) + 4;
@@ -19,6 +20,7 @@ interface Props {
   provider: string;
   model: string;
   sessionCount: number;
+  update?: string | null;
 }
 
 function Tip({ cmd, desc }: { cmd: string; desc: string }) {
@@ -34,9 +36,19 @@ function Tip({ cmd, desc }: { cmd: string; desc: string }) {
 
 // Branding-only: l'input è condiviso (gestito da App), così gli slash e
 // l'autocomplete funzionano anche dalla home.
-export function Welcome({ provider, model, sessionCount }: Props) {
+export function Welcome({ provider, model, sessionCount, update }: Props) {
   return (
     <Box flexDirection="column" marginBottom={1}>
+      {/* Banner aggiornamento (it. 28): discreto, solo se c'è una versione più recente */}
+      {update && (
+        <Box justifyContent="center" marginBottom={1}>
+          <Text color={ACCENT}>
+            interference {CURRENT_VERSION} → {update}
+          </Text>
+          <Text color={MUTED}> · run </Text>
+          <Text color={ACCENT}>/update</Text>
+        </Box>
+      )}
       {/* Header centrato: wordmark su pannello (sfondo reale via Text) + tagline */}
       <Box flexDirection="column" alignItems="center" marginBottom={1}>
         <Box flexDirection="column">
@@ -65,13 +77,16 @@ export function Welcome({ provider, model, sessionCount }: Props) {
         </Box>
       )}
 
-      {/* Tips (blocco, centrato) */}
+      {/* Tips (blocco, centrato) — i due comandi fondamentali in cima */}
       <Box flexDirection="column" alignItems="center" marginTop={1}>
+        <Box marginBottom={1}>
+          <Text color={MUTED}>Get started — connect a provider, then pick a model:</Text>
+        </Box>
         <Box flexDirection="column">
-          <Tip cmd="/help" desc="show all commands" />
-          <Tip cmd="/build" desc="switch to full-access mode" />
+          <Tip cmd="/provider" desc="connect a provider (add your API key)" />
+          <Tip cmd="/model" desc="choose the model to use" />
+          <Tip cmd="/help" desc="all commands" />
           <Tip cmd="/thinking" desc="set reasoning level" />
-          <Tip cmd="/init" desc="generate AGENTS.md" />
         </Box>
       </Box>
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Box, Text, Static, useInput, useApp } from "ink";
-import { Spinner } from "@inkjs/ui";
+import { Spinner } from "./Spinner.tsx";
 import TextInput from "ink-text-input";
 import type { ModelMessage } from "ai";
 import { runTurn } from "../agent/loop.ts";
@@ -34,7 +34,10 @@ import { QuestionDialog } from "./QuestionDialog.tsx";
 import { setAnswerHandler, type QuestionSpec, type Answers } from "../tools/question.ts";
 import { ToolStep } from "./ToolStep.tsx";
 import { MarkdownText } from "./MarkdownText.tsx";
-import { USER_BAR, ASSISTANT_BAR } from "./theme.ts";
+import { reasoningSummary } from "./reasoning.ts";
+import { placeholderFor } from "./placeholders.ts";
+import { checkForUpdate, CURRENT_VERSION } from "../version.ts";
+import { USER_BAR, ASSISTANT_BAR, THINKING, THINKING_BODY } from "./theme.ts";
 import { Panel } from "./Panel.tsx";
 
 type HistoryItem = {
@@ -77,6 +80,8 @@ export default function App({ session }: { session: Session }) {
   const [gitBranch, setGitBranch] = useState("");
   const [todos, setTodosState] = useState<Todo[]>(session.todos ?? []);
   const [questions, setQuestions] = useState<QuestionSpec[] | null>(null);
+  const [phIdx, setPhIdx] = useState(0); // indice esempio placeholder (it. 25)
+  const [update, setUpdate] = useState<string | null>(null); // versione più recente (it. 28)
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const answerResolveRef = useRef<((a: Answers) => void) | null>(null);
@@ -85,6 +90,11 @@ export default function App({ session }: { session: Session }) {
   const sessionRef = useRef(session);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Controllo aggiornamenti (it. 28): non bloccante, throttled, silenzioso offline.
+  useEffect(() => {
+    checkForUpdate().then(setUpdate).catch(() => {});
+  }, []);
 
   // Todos: ripristina dalla sessione e ri-renderizza ad ogni update del tool.
   useEffect(() => {
@@ -320,6 +330,7 @@ export default function App({ session }: { session: Session }) {
       setReasoning("");
       setToolSteps([]);
       setBusy(false);
+      setPhIdx((i) => i + 1); // ruota l'esempio del placeholder
       aborterRef.current = null;
 
       if (messageQueue.length > 0) {
@@ -537,6 +548,7 @@ ${args ? `Additional context: ${args}` : ""}`;
               provider={currentProvider().label}
               model={currentModel()}
               sessionCount={0}
+              update={update}
             />
           )}
 
@@ -601,7 +613,7 @@ ${args ? `Additional context: ${args}` : ""}`;
                   if (val !== draft) setAcIdx(0);
                   setDraft(val);
                 }}
-                placeholder={busy ? `working… (${messageQueue.length} queued)` : "Type a message (/ for commands)"}
+                placeholder={busy ? `working… (${messageQueue.length} queued)` : placeholderFor(sessionRef.current.meta.mode, phIdx)}
                 onSubmit={onSubmit}
               />
             </Box>
@@ -657,7 +669,9 @@ function RoleBlock({
   );
 }
 
-function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
+// Fase PENSIERO: header ambra "✻ Thinking/Thought · durata" + corpo attenuato.
+// Distinta dall'esecuzione (icone tool, bianco) e dalla risposta (markdown bianco pieno).
+function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?: number }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -667,25 +681,23 @@ function ReasoningBlock({ text, live }: { text: string; live?: boolean }) {
     return () => clearInterval(timer);
   }, [live]);
 
-  const shown = live
-    ? text.length > 500 ? "…" + text.slice(-500) : text
-    : text.length > 600 ? text.slice(0, 600) + " …" : text;
+  const title = reasoningSummary(text);
+  const titlePart = title ? `: ${title}` : live ? "…" : "";
+  const header = live
+    ? `✻ Thinking${titlePart}${elapsed > 0 ? ` · ${elapsed}s` : ""}`
+    : `✻ Thought${titlePart}${ms ? ` · ${(ms / 1000).toFixed(1)}s` : ""}`;
+
+  // Live: coda in streaming. History: testo dall'inizio, capato.
+  const body = live
+    ? text.length > 400 ? "…" + text.slice(-400) : text
+    : text.length > 700 ? text.slice(0, 700) + " …" : text;
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="gray"
-      borderTop={false}
-      borderRight={false}
-      borderBottom={false}
-      paddingLeft={1}
-      marginBottom={1}
-    >
-      <Text dimColor bold>
-        ┄ thinking{live && elapsed > 0 ? ` ${elapsed}s` : ""}
+    <Box flexDirection="column" paddingLeft={3} marginBottom={1}>
+      <Text color={THINKING} bold>
+        {header}
       </Text>
-      <Text dimColor>{shown}</Text>
+      <Text color={THINKING_BODY}>{body}</Text>
     </Box>
   );
 }
@@ -702,9 +714,7 @@ function MsgBlock({ item }: { item: HistoryItem }) {
   }
   return (
     <Box flexDirection="column">
-      {item.reasoning && (
-        <Text dimColor>┄ thought{item.reasoningMs ? ` · ${secs(item.reasoningMs)}` : ""}</Text>
-      )}
+      {item.reasoning && <ReasoningBlock text={item.reasoning} ms={item.reasoningMs} />}
       <RoleBlock
         color={ASSISTANT_BAR}
         content={item.content}

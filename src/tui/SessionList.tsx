@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type FC } from "react";
 import { Box, Text, useInput } from "ink";
 import { listSessions, loadSession, type SessionMeta } from "../session/store.ts";
+import { SelectRow } from "./SelectRow.tsx";
 
 interface Props {
   onSelect: (sessionId: string) => void;
@@ -56,13 +57,12 @@ export const SessionList: FC<Props> = ({ onSelect, onCancel }) => {
         <Text bold>Sessions ({sessions.length})</Text>
       </Box>
       {sessions.slice(0, PAGE_SIZE).map((s, i) => (
-        <Box key={s.id}>
-          <Text color={i === idx ? "cyan" : undefined} bold={i === idx}>
-            {i === idx ? "▸" : " "}
-          </Text>
-          <Text dimColor>{s.id.slice(0, 12)}</Text>
-          <Text> {s.mode} · {s.turnCount}t · {s.updatedAt.slice(0, 10)}</Text>
-        </Box>
+        <SelectRow
+          key={s.id}
+          label={s.id.slice(0, 12)}
+          meta={`${s.mode} · ${s.turnCount}t · ${s.updatedAt.slice(0, 10)}`}
+          selected={i === idx}
+        />
       ))}
       <Box marginTop={1}>
         <Text dimColor>↑↓ j/k navigate · Enter select · Esc/q cancel</Text>

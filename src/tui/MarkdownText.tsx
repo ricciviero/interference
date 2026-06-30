@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import type { ReactNode } from "react";
+import { tokenizeLine, normalizeLang } from "./syntax.ts";
 
 // Rendering markdown minimale per il terminale (no dipendenze):
 // - fenced code ``` → blocco dim
@@ -32,14 +33,35 @@ export function MarkdownText({ content }: { content: string }) {
   const lines = content.split("\n");
   const blocks: ReactNode[] = [];
   let inFence = false;
+  let lang = "";
+  let fenceLines = 0;
 
   lines.forEach((line, i) => {
-    if (line.trimStart().startsWith("```")) {
-      inFence = !inFence;
+    const t = line.trimStart();
+    if (t.startsWith("```")) {
+      if (!inFence) {
+        inFence = true;
+        lang = normalizeLang(t.slice(3));
+        fenceLines = 0;
+      } else {
+        inFence = false;
+        lang = "";
+      }
       return; // nascondi i marker di fence
     }
     if (inFence) {
-      blocks.push(<Text key={i} dimColor>  {line}</Text>);
+      if (++fenceLines > 200) return; // cap di sicurezza
+      const toks = tokenizeLine(line, lang);
+      blocks.push(
+        <Text key={i}>
+          {"  "}
+          {toks.map((tk, j) => (
+            <Text key={j} color={tk.color} dimColor={tk.dim}>
+              {tk.text}
+            </Text>
+          ))}
+        </Text>,
+      );
       return;
     }
     const heading = /^(#{1,6})\s+(.*)$/.exec(line);

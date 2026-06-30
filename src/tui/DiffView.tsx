@@ -1,19 +1,25 @@
 export interface DiffLine {
   type: "same" | "add" | "remove";
   text: string;
+  oldNo?: number; // numero riga nel file vecchio (1-based) — same/remove
+  newNo?: number; // numero riga nel file nuovo (1-based) — same/add
 }
 
 export function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
   const result: DiffLine[] = [];
   let oi = 0;
   let ni = 0;
+  // Numeri di riga 1-based: oi/ni sono indici 0-based → +1 al push.
+  const same = (t: string) => result.push({ type: "same", text: t, oldNo: oi + 1, newNo: ni + 1 });
+  const rem = (t: string) => result.push({ type: "remove", text: t, oldNo: oi + 1 });
+  const add = (t: string) => result.push({ type: "add", text: t, newNo: ni + 1 });
 
   while (oi < oldLines.length && ni < newLines.length) {
     const old = oldLines[oi]!;
     const nw = newLines[ni]!;
 
     if (old === nw) {
-      result.push({ type: "same", text: old });
+      same(old);
       oi++;
       ni++;
       continue;
@@ -21,32 +27,32 @@ export function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] 
 
     const oldEnd = findEnd(oldLines, newLines, oi, ni);
     if (oldEnd.oi === oi) {
-      result.push({ type: "add", text: nw });
+      add(nw);
       ni++;
       continue;
     }
     if (oldEnd.ni === ni) {
-      result.push({ type: "remove", text: old });
+      rem(old);
       oi++;
       continue;
     }
 
     while (oi < oldEnd.oi) {
-      result.push({ type: "remove", text: oldLines[oi]! });
+      rem(oldLines[oi]!);
       oi++;
     }
     while (ni < oldEnd.ni) {
-      result.push({ type: "add", text: newLines[ni]! });
+      add(newLines[ni]!);
       ni++;
     }
   }
 
   while (oi < oldLines.length) {
-    result.push({ type: "remove", text: oldLines[oi]! });
+    rem(oldLines[oi]!);
     oi++;
   }
   while (ni < newLines.length) {
-    result.push({ type: "add", text: newLines[ni]! });
+    add(newLines[ni]!);
     ni++;
   }
 
@@ -71,17 +77,11 @@ function findEnd(
 
 export function formatDiff(diff: DiffLine[]): string {
   const lines: string[] = [];
+  const no = (n?: number) => String(n ?? "").padStart(4, " ");
   for (const d of diff.slice(0, 80)) {
-    switch (d.type) {
-      case "add":
-        lines.push(`+ ${d.text}`);
-        break;
-      case "remove":
-        lines.push(`- ${d.text}`);
-        break;
-      default:
-        lines.push(`  ${d.text}`);
-    }
+    const num = d.type === "add" ? no(d.newNo) : no(d.oldNo);
+    const mark = d.type === "add" ? "+" : d.type === "remove" ? "-" : " ";
+    lines.push(`${num} ${mark} ${d.text}`);
   }
   if (diff.length > 80) lines.push(`… and ${diff.length - 80} more lines`);
   return lines.join("\n");
