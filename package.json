@@ -1,17 +1,30 @@
 {
   "name": "interference-agent",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The open-source coding agent that lives in your terminal.",
   "type": "module",
   "license": "MIT",
   "author": "ricciviero",
   "repository": "github:ricciviero/interference",
   "homepage": "https://github.com/ricciviero/interference#readme",
-  "keywords": ["ai", "coding-agent", "terminal", "cli", "bun", "typescript", "llm", "open-source"],
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "terminal",
+    "cli",
+    "bun",
+    "typescript",
+    "llm",
+    "open-source"
+  ],
   "bin": {
     "interference": "./src/cli.ts"
   },
-  "files": ["src", "README.md", "LICENSE"],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "bun": ">=1.3.0"
   },
