@@ -18,7 +18,6 @@ const I18N = {
     "hero.lede": "interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.",
     "hero.cta_start": "Get started",
     "hero.cta_source": "View source ↗",
-    "hero.foot": "MIT&nbsp;licensed · Plan&nbsp;/&nbsp;Build&nbsp;modes · Transparent&nbsp;API&nbsp;pricing",
 
     "term.title": "interference — ~/project",
 
@@ -94,7 +93,6 @@ const I18N = {
     "hero.lede": "interference legge il tuo codice, modifica file ed esegue comandi attraverso un agent loop — con permessi espliciti e una modalità Plan in sola lettura. Nessun vincolo all'editor. Solo il terminale.",
     "hero.cta_start": "Inizia",
     "hero.cta_source": "Sorgente ↗",
-    "hero.foot": "Licenza&nbsp;MIT · Modalità&nbsp;Plan&nbsp;/&nbsp;Build · Costi&nbsp;API&nbsp;trasparenti",
 
     "term.title": "interference — ~/progetto",
 
