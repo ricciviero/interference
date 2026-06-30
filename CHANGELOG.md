@@ -5,6 +5,19 @@ Tutte le modifiche rilevanti a interference. Formato basato su
 
 ## [Unreleased]
 
+## [0.2.3]
+
+### Corretto
+- **Persistenza sessioni**: la test suite girava contro `~/.interference` reale e `cleanupSessions`/`deleteSession` cancellavano le sessioni vere a ogni `bun test`. Ora i test sono isolati via `INTERFERENCE_HOME` su una directory temporanea.
+- `resume`: i messaggi ripresi mostravano JSON grezzo; ora testo e reasoning vengono estratti correttamente dal content strutturato.
+
+### Aggiunto
+- Sessioni con **titolo automatico** derivato dal primo messaggio; `/rename` aggiorna il titolo; la lista sessioni mostra solo il titolo.
+- Output dei comandi reso **sopra l'input** (stile opencode) invece che nel footer.
+
+### Modificato
+- Risoluzione di `~/.interference` **centralizzata** in `src/paths.ts` (`interferenceHome`/`interferenceDir`): store, skill, auth e update-check passano tutti dall'helper e onorano `INTERFERENCE_HOME`.
+
 ## [0.2.2]
 
 ### Corretto
