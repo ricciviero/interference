@@ -1,11 +1,11 @@
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import * as path from "node:path";
+import { interferenceDir } from "./paths.ts";
 
-export const SKILLS_DIR = path.join(
-  process.env.HOME ?? process.env.USERPROFILE ?? "/tmp",
-  ".interference",
-  "skills",
-);
+/** Directory delle skill (`~/.interference/skills`, reindirizzabile in test). */
+export function skillsDir(): string {
+  return interferenceDir("skills");
+}
 
 const BUNDLED_SKILLS: Record<string, string> = {
   "agents-setup": `---
@@ -90,10 +90,10 @@ export async function loadSkillRegistry(): Promise<SkillInfo[]> {
   if (registryCache) return registryCache;
   const list: SkillInfo[] = [];
   try {
-    const entries = await readdir(SKILLS_DIR, { withFileTypes: true });
+    const entries = await readdir(skillsDir(), { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const skillFile = path.join(SKILLS_DIR, entry.name, "SKILL.md");
+      const skillFile = path.join(skillsDir(), entry.name, "SKILL.md");
       try {
         const content = await readFile(skillFile, "utf-8");
         const info = parseSkillFrontmatter(content);
@@ -119,7 +119,7 @@ function parseSkillFrontmatter(content: string): SkillInfo | null {
 }
 
 export async function loadSkillBody(name: string): Promise<string | null> {
-  const skillFile = path.join(SKILLS_DIR, name, "SKILL.md");
+  const skillFile = path.join(skillsDir(), name, "SKILL.md");
   try {
     return await readFile(skillFile, "utf-8");
   } catch {
@@ -165,7 +165,7 @@ const STOPWORDS = new Set([
 
 export async function bootstrapSkills(): Promise<void> {
   for (const [name, content] of Object.entries(BUNDLED_SKILLS)) {
-    const dir = path.join(SKILLS_DIR, name);
+    const dir = path.join(skillsDir(), name);
     try { await mkdir(dir, { recursive: true }); } catch {}
     const fp = path.join(dir, "SKILL.md");
     try {

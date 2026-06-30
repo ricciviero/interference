@@ -26,7 +26,14 @@ import type { ModelMessage } from "ai";
 
 const TMP = path.join(process.cwd(), ".test-tmp-session");
 
+// ISOLAMENTO STORE: reindirizza ~/.interference verso TMP così i test su
+// saveSession/cleanupSessions/deleteSession NON tocchino mai le sessioni reali
+// dell'utente. Senza questo override, `cleanupSessions(2)` cancellerebbe le
+// chat vere salvate in ~/.interference/<hash>/sessions.
+const PREV_HOME = process.env.INTERFERENCE_HOME;
+
 beforeAll(async () => {
+  process.env.INTERFERENCE_HOME = TMP;
   await rm(TMP, { recursive: true, force: true });
   await mkdir(TMP, { recursive: true });
   await writeFile(path.join(TMP, "a.txt"), "original a\n");
@@ -35,6 +42,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await rm(TMP, { recursive: true, force: true });
+  if (PREV_HOME === undefined) delete process.env.INTERFERENCE_HOME;
+  else process.env.INTERFERENCE_HOME = PREV_HOME;
 });
 
 describe("session store", () => {

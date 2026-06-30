@@ -3,9 +3,11 @@ import * as path from "node:path";
 import { createHash } from "node:crypto";
 import type { ModelMessage } from "ai";
 import type { Todo } from "../tools/todowrite.ts";
+import { interferenceDir } from "../paths.ts";
 
 export interface SessionMeta {
   id: string;
+  title?: string; // nome leggibile (auto dal primo messaggio o via /rename)
   workspace: string;
   startedAt: string;
   updatedAt: string;
@@ -26,11 +28,8 @@ function projectDir(): string {
     .update(process.cwd())
     .digest("hex")
     .slice(0, 12);
-  return path.join(
-    process.env.HOME ?? process.env.USERPROFILE ?? "/tmp",
-    ".interference",
-    hash,
-  );
+  // Home reindirizzabile via INTERFERENCE_HOME (isolamento test) — vedi paths.ts.
+  return interferenceDir(hash);
 }
 
 function sessionsDir(): string {

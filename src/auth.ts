@@ -1,21 +1,19 @@
 import { readFile, writeFile, mkdir, chmod } from "node:fs/promises";
 import * as path from "node:path";
-
-const AUTH_DIR = path.join(
-  process.env.HOME ?? process.env.USERPROFILE ?? "/tmp",
-  ".interference",
-);
+import { interferenceDir } from "./paths.ts";
 
 interface ProviderAuth {
   label: string;
   envKey: string;
 }
 
-const AUTH_FILE = path.join(AUTH_DIR, "auth.json");
+// Risolti a runtime (non all'import) così INTERFERENCE_HOME isola i test.
+const authDir = (): string => interferenceDir();
+const authFile = (): string => path.join(authDir(), "auth.json");
 
 export async function loadAuth(): Promise<Record<string, string>> {
   try {
-    const raw = await readFile(AUTH_FILE, "utf-8");
+    const raw = await readFile(authFile(), "utf-8");
     return JSON.parse(raw) as Record<string, string>;
   } catch {
     return {};
@@ -23,9 +21,9 @@ export async function loadAuth(): Promise<Record<string, string>> {
 }
 
 export async function saveAuth(auth: Record<string, string>): Promise<void> {
-  await mkdir(AUTH_DIR, { recursive: true });
-  await writeFile(AUTH_FILE, JSON.stringify(auth, null, 2));
-  try { await chmod(AUTH_FILE, 0o600); } catch {}
+  await mkdir(authDir(), { recursive: true });
+  await writeFile(authFile(), JSON.stringify(auth, null, 2));
+  try { await chmod(authFile(), 0o600); } catch {}
 }
 
 export function applyAuthToEnv(auth: Record<string, string>, providers: Record<string, ProviderAuth>): void {

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import * as path from "node:path";
+import { interferenceDir } from "./paths.ts";
 
 // Versione corrente letta dal package.json del pacchetto (sync, funziona anche
 // installato globalmente: version.ts sta in <pkg>/src, package.json in <pkg>/).
@@ -20,8 +21,8 @@ const TTL = 24 * 60 * 60 * 1000; // 24h
 const REGISTRY = `https://registry.npmjs.org/${PKG}/latest`;
 
 function cachePath(): string {
-  const home = process.env.HOME ?? process.env.USERPROFILE ?? "/tmp";
-  return path.join(home, ".interference", "update-check.json");
+  // Reindirizzabile via INTERFERENCE_HOME (isolamento test) — vedi paths.ts.
+  return interferenceDir("update-check.json");
 }
 
 // Confronto semver "x.y.z" (con eventuale prefisso v). true se `latest` > `current`.
