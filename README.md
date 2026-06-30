@@ -51,13 +51,13 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 ## Quickstart
 
 ```bash
-bun install
-# Set API key in .env (Bun auto-loads it)
-echo 'DEEPSEEK_API_KEY=sk-...' > .env
-bun run interference
+bun install -g interference-agent
+interference
 ```
 
-> Requires **Bun 1.3+** (Node ≥22 / React ≥19.2 for the Ink TUI).
+On first run, use `/provider` to add your API keys. They're saved in `~/.interference/auth.json`.
+
+> Requires **Bun 1.3+**.
 
 ## Screenshot
 

@@ -69,8 +69,8 @@ const I18N = {
 
     "start.eyebrow": "/ 04 — quickstart",
     "start.title": "In your terminal in a minute.",
-    "start.note": "Requires <strong>Bun&nbsp;1.3+</strong> · set your provider API key in <code>.env</code>.",
-    "start.cta": "Read the docs ↗",
+    "start.note": "Then run <code>interference</code>. Add keys with <code>/provider</code> on first launch.",
+    "start.cta": "GitHub ↗",
 
     "footer.builtin": "Built in Italy \uD83C\uDDEE\uD83C\uDDF9",
 
@@ -144,8 +144,8 @@ const I18N = {
 
     "start.eyebrow": "/ 04 — inizia",
     "start.title": "Nel tuo terminale in un minuto.",
-    "start.note": "Richiede <strong>Bun&nbsp;1.3+</strong> · imposta la API key del tuo provider in <code>.env</code>.",
-    "start.cta": "Leggi la documentazione ↗",
+    "start.note": "Poi esegui <code>interference</code>. Aggiungi le chiavi con <code>/provider</code> al primo avvio.",
+    "start.cta": "GitHub ↗",
 
     "footer.builtin": "Fatto in Italia \uD83C\uDDEE\uD83C\uDDF9",
 

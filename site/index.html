@@ -212,16 +212,17 @@
       <span class="eyebrow" data-i18n="start.eyebrow">/ 04 — quickstart</span>
       <h2 data-i18n="start.title">In your terminal in a minute.</h2>
     </div>
-    <div class="install reveal-up">
-      <div class="install-row">
-        <code id="installcmd">bun install &amp;&amp; bun run interference</code>
-        <button class="copy" id="copybtn" type="button" aria-label="Copy command" data-i18n="ui.copy">copy</button>
+      <div class="install reveal-up">
+        <div class="install-row">
+          <code id="installcmd">bun install -g interference-agent</code>
+          <button class="copy" id="copybtn" type="button" aria-label="Copy command" data-i18n="ui.copy">copy</button>
+        </div>
+        <p class="install-note">Then run <code>interference</code>. Add keys with <code>/provider</code> on first launch.</p>
       </div>
-      <p class="install-note" data-i18n-html="start.note">Requires <strong>Bun&nbsp;1.3+</strong> · set your provider API key in <code>.env</code>.</p>
-    </div>
-    <div class="hero-actions hero-actions--center reveal-up" style="--d:1">
-      <a class="btn btn-paper" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener" data-i18n="start.cta">Read the docs ↗</a>
-    </div>
+      <div class="hero-actions hero-actions--center reveal-up" style="--d:1">
+        <a class="btn btn-paper" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">GitHub ↗</a>
+        <a class="btn btn-paper" href="https://www.npmjs.com/package/interference-agent" target="_blank" rel="noopener">npm ↗</a>
+      </div>
   </section>
 
 </main>
