@@ -1,5 +1,5 @@
 {
-  "name": "interference",
+  "name": "interference-agent",
   "version": "0.1.0",
   "description": "The open-source coding agent that lives in your terminal.",
   "type": "module",
