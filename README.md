@@ -59,6 +59,18 @@ bun run interference
 
 > Requires **Bun 1.3+** (Node ≥22 / React ≥19.2 for the Ink TUI).
 
+## Demo
+
+Record a terminal session with [asciinema](https://asciinema.org):
+
+```bash
+asciinema rec demo.cast
+# ... use interference normally, then Ctrl+D
+asciinema-agg demo.cast assets/demo.gif
+```
+
+*(GIF coming soon)*
+
 ## Landing page
 
 A static landing page lives in [`site/`](site/).
