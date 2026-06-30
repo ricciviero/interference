@@ -337,4 +337,13 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.textContent = copiedText; btn.classList.add("done");
     setTimeout(function () { btn.textContent = prev; btn.classList.remove("done"); }, 1600);
   });
+
+  // GitHub star count
+  fetch("https://api.github.com/repos/ricciviero/interference")
+    .then(r => r.json())
+    .then(d => {
+      var s = document.getElementById("ghstars");
+      if (s && d.stargazers_count) s.textContent = d.stargazers_count;
+    })
+    .catch(function(){});
 })();
