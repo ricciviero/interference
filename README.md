@@ -61,15 +61,7 @@ bun run interference
 
 ## Demo
 
-Record a terminal session with [asciinema](https://asciinema.org):
-
-```bash
-asciinema rec demo.cast
-# ... use interference normally, then Ctrl+D
-asciinema-agg demo.cast assets/demo.gif
-```
-
-*(GIF coming soon)*
+![interference CLI demo](assets/demo.gif)
 
 ## Landing page
 
