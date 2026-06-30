@@ -39,9 +39,15 @@ export const bash = tool({
       cwd: process.cwd(),
       stdout: "pipe",
       stderr: "pipe",
-      timeout: ms,
-      killSignal: "SIGTERM",
     });
+
+    // Timeout esplicito: l'opzione `timeout` di Bun.spawn non è affidabile su
+    // tutte le versioni/piattaforme (es. runner CI) → uccidiamo noi il processo.
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      proc.kill(9); // SIGKILL
+    }, ms);
 
     const [stdout, stderr] = await Promise.all([
       readStream(proc.stdout, OUTPUT_CAP),
@@ -49,12 +55,17 @@ export const bash = tool({
     ]);
 
     const exitCode = await proc.exited;
+    clearTimeout(timer);
 
     let output = "";
     if (stdout.length > 0) output += stdout;
     if (stderr.length > 0) {
       if (output.length > 0) output += "\n";
       output += "[stderr]\n" + stderr;
+    }
+
+    if (timedOut) {
+      return `Command timed out after ${ms}ms and was killed (exit code: ${exitCode ?? "killed"}).${output ? "\n" + output : ""}`;
     }
 
     const truncated =
