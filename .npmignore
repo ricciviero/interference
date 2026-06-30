@@ -1,0 +1,11 @@
+.env
+.env.*
+.claude/
+docs/
+iterazioni/
+fix/
+logo/
+opencode-dev/
+scripts/
+site/
+assets/demo.cast
