@@ -190,6 +190,7 @@ a { color: inherit; text-decoration: none; }
   min-height: 280px; white-space: pre-wrap; word-break: break-word;
 }
 .term-body .u { color: #fafaf7; font-weight: 600; }   /* user prompt */
+.term-shot { display: block; width: 100%; border-radius: 0 0 6px 6px; }
 .term-body .c { color: #8fb8a8; }                       /* command / tool */
 .term-body .m { color: rgba(250,250,247,0.62); }        /* muted/meta */
 .term-body .ok { color: #b5d3a8; }
