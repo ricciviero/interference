@@ -16,9 +16,11 @@ export function computeWindow(total: number, selected: number, size: number): Wi
 
 const FALLBACK_ROWS = 24;
 
-// How many rows a picker can show before it overflows the terminal, after
-// subtracting border/padding/title/footer chrome. `overhead` lets each
-// picker account for its own extra chrome (e.g. scroll indicators).
+// Visible content rows = terminal height minus picker chrome.
+// No upper cap: the picker's natural height is bounded by `rows - overhead`
+// and overflows only if the terminal is too small for the chrome alone
+// (below ~12 rows). On a 24+ row terminal, chrome=10 leaves 14+ rows for
+// content — sufficient for scrolling through 10 providers.
 export function useMaxVisibleRows(overhead: number): number {
   const { stdout } = useStdout();
   const rows = stdout?.rows ?? FALLBACK_ROWS;
