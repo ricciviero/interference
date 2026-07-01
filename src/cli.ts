@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 import { stdin, stdout } from "node:process";
 import { currentModel, currentProvider } from "./config.ts";
-import { MissingApiKeyError } from "./provider.ts";
 import { createSession, latestSession, loadSession, saveSession, initStore } from "./session/store.ts";
 import { initSnapshot } from "./session/snapshot.ts";
 import { initInstructions } from "./agent/prompt.ts";
@@ -38,11 +37,6 @@ async function main(): Promise<void> {
   applyAuthToEnv(auth, Object.fromEntries(
     Object.entries(PROVIDERS).map(([pid, def]) => [pid, { label: def.label, envKey: def.envKey }])
   ));
-
-  if (!process.env[provider.envKey]) {
-    stdout.write(`\n${new MissingApiKeyError(provider).message}\n`);
-    process.exit(1);
-  }
 
   const config = await loadConfig();
   if (config) applyConfig(config);

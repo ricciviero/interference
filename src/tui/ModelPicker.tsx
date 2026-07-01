@@ -93,7 +93,7 @@ export const ModelPicker: FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const below = rows.length - end;
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1} marginTop={1}>
       <Box marginBottom={1}>
         <Text bold>Select model</Text>
       </Box>
