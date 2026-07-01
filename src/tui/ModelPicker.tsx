@@ -4,8 +4,8 @@ import { currentModel, currentProviderId, setModel, setProvider, PROVIDERS, type
 import { SelectRow } from "./SelectRow.tsx";
 import { computeWindow, useMaxVisibleRows } from "./viewport.ts";
 
-// Chrome around the list: border(2) + padding(2) + title+margin(2) + help+margin(2)
-// + up-to-2 scroll indicators + root Box padding(2) in App.tsx.
+// Chrome inside the picker: border(2) + padding(2) + title+margin(2) + help+margin(2)
+// + up-to-2 scroll indicators = 10. Plus root Box padding(2) in App.tsx = 12 total.
 const PICKER_OVERHEAD = 12;
 
 type Row =
@@ -93,7 +93,7 @@ export const ModelPicker: FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const below = rows.length - end;
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1} marginTop={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
       <Box marginBottom={1}>
         <Text bold>Select model</Text>
       </Box>
