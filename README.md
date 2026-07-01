@@ -23,7 +23,7 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Safe bash** — timeout, output truncation, exit code, dangerous-command deny list
 - **Session persistence** — messages saved per-project, resume with `--continue`; `/sessions` picker
 - **Undo / redo** — file snapshots before every mutation; `/undo` `/redo`
-- **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename` `/provider` `/thinking`
+- **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename` `/provider` `/thinking` `/review`
 - **`/init`** — analyzes your project and generates `AGENTS.md`
 - **`/provider`** — manage API keys interactively (stored in `~/.interference/auth.json`)
 - **Skill invocation** — explicit `/skill-name` + automatic keyword matching on description
@@ -57,7 +57,7 @@ interference
 
 On first run, use `/provider` to add your API keys. They're saved in `~/.interference/auth.json`.
 
-interference stores its state in `~/.interference/` — sessions, skills, snapshots, and auth — just like Claude Code uses `~/.claude/`.
+interference stores its state in `~/.interference/` — sessions, skills, snapshots, and auth.
 
 > Requires **Bun 1.3+**.
 
