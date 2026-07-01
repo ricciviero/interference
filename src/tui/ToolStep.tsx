@@ -8,9 +8,18 @@ const fill = (w: number, used: number) => " ".repeat(Math.max(0, w - used));
 
 // Diff row: line number + marker + text, on muted green/red background (it. 20).
 function DiffLineRow({ d, w }: { d: DiffLine; w: number }) {
-  const bg = d.type === "add" ? DIFF_ADD_BG : d.type === "remove" ? DIFF_REM_BG : BG_PANEL;
-  const fg = d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined;
-  const num = String((d.type === "add" ? d.newNo : d.oldNo) ?? "").padStart(4, " ");
+  const bg =
+    d.type === "add"
+      ? DIFF_ADD_BG
+      : d.type === "remove"
+        ? DIFF_REM_BG
+        : BG_PANEL;
+  const fg =
+    d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined;
+  const num = String((d.type === "add" ? d.newNo : d.oldNo) ?? "").padStart(
+    4,
+    " ",
+  );
   const mark = d.type === "add" ? "+ " : d.type === "remove" ? "- " : "  ";
   const text = d.text.slice(0, Math.max(0, w - 9));
   const used = 2 + 4 + 1 + 2 + text.length; // bar + number + space + marker + text
@@ -75,7 +84,9 @@ const pendingText = (name: string) => PENDING[name] ?? "Working…";
 const BLOCK = new Set(["bash", "write", "edit"]);
 
 function rec(input: unknown): Record<string, unknown> {
-  return input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  return input && typeof input === "object"
+    ? (input as Record<string, unknown>)
+    : {};
 }
 
 // Synthetic description (path/command/pattern) instead of raw JSON.
@@ -101,7 +112,9 @@ function describe(toolName: string, input: unknown): string {
     case "todowrite":
       return "todos";
     case "question":
-      return Array.isArray(i.questions) ? `${i.questions.length} question(s)` : "question";
+      return Array.isArray(i.questions)
+        ? `${i.questions.length} question(s)`
+        : "question";
     case "task":
       return s(i.description) || s(i.prompt).slice(0, 60);
     default: {
@@ -152,7 +165,10 @@ function InlineTool({
             <SpinnerInline />
           </>
         ) : (
-          <Text color={tool.isError ? "red" : undefined} dimColor={!tool.isError}>
+          <Text
+            color={tool.isError ? "red" : undefined}
+            dimColor={!tool.isError}
+          >
             {tool.toolName} {desc}
           </Text>
         )}
@@ -214,9 +230,13 @@ function BlockTool({
     !diff && !pending && tool.output ? clip(tool.output).split("\n") : [];
 
   return (
-    <Box flexDirection="column" marginTop={1} marginBottom={1}>
+    <Box flexDirection="column" marginTop={10} marginBottom={1}>
       <PanelLine w={w} barColor={barColor} used={2 + titleClip.length}>
-        <Text color={tool.isError ? "red" : "white"} bold backgroundColor={BG_PANEL}>
+        <Text
+          color={tool.isError ? "red" : "white"}
+          bold
+          backgroundColor={BG_PANEL}
+        >
           {icon}{" "}
         </Text>
         <Text bold backgroundColor={BG_PANEL}>
@@ -225,14 +245,19 @@ function BlockTool({
       </PanelLine>
 
       {pending && (
-        <PanelLine w={w} barColor={barColor} used={2 + pendingText(tool.toolName).length}>
+        <PanelLine
+          w={w}
+          barColor={barColor}
+          used={2 + pendingText(tool.toolName).length}
+        >
           <Text dimColor backgroundColor={BG_PANEL}>
             ~ {pendingText(tool.toolName)}
           </Text>
         </PanelLine>
       )}
 
-      {diff && diff.slice(0, 15).map((d, i) => <DiffLineRow key={i} d={d} w={w} />)}
+      {diff &&
+        diff.slice(0, 15).map((d, i) => <DiffLineRow key={i} d={d} w={w} />)}
       {diff && diff.length > 15 && (
         <PanelLine w={w} barColor={barColor} used={2 + 14}>
           <Text dimColor backgroundColor={BG_PANEL}>
@@ -245,7 +270,11 @@ function BlockTool({
         const t = ln.slice(0, w - 2);
         return (
           <PanelLine key={i} w={w} barColor={barColor} used={t.length}>
-            <Text dimColor color={tool.isError ? "red" : undefined} backgroundColor={BG_PANEL}>
+            <Text
+              dimColor
+              color={tool.isError ? "red" : undefined}
+              backgroundColor={BG_PANEL}
+            >
               {t}
             </Text>
           </PanelLine>

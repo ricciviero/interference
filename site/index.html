@@ -58,7 +58,7 @@
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-copy">
-        <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The coding agent<br />that lives in your<br /><span class="ital">terminal.</span></h1>
+        <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The Italian<br />Open Source<br /><span class="ital">Coding Agent.</span></h1>
         <p class="lede reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.</p>
         <div class="hero-actions reveal" style="--d:3">
           <a class="btn btn-ink" href="#start" data-i18n="hero.cta_start">Get started</a>
@@ -111,6 +111,36 @@
         <p data-i18n="how.step4_desc">Sessions are persisted and snapshotted. Roll back a change the agent made, instantly.</p>
       </li>
     </ol>
+  </section>
+
+  <!-- ── SKILLS ──────────────────────────────────────── -->
+  <section id="skills" class="section">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="skills.eyebrow">/ 02 — skills</span>
+      <h2 data-i18n="skills.title">Teach it once. It remembers every time.</h2>
+    </div>
+    <div class="modes">
+      <div class="mode-card reveal-up">
+        <span class="eyebrow" data-i18n="skills.without_eyebrow">without skills</span>
+        <h3 data-i18n="skills.without_title">Generic agent</h3>
+        <p data-i18n="skills.without_desc">Every session starts from zero. You re-explain your commit style, your test setup, your release process — every time, in every conversation.</p>
+        <ul class="ticks">
+          <li data-i18n="skills.without_tick1">Re-explained every session</li>
+          <li data-i18n="skills.without_tick2">Generic, one-size-fits-all output</li>
+          <li data-i18n="skills.without_tick3">Inconsistent results</li>
+        </ul>
+      </div>
+      <div class="mode-card mode-card--ink reveal-up" style="--d:1">
+        <span class="eyebrow" data-i18n="skills.with_eyebrow">with skills</span>
+        <h3 data-i18n="skills.with_title">Scoped skills</h3>
+        <p data-i18n="skills.with_desc">Skills aren't one block of text bolted onto every prompt. interference injects each one exactly where it belongs — into the main conversation, or into a dedicated subagent with its own system prompt built around that one task.</p>
+        <ul class="ticks">
+          <li data-i18n-html="skills.with_tick1">Auto-detected, or called directly: <code>/commit</code></li>
+          <li data-i18n="skills.with_tick2">Injected into the exact prompt that needs it</li>
+          <li data-i18n="skills.with_tick3">Subagents get their own tailored prompt too</li>
+        </ul>
+      </div>
+    </div>
   </section>
 
   <!-- ── MODES ───────────────────────────────────────── -->
@@ -176,18 +206,18 @@
       </article>
       <article class="feat reveal-up" style="--d:6">
         <span class="feat-i">✦</span>
-        <h3>Extensible skill system</h3>
-        <p>Agent Skills format with auto-detection by keyword matching. Invoke via /skill-name. 3 skills bundled, your own are just a SKILL.md away.</p>
+        <h3 data-i18n="feat.7_title">Extensible skill system</h3>
+        <p data-i18n="feat.7_desc">Agent Skills format with auto-detection by keyword matching. Invoke via /skill-name. 3 skills bundled, your own are just a SKILL.md away.</p>
       </article>
       <article class="feat reveal-up" style="--d:7">
         <span class="feat-i">⎔</span>
-        <h3>Subagents</h3>
-        <p>Delegate complex multi-step tasks to isolated agents. Explore (read-only) and General (full) types, with permission inheritance.</p>
+        <h3 data-i18n="feat.8_title">Subagents</h3>
+        <p data-i18n="feat.8_desc">Delegate complex multi-step tasks to isolated agents — Explore (read-only), General (full access), Review (bug/security/simplicity findings), or your own custom agents. Launch several in the same turn to run them in parallel.</p>
       </article>
       <article class="feat reveal-up" style="--d:8">
         <span class="feat-i">⌨</span>
-        <h3>Slash commands + autocomplete</h3>
-        <p>/help · /clear · /undo · /redo · /init · /model · /plan · /build · /compact · /sessions · /rename · /provider · /thinking. Fuzzy autocomplete on /.</p>
+        <h3 data-i18n="feat.9_title">Slash commands + autocomplete</h3>
+        <p data-i18n="feat.9_desc">/help · /clear · /undo · /redo · /init · /model · /plan · /build · /compact · /sessions · /rename · /provider · /thinking. Fuzzy autocomplete on /.</p>
       </article>
     </div>
   </section>
@@ -208,6 +238,11 @@
         <span class="why-n">02</span>
         <h3 data-i18n="why.2_title">Radically transparent</h3>
         <p data-i18n="why.2_desc">Every tool call, every reasoning step, and exactly what you&rsquo;re spending on API costs — live, in your terminal. No hidden usage. No surprise bills.</p>
+      </div>
+      <div class="why-card reveal-up" style="--d:2">
+        <span class="why-n">03</span>
+        <h3 data-i18n="why.3_title">Privacy by architecture</h3>
+        <p data-i18n="why.3_desc">There&rsquo;s no interference server. Chats and sessions stay local in ~/.interference/, never uploaded. We don&rsquo;t save your conversations, don&rsquo;t collect your data, and don&rsquo;t train on anything — what you send your LLM provider is between you and them.</p>
       </div>
     </div>
   </section>

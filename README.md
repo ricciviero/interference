@@ -18,7 +18,7 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Plan & Build** modes — explore read-only, switch to full access when ready
 - **Permissioned by design** — allow / ask / deny enforced in code, not in the prompt; dangerous commands auto-blocked (`rm -rf`, `sudo`, `curl | sh`)
 - **Extensible skills** — Agent Skills format (SKILL.md); auto-detected by keyword matching, or invoked via `/skill-name`; 3 skills bundled, user-extensible
-- **Subagents** — delegate complex tasks to isolated agents (`explore` for read-only, `general` for full access)
+- **Subagents** — delegate complex tasks to isolated agents (`explore` read-only, `general` full access, `review` for bug/security/simplicity findings); custom agents definable in `interference.json`; invoke several in the same turn to run them in parallel
 - **Atomic edit** — unique-match string replacement with `replaceAll` support
 - **Safe bash** — timeout, output truncation, exit code, dangerous-command deny list
 - **Session persistence** — messages saved per-project, resume with `--continue`; `/sessions` picker
@@ -31,7 +31,7 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Config file** — per-project `interference.json` (model, permissions, mode, instructions)
 - **Diff view** — color-coded (+/-, green/red) in TUI for every edit/write
 - **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, status footer (model / mode / context% / cost / git branch), pickers (model, provider, thinking), slash autocomplete, session list, toast, welcome screen
-- **Multi-provider** — DeepSeek, OpenAI (GPT-5.5), Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi) + any OpenAI-compatible endpoint
+- **Multi-provider** — DeepSeek, OpenAI, Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi), Google (Gemini), Groq, xAI (Grok), Mistral, OpenRouter + any OpenAI-compatible endpoint; model picker grouped by provider; pricing/context from a live model catalog
 - **Reasoning/thinking** — distinct `┄ thinking` blocks for every provider, enabled at max
 - **Cost tracking** — real-time cost estimation per model
 - **AGENTS.md & CLAUDE.md** — auto-loaded from project tree into system prompt

@@ -2,13 +2,16 @@ import { useState, useEffect, useCallback, type FC } from "react";
 import { Box, Text, useInput } from "ink";
 import { listSessions, loadSession, type SessionMeta } from "../session/store.ts";
 import { SelectRow } from "./SelectRow.tsx";
+import { computeWindow, useMaxVisibleRows } from "./viewport.ts";
 
 interface Props {
   onSelect: (sessionId: string) => void;
   onCancel: () => void;
 }
 
-const PAGE_SIZE = 15;
+// Chrome around the list: border(2) + padding(2) + title+margin(2) + help+margin(2)
+// + up-to-2 scroll indicators.
+const PAGE_OVERHEAD = 10;
 
 export const SessionList: FC<Props> = ({ onSelect, onCancel }) => {
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
@@ -51,18 +54,33 @@ export const SessionList: FC<Props> = ({ onSelect, onCancel }) => {
     );
   }
 
+  const maxVisible = useMaxVisibleRows(PAGE_OVERHEAD);
+  const { start, end } = computeWindow(sessions.length, idx, maxVisible);
+  const above = start;
+  const below = sessions.length - end;
+
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
       <Box marginBottom={1}>
         <Text bold>Sessions ({sessions.length})</Text>
       </Box>
-      {sessions.slice(0, PAGE_SIZE).map((s, i) => (
+      {above > 0 && (
+        <Box>
+          <Text dimColor>↑ {above} more above</Text>
+        </Box>
+      )}
+      {sessions.slice(start, end).map((s, i) => (
         <SelectRow
           key={s.id}
           label={s.title || `(untitled ${s.id.slice(0, 8)})`}
-          selected={i === idx}
+          selected={start + i === idx}
         />
       ))}
+      {below > 0 && (
+        <Box>
+          <Text dimColor>↓ {below} more below</Text>
+        </Box>
+      )}
       <Box marginTop={1}>
         <Text dimColor>↑↓ j/k navigate · Enter select · Esc/q cancel</Text>
       </Box>
