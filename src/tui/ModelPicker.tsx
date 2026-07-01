@@ -2,6 +2,11 @@ import { useState, type FC } from "react";
 import { Box, Text, useInput } from "ink";
 import { currentModel, currentProviderId, setModel, setProvider, PROVIDERS, type ProviderId } from "../config.ts";
 import { SelectRow } from "./SelectRow.tsx";
+import { computeWindow, useMaxVisibleRows } from "./viewport.ts";
+
+// Chrome around the list: border(2) + padding(2) + title+margin(2) + help+margin(2)
+// + up-to-2 scroll indicators + root Box padding(2) in App.tsx.
+const PICKER_OVERHEAD = 12;
 
 type Row =
   | { type: "header"; label: string }
@@ -76,21 +81,43 @@ export const ModelPicker: FC<{ onCancel: () => void }> = ({ onCancel }) => {
     );
   }
 
+  const maxVisible = useMaxVisibleRows(PICKER_OVERHEAD);
+  let { start, end } = computeWindow(rows.length, selectedRow ?? 0, maxVisible);
+  // Don't strand a model row without its group header above it.
+  if (start > 0 && rows[start]?.type === "model") {
+    let h = start - 1;
+    while (h > 0 && rows[h]?.type !== "header") h--;
+    start = h;
+  }
+  const above = start;
+  const below = rows.length - end;
+
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
       <Box marginBottom={1}>
         <Text bold>Select model</Text>
       </Box>
-      {rows.map((row, i) =>
-        row.type === "header" ? (
-          <Box key={`h-${row.label}`} marginTop={i === 0 ? 0 : 1}>
+      {above > 0 && (
+        <Box>
+          <Text dimColor>↑ {above} more above</Text>
+        </Box>
+      )}
+      {rows.slice(start, end).map((row, i) => {
+        const ri = start + i;
+        return row.type === "header" ? (
+          <Box key={`h-${row.label}`} marginTop={ri === 0 ? 0 : 1}>
             <Text dimColor bold>
               {row.label}
             </Text>
           </Box>
         ) : (
-          <SelectRow key={row.id} label={row.label} selected={i === selectedRow} current={row.id === current} />
-        ),
+          <SelectRow key={row.id} label={row.label} selected={ri === selectedRow} current={row.id === current} />
+        );
+      })}
+      {below > 0 && (
+        <Box>
+          <Text dimColor>↓ {below} more below</Text>
+        </Box>
       )}
       <Box marginTop={1}>
         <Text dimColor>↑↓ j/k navigate · Enter select · Esc cancel</Text>
