@@ -31,11 +31,6 @@ async function main(): Promise<void> {
 
   const provider = currentProvider();
 
-  if (!process.env[provider.envKey]) {
-    stdout.write(`\n${new MissingApiKeyError(provider).message}\n`);
-    process.exit(1);
-  }
-
   await initStore();
   await bootstrapSkills();
 
@@ -43,6 +38,11 @@ async function main(): Promise<void> {
   applyAuthToEnv(auth, Object.fromEntries(
     Object.entries(PROVIDERS).map(([pid, def]) => [pid, { label: def.label, envKey: def.envKey }])
   ));
+
+  if (!process.env[provider.envKey]) {
+    stdout.write(`\n${new MissingApiKeyError(provider).message}\n`);
+    process.exit(1);
+  }
 
   const config = await loadConfig();
   if (config) applyConfig(config);
