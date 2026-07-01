@@ -497,7 +497,7 @@ ${args ? `Additional context: ${args}` : ""}`;
   );
 
   return (
-    <Box flexDirection="column" padding={1} key={showModel || showSessions || showThinking || showProvider ? "overlay" : "chat"}>
+    <Box flexDirection="column" padding={1}>
       {showSessions && (
         <SessionList
           onSelect={async (id) => {
