@@ -5,6 +5,7 @@ import TextInput from "ink-text-input";
 import type { ModelMessage } from "ai";
 import { runTurn } from "../agent/loop.ts";
 import type { Chunk } from "../agent/loop.ts";
+import { runReview, getWorkingDiff } from "../agent/review.ts";
 import { MissingApiKeyError } from "../provider.ts";
 import { setConfirmHandler } from "../permissions.ts";
 import type { ConfirmHandler } from "../permissions.ts";
@@ -51,8 +52,10 @@ type HistoryItem = {
   model?: string;
 };
 
-type ToolEntry = {
-  id: number;
+export type ToolEntry = {
+  // Real toolCallId from the SDK (not an internal counter): correlates call/result
+  // even when multiple tools run in parallel and results arrive out of order.
+  id: string;
   toolName: string;
   input: unknown;
   output?: string;
@@ -80,8 +83,8 @@ export default function App({ session }: { session: Session }) {
   const [gitBranch, setGitBranch] = useState("");
   const [todos, setTodosState] = useState<Todo[]>(session.todos ?? []);
   const [questions, setQuestions] = useState<QuestionSpec[] | null>(null);
-  const [phIdx, setPhIdx] = useState(0); // indice esempio placeholder (it. 25)
-  const [update, setUpdate] = useState<string | null>(null); // versione più recente (it. 28)
+  const [phIdx, setPhIdx] = useState(0); // placeholder example index (it. 25)
+  const [update, setUpdate] = useState<string | null>(null); // newer version (it. 28)
   const { toasts, addToast } = useToast();
   const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
   const answerResolveRef = useRef<((a: Answers) => void) | null>(null);
@@ -91,12 +94,12 @@ export default function App({ session }: { session: Session }) {
 
   useEffect(() => { sessionRef.current = session; }, [session]);
 
-  // Controllo aggiornamenti (it. 28): non bloccante, throttled, silenzioso offline.
+  // Update check (it. 28): non-blocking, throttled, silent offline.
   useEffect(() => {
     checkForUpdate().then(setUpdate).catch(() => {});
   }, []);
 
-  // Todos: ripristina dalla sessione e ri-renderizza ad ogni update del tool.
+  // Todos: restore from session and re-render on each tool update.
   useEffect(() => {
     setTodos(session.todos ?? []);
     setTodosState(session.todos ?? []);
@@ -116,7 +119,7 @@ export default function App({ session }: { session: Session }) {
     return () => setConfirmHandler(null);
   }, []);
 
-  // Question tool (RF-15): handler event-driven, stesso pattern della conferma.
+  // Question tool (RF-15): event-driven handler, same pattern as confirmation.
   useEffect(() => {
     setAnswerHandler(async (qs) => {
       setQuestions(qs);
@@ -146,8 +149,8 @@ export default function App({ session }: { session: Session }) {
     }
   });
 
-  // Navigazione autocomplete: frecce ↑↓ muovono la selezione quando il draft è "/…".
-  // L'Invio (TextInput.onSubmit) esegue il comando evidenziato → niente conflitto.
+  // Autocomplete navigation: arrow keys ↑↓ move selection when draft is "/…".
+  // Enter (TextInput.onSubmit) runs the highlighted command → no conflict.
   const acLastKey = useRef(0);
   const cmdHistory = useRef<string[]>([]);
   const cmdHistoryIdx = useRef(-1);
@@ -155,7 +158,7 @@ export default function App({ session }: { session: Session }) {
   useInput((_input, key) => {
     if (confirmPreview || questions || showThinking || showSessions || showModel || showProvider) return;
 
-    // Command history: freccia su/giù senza slash attivo
+    // Command history: up/down arrow without active slash
     if (!draft.startsWith("/")) {
       if (key.upArrow && cmdHistory.current.length > 0) {
         cmdHistoryIdx.current = Math.min(
@@ -179,7 +182,7 @@ export default function App({ session }: { session: Session }) {
       }
     }
 
-    // Autocomplete: frecce quando draft è "/…"
+    // Autocomplete: arrows when draft is "/…"
     if (!draft.startsWith("/")) return;
     const ms = matchCommands(draft.slice(1));
     if (ms.length === 0) return;
@@ -192,7 +195,7 @@ export default function App({ session }: { session: Session }) {
 
   const nextId = (): number => Date.now() + Math.random();
 
-  // Titolo leggibile dal primo messaggio (collassa spazi, cap ~40 char).
+  // Readable title from the first message (collapse spaces, cap ~40 char).
   const deriveTitle = (text: string): string => {
     const t = text.replace(/\s+/g, " ").trim();
     return t.length > 40 ? t.slice(0, 40).trimEnd() + "…" : t;
@@ -232,7 +235,7 @@ export default function App({ session }: { session: Session }) {
     setHistory((h) => [...h, userMsg]);
 
     nextTurn();
-    // Auto-title alla prima interazione (se non già rinominata dall'utente).
+    // Auto-title on first interaction (if not already renamed by the user).
     if (!sessionRef.current.meta.title) {
       sessionRef.current.meta.title = deriveTitle(userText);
     }
@@ -240,7 +243,6 @@ export default function App({ session }: { session: Session }) {
     aborterRef.current = new AbortController();
     let acc = "";
     let reasoningAcc = "";
-    let currentToolId = 0;
     const turnStart = Date.now();
     let reasoningStart = 0;
     let reasoningMs = 0;
@@ -263,30 +265,16 @@ export default function App({ session }: { session: Session }) {
             break;
 
           case "tool-call":
-            currentToolId = nextId();
-            setToolSteps((ts) => [
-              ...ts,
-              {
-                id: currentToolId,
-                toolName: chunk.toolName,
-                input: chunk.input,
-              },
-            ]);
+            // chunk.toolCallId (from the SDK) is the correlation key — not a shared
+            // external variable: with multiple parallel tools (e.g. multiple `task`
+            // subagents), results arrive in an order not guaranteed to match the call
+            // order, and a single "last id" variable would wrongly attribute every
+            // result to the most recently created call.
+            setToolSteps((ts) => addToolCall(ts, chunk));
             break;
 
           case "tool-result":
-            setToolSteps((ts) =>
-              ts.map((t) => {
-                if (t.id !== currentToolId) return t;
-                const diff = computeToolDiff(t.toolName, t.input as Record<string, unknown>, chunk.isError ? null : chunk.output);
-                return {
-                  ...t,
-                  output: chunk.output,
-                  isError: chunk.isError,
-                  diff,
-                };
-              }),
-            );
+            setToolSteps((ts) => applyToolResult(ts, chunk));
             break;
         }
       }
@@ -340,7 +328,7 @@ export default function App({ session }: { session: Session }) {
       setReasoning("");
       setToolSteps([]);
       setBusy(false);
-      setPhIdx((i) => i + 1); // ruota l'esempio del placeholder
+      setPhIdx((i) => i + 1); // rotate placeholder example
       aborterRef.current = null;
 
       if (messageQueue.length > 0) {
@@ -361,8 +349,8 @@ export default function App({ session }: { session: Session }) {
         addToast(`Queued (${messageQueue.length + 1} pending)`, "info");
         return;
       }
-      // Se è uno slash parziale senza argomenti, esegui il comando EVIDENZIATO
-      // nell'autocomplete (frecce) invece di richiedere il nome completo.
+      // If it's a partial slash without arguments, run the HIGHLIGHTED command
+      // in the autocomplete (arrows) instead of requiring the full name.
       if (v.startsWith("/") && !v.includes(" ")) {
         const ms = matchCommands(v.slice(1));
         if (ms.length > 0) {
@@ -473,6 +461,17 @@ ${args ? `Additional context: ${args}` : ""}`;
             doCompact();
             return "";
           },
+          doReview: async () => {
+            setBusy(true);
+            try {
+              const diff = await getWorkingDiff();
+              return await runReview(diff);
+            } catch (err) {
+              return `Review failed: ${err instanceof Error ? err.message : String(err)}`;
+            } finally {
+              setBusy(false);
+            }
+          },
         }).then((result) => {
           if (result) setStatusText(result);
         });
@@ -508,9 +507,9 @@ ${args ? `Additional context: ${args}` : ""}`;
               messagesRef.current = loaded.messages;
               sessionRef.current = loaded;
               setTodos(loaded.todos ?? []);
-              // Ricostruisci la history dai messaggi salvati. Il content può essere
-              // una stringa o un ARRAY di parti ({type:"text"|"reasoning"|...}):
-              // estraiamo testo e reasoning invece di stringificare (era reso come JSON grezzo).
+              // Rebuild history from saved messages. Content can be a string or an
+              // ARRAY of parts ({type:"text"|"reasoning"|...}): extract text and
+              // reasoning instead of stringifying (was rendered as raw JSON).
               const items: HistoryItem[] = [];
               let nid = Date.now();
               for (const m of loaded.messages) {
@@ -525,7 +524,7 @@ ${args ? `Additional context: ${args}` : ""}`;
                     else if (p?.type === "reasoning" && p.text) reasoning += p.text;
                   }
                 }
-                if (!text && !reasoning) continue; // salta i messaggi solo-tool
+                if (!text && !reasoning) continue; // skip tool-only messages
                 items.push({
                   id: nid++,
                   role: m.role as "user" | "assistant",
@@ -588,6 +587,11 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {streaming && <RoleBlock color={ASSISTANT_BAR} content={streaming} markdown />}
 
+          {countPendingTasks(toolSteps) > 1 && (
+            <Box paddingLeft={3} marginBottom={1}>
+              <Text dimColor>⇉ {countPendingTasks(toolSteps)} subagents running in parallel</Text>
+            </Box>
+          )}
           {toolSteps.map((t) => (
             <ToolStep key={t.id} tool={t} />
           ))}
@@ -630,7 +634,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
-          {/* Avviso comandi/stato: subito SOPRA l'input (stile opencode), non nel footer */}
+          {/* Command/status notice: directly ABOVE the input (conventional TUI style), not in the footer */}
           {statusText && !confirmPreview && !questions && !showSessions && (
             <Box paddingLeft={1}>
               <Text dimColor>{statusText}</Text>
@@ -672,8 +676,8 @@ ${args ? `Additional context: ${args}` : ""}`;
   );
 }
 
-// Risposta assistant: barra laterale grigia (bordo sinistro) su sfondo nudo.
-// Il contrasto col messaggio utente (pannello pieno) li differenzia.
+// Assistant response: gray sidebar (left border) on bare background.
+// The contrast with the user message (filled panel) differentiates them.
 function RoleBlock({
   color,
   content,
@@ -702,8 +706,8 @@ function RoleBlock({
   );
 }
 
-// Fase PENSIERO: header ambra "✻ Thinking/Thought · durata" + corpo attenuato.
-// Distinta dall'esecuzione (icone tool, bianco) e dalla risposta (markdown bianco pieno).
+// THINKING phase: amber header "✻ Thinking/Thought · duration" + dimmed body.
+// Distinct from execution (tool icons, white) and response (full white markdown).
 function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?: number }) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -720,7 +724,7 @@ function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?:
     ? `✻ Thinking${titlePart}${elapsed > 0 ? ` · ${elapsed}s` : ""}`
     : `✻ Thought${titlePart}${ms ? ` · ${(ms / 1000).toFixed(1)}s` : ""}`;
 
-  // Live: coda in streaming. History: testo dall'inizio, capato.
+  // Live: streaming tail. History: full text from start, capped.
   const body = live
     ? text.length > 400 ? "…" + text.slice(-400) : text
     : text.length > 700 ? text.slice(0, 700) + " …" : text;
@@ -778,4 +782,32 @@ function computeToolDiff(
   }
 
   return null;
+}
+
+// Pure state-reduction functions for tool steps, extracted to be testable in
+// isolation. Key = chunk.toolCallId (from the SDK), not a "last id" counter: with
+// multiple parallel tools, results arrive in an order not guaranteed to match the call order.
+export function addToolCall(
+  steps: ToolEntry[],
+  chunk: Extract<Chunk, { type: "tool-call" }>,
+): ToolEntry[] {
+  return [...steps, { id: chunk.toolCallId, toolName: chunk.toolName, input: chunk.input }];
+}
+
+export function applyToolResult(
+  steps: ToolEntry[],
+  chunk: Extract<Chunk, { type: "tool-result" }>,
+): ToolEntry[] {
+  return steps.map((t) => {
+    if (t.id !== chunk.toolCallId) return t;
+    const diff = computeToolDiff(t.toolName, t.input as Record<string, unknown>, chunk.isError ? null : chunk.output);
+    return { ...t, output: chunk.output, isError: chunk.isError, diff };
+  });
+}
+
+// Number of `task` subagents currently pending (no output yet) — used to show an
+// explicit "N subagents running in parallel" indicator when the model launches more
+// than one task tool-call in the same step (Promise.all under the hood).
+export function countPendingTasks(steps: ToolEntry[]): number {
+  return steps.filter((t) => t.toolName === "task" && t.output === undefined).length;
 }

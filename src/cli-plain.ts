@@ -4,6 +4,7 @@ import { stdin, stdout } from "node:process";
 import { currentModel, currentProvider, currentMode, setMode } from "./config.ts";
 import { runTurn } from "./agent/loop.ts";
 import type { Chunk } from "./agent/loop.ts";
+import { runReview, getWorkingDiff } from "./agent/review.ts";
 import { MissingApiKeyError } from "./provider.ts";
 import { setConfirmHandler } from "./permissions.ts";
 import { setAnswerHandler, type Answers } from "./tools/question.ts";
@@ -168,6 +169,14 @@ ${args ? `Additional context: ${args}` : ""}`;
             await saveSession(session);
             return `Session renamed to '${name}'.`;
           },
+          doReview: async () => {
+            try {
+              const diff = await getWorkingDiff();
+              return await runReview(diff);
+            } catch (err) {
+              return `Review failed: ${err instanceof Error ? err.message : String(err)}`;
+            }
+          },
         });
         if (result) stdout.write(`${DIM}${result}${RESET}\n\n`);
         continue;
@@ -221,7 +230,12 @@ ${args ? `Additional context: ${args}` : ""}`;
 async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
   let sawReasoning = false;
   let inText = false;
-  let activeTool: { name: string; args: string; input: unknown } | null = null;
+  // Key = toolCallId (not "the last tool"): with multiple parallel tools (e.g. subagent
+  // `task` in the same step) tool results arrive in an order not guaranteed to match
+  // the call order — a single "last active tool" variable would attribute the wrong
+  // result (e.g. the diff of an `edit` shown under a different `write`).
+  const activeTools = new Map<string, { name: string; args: string; input: unknown }>();
+  let lastWasTool = false;
 
   for await (const chunk of chunks) {
     switch (chunk.type) {
@@ -230,7 +244,7 @@ async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
         stdout.write(`${DIM}${chunk.text}${RESET}`);
         break;
       case "text":
-        if (activeTool) { stdout.write("\n"); activeTool = null; }
+        if (lastWasTool) { stdout.write("\n"); lastWasTool = false; }
         if (sawReasoning && !inText) { stdout.write(`\n\n`); inText = true; }
         else if (!inText) { inText = true; }
         stdout.write(chunk.text);
@@ -238,23 +252,25 @@ async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
       case "tool-call": {
         const args = typeof chunk.input === "string" ? chunk.input : JSON.stringify(chunk.input);
         if (sawReasoning && !inText) { stdout.write(`\n\n`); inText = true; }
-        else if (activeTool || !inText) { stdout.write("\n"); }
+        else if (lastWasTool || !inText) { stdout.write("\n"); }
         stdout.write(`${DIM}· ${chunk.toolName}${RESET}(${args})`);
-        activeTool = { name: chunk.toolName, args, input: chunk.input };
+        activeTools.set(chunk.toolCallId, { name: chunk.toolName, args, input: chunk.input });
+        lastWasTool = true;
         break;
       }
-      case "tool-result":
+      case "tool-result": {
+        const tool = activeTools.get(chunk.toolCallId);
         if (chunk.isError) {
           stdout.write(`\n${RED}  → error${RESET}: ${chunk.output.slice(0, 200)}`);
-        } else if (activeTool && (activeTool.name === "write" || activeTool.name === "edit")) {
-          const input = activeTool.input as Record<string, unknown> | undefined;
+        } else if (tool && (tool.name === "write" || tool.name === "edit")) {
+          const input = tool.input as Record<string, unknown> | undefined;
           let diffText = "";
-          if (activeTool.name === "edit" && input && typeof input.oldString === "string" && typeof input.newString === "string") {
+          if (tool.name === "edit" && input && typeof input.oldString === "string" && typeof input.newString === "string") {
             diffText = formatDiff(computeDiff(
               (input.oldString as string).split("\n"),
               (input.newString as string).split("\n"),
             ));
-          } else if (activeTool.name === "write" && input && typeof input.content === "string") {
+          } else if (tool.name === "write" && input && typeof input.content === "string") {
             diffText = formatDiff(computeDiff([], (input.content as string).split("\n")));
           }
           if (diffText) {
@@ -267,8 +283,10 @@ async function consumeTurn(chunks: AsyncGenerator<Chunk>): Promise<void> {
           const p = chunk.output.length > 120 ? chunk.output.slice(0, 120).replace(/\n/g, " ") + "…" : chunk.output.replace(/\n/g, " ");
           stdout.write(`\n${DIM}  →${RESET} ${p}`);
         }
-        activeTool = null;
+        activeTools.delete(chunk.toolCallId);
+        lastWasTool = false;
         break;
+      }
     }
   }
 }

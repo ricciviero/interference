@@ -17,7 +17,7 @@ describe("ToolStep rendering (iter 18)", () => {
     const out = frame(<ToolStep tool={{ toolName: "read", input: { path: "src/y.ts" }, output: "10 lines" }} />);
     expect(out).toContain("→");
     expect(out).toContain("read src/y.ts");
-    expect(out).not.toContain("{"); // niente JSON grezzo
+    expect(out).not.toContain("{"); // no raw JSON
   });
 
   test("pending tool shows descriptive text (iter 21)", () => {
@@ -31,7 +31,7 @@ describe("ToolStep rendering (iter 18)", () => {
     const out = frame(<ToolStep tool={{ toolName: "bash", input: { command: "bun test" }, output: "77 pass" }} />);
     expect(out).toContain("$ bun test");
     expect(out).toContain("77 pass");
-    expect(out).toContain("▌"); // pannello (it. 19): barra laterale su sfondo
+    expect(out).toContain("▌"); // panel (it. 19): side bar on background
   });
 
   test("edit block: diff lines with +/-", () => {
@@ -70,7 +70,7 @@ describe("diff line numbers (iter 20)", () => {
     const out = frame(<ToolStep tool={{ toolName: "edit", input: { path: "f.ts" }, output: "ok", diff: d }} />);
     expect(out).toContain("- x");
     expect(out).toContain("+ y");
-    expect(out).toMatch(/\b1\b/); // numero di riga presente
+    expect(out).toMatch(/\b1\b/); // line number present
   });
 });
 

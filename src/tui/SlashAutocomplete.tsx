@@ -3,13 +3,13 @@ import { matchCommands } from "../commands/index.ts";
 
 interface Props {
   filter: string;
-  /** Indice selezionato (navigato con ↑↓ da App). */
+  /** Selected index (navigated with ↑↓ by App). */
   selected: number;
 }
 
-// Hint con selezione: le frecce (gestite da App) muovono `selected`; l'Invio
-// (gestito dal TextInput) esegue il comando evidenziato. Niente useInput qui
-// per non confliggere col campo di testo sull'Invio.
+// Hint with selection: arrows (managed by App) move `selected`; Enter
+// (managed by TextInput) runs the highlighted command. No useInput here
+// to avoid conflicting with the text field on Enter.
 export function SlashAutocomplete({ filter, selected }: Props) {
   const matches = matchCommands(filter);
   if (matches.length === 0) return null;

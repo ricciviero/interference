@@ -22,6 +22,7 @@ export type CommandHandler = (
     doSessions?: () => Promise<string>;
     doRename?: (name: string) => Promise<string>;
     doCompact?: () => Promise<string>;
+    doReview?: () => Promise<string>;
   },
 ) => string | void | Promise<string | void>;
 
@@ -46,7 +47,7 @@ export function listCommands(): CommandInfo[] {
   return [...registry.values()];
 }
 
-/** Comandi che matchano un filtro (nome o descrizione). Usato da CLI + autocomplete. */
+/** Commands matching a filter (name or description). Used by CLI + autocomplete. */
 export function matchCommands(filter: string): CommandInfo[] {
   const f = filter.toLowerCase();
   return listCommands().filter(
@@ -181,6 +182,16 @@ register("rename", "Rename the current session (usage: /rename <new-name>)", (ar
   if (ctx.doRename) return ctx.doRename(args.trim());
   return `Session would be renamed to '${args.trim()}'.`;
 });
+
+register(
+  "review",
+  "Review the current diff for bugs, security issues, and simplification opportunities",
+  (_args, ctx) => {
+    if (ctx.doReview) return ctx.doReview();
+    return "Review not available in this context.";
+  },
+  { delegate: true },
+);
 
 export async function initSkillCommands(): Promise<void> {
   const skills = getCachedRegistry();

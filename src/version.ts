@@ -3,8 +3,8 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import * as path from "node:path";
 import { interferenceDir } from "./paths.ts";
 
-// Versione corrente letta dal package.json del pacchetto (sync, funziona anche
-// installato globalmente: version.ts sta in <pkg>/src, package.json in <pkg>/).
+// Current version read from the package.json of the package (sync, works even
+// installed globally: version.ts lives in <pkg>/src, package.json in <pkg>/).
 function readVersion(): string {
   try {
     const raw = readFileSync(new URL("../package.json", import.meta.url), "utf8");
@@ -21,11 +21,11 @@ const TTL = 24 * 60 * 60 * 1000; // 24h
 const REGISTRY = `https://registry.npmjs.org/${PKG}/latest`;
 
 function cachePath(): string {
-  // Reindirizzabile via INTERFERENCE_HOME (isolamento test) — vedi paths.ts.
+  // Redirectable via INTERFERENCE_HOME (test isolation) — see paths.ts.
   return interferenceDir("update-check.json");
 }
 
-// Confronto semver "x.y.z" (con eventuale prefisso v). true se `latest` > `current`.
+// Semver comparison "x.y.z" (with optional v prefix). true if `latest` > `current`.
 export function isNewer(latest: string, current: string): boolean {
   const p = (v: string) => v.replace(/^v/, "").split(".").map((n) => parseInt(n, 10) || 0);
   const a = p(latest);
@@ -38,25 +38,25 @@ export function isNewer(latest: string, current: string): boolean {
   return false;
 }
 
-// Controlla npm per una versione più recente. Throttled (cache 24h), non bloccante,
-// silenzioso offline. Ritorna la versione latest se più nuova, altrimenti null.
+// Checks npm for a newer version. Throttled (24h cache), non-blocking,
+// silent offline. Returns the latest version if newer, otherwise null.
 export async function checkForUpdate(): Promise<string | null> {
   if (process.env.INTERFERENCE_NO_UPDATE_CHECK) return null;
   const file = cachePath();
   try {
     let latest: string | null = null;
 
-    // 1) cache fresca?
+    // 1) fresh cache?
     try {
       const c = JSON.parse(await readFile(file, "utf8"));
       if (typeof c.ts === "number" && Date.now() - c.ts < TTL && typeof c.latest === "string") {
         latest = c.latest;
       }
     } catch {
-      // niente cache valida
+      // no valid cache
     }
 
-    // 2) altrimenti interroga il registry (timeout breve)
+    // 2) otherwise query the registry (short timeout)
     if (!latest) {
       const res = await fetch(REGISTRY, { signal: AbortSignal.timeout(2500) });
       if (!res.ok) return null;
@@ -74,6 +74,6 @@ export async function checkForUpdate(): Promise<string | null> {
 
     return latest && isNewer(latest, CURRENT_VERSION) ? latest : null;
   } catch {
-    return null; // offline / errori → nessun avviso
+    return null; // offline / errors → no alert
   }
 }

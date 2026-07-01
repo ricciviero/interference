@@ -10,14 +10,14 @@ interface Props {
 
 export const QuestionDialog: FC<Props> = ({ questions, onResolve }) => {
   const [qIdx, setQIdx] = useState(0);
-  // Risposte accumulate (label selezionate) per domanda.
+  // Accumulated answers (selected labels) per question.
   const [acc, setAcc] = useState<Answers>(() => questions.map(() => []));
 
   const q = questions[qIdx]!;
   const multiple = q.multiple ?? false;
   const total = questions.length;
 
-  // value = indice opzione (stringa); risaliamo alla label al commit.
+  // value = option index (string); resolve to the label at commit time.
   const options = q.options.map((o, i) => ({
     label: o.description ? `${o.label}  — ${o.description}` : o.label,
     value: String(i),
@@ -34,7 +34,7 @@ export const QuestionDialog: FC<Props> = ({ questions, onResolve }) => {
     }
   }
 
-  // Esc salta tutto. Le altre frecce/spazio/Invio sono gestiti da Select/MultiSelect.
+  // Esc skips everything. Other arrows/space/Enter are handled by Select/MultiSelect.
   useInput((_i, key) => {
     if (key.escape) onResolve(questions.map(() => []));
   }, { isActive: true });
@@ -48,7 +48,7 @@ export const QuestionDialog: FC<Props> = ({ questions, onResolve }) => {
       </Box>
       <Box marginTop={1}>
         {multiple ? (
-          // key={qIdx}: remount per domanda → stato interno azzerato
+          // key={qIdx}: remount per question → reset internal state
           <MultiSelect key={qIdx} options={options} onSubmit={commit} />
         ) : (
           <Select key={qIdx} options={options} onChange={(v) => commit([v])} />

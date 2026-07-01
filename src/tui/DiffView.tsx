@@ -1,15 +1,15 @@
 export interface DiffLine {
   type: "same" | "add" | "remove";
   text: string;
-  oldNo?: number; // numero riga nel file vecchio (1-based) — same/remove
-  newNo?: number; // numero riga nel file nuovo (1-based) — same/add
+  oldNo?: number; // line number in old file (1-based) — same/remove
+  newNo?: number; // line number in new file (1-based) — same/add
 }
 
 export function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
   const result: DiffLine[] = [];
   let oi = 0;
   let ni = 0;
-  // Numeri di riga 1-based: oi/ni sono indici 0-based → +1 al push.
+  // 1-based line numbers: oi/ni are 0-based indices → +1 on push.
   const same = (t: string) => result.push({ type: "same", text: t, oldNo: oi + 1, newNo: ni + 1 });
   const rem = (t: string) => result.push({ type: "remove", text: t, oldNo: oi + 1 });
   const add = (t: string) => result.push({ type: "add", text: t, newNo: ni + 1 });

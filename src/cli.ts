@@ -9,20 +9,21 @@ import { bootstrapSkills } from "./skills.ts";
 import { initSkillCommands } from "./commands/index.ts";
 import { loadConfig, applyConfig } from "./config-file.ts";
 import { loadAuth, applyAuthToEnv } from "./auth.ts";
+import { loadCatalog } from "./catalog.ts";
 import { PROVIDERS } from "./config.ts";
 import type { Session } from "./session/store.ts";
 import { CURRENT_VERSION } from "./version.ts";
 
 async function main(): Promise<void> {
-  // --version / -v: stampa la versione ed esce (prima di tutto).
+  // --version / -v: print the version and exit (before everything else).
   const cliArgs = Bun.argv.slice(2);
   if (cliArgs.includes("--version") || cliArgs.includes("-v")) {
     stdout.write(`${CURRENT_VERSION}\n`);
     return;
   }
 
-  // Titolo + nome-icona della tab del terminale (come Claude Code), solo in TTY
-  // (in pipe/non-TTY le sequenze OSC sporcherebbero l'output).
+  // Terminal tab/window title (like Claude Code), only in TTY
+  // (in a pipe/non-TTY, OSC sequences would pollute the output).
   // OSC 1 = icon/tab name, OSC 2 = window title.
   if (stdout.isTTY) {
     stdout.write("\x1b]1;◉ interference\x07\x1b]2;◉ interference\x07");
@@ -48,6 +49,9 @@ async function main(): Promise<void> {
 
   await initInstructions();
   await initSkillCommands();
+  // Model catalog (it. 37): on-disk cache -> remote fetch -> embedded offline snapshot.
+  // Never throws; if slow (first run, expired cache) doesn't block beyond the fetch.
+  await loadCatalog();
 
   const args = Bun.argv.slice(2);
   const resumeId = args.includes("--continue")

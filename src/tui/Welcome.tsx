@@ -4,12 +4,12 @@ import { WORDMARK } from "./wordmark.ts";
 import { PANEL, padRight } from "./theme.ts";
 import { CURRENT_VERSION } from "../version.ts";
 
-// Larghezza del pannello wordmark = riga più lunga + margini.
+// Width of the wordmark panel = longest line + margins.
 const WM_W = Math.max(...WORDMARK.map((l) => l.length)) + 4;
-// Righe del pannello: una vuota sopra/sotto + il wordmark, tutte riempite.
+// Panel rows: one empty above/below + the wordmark, all filled.
 const WM_LINES = ["", ...WORDMARK, ""].map((l) => padRight("  " + l, WM_W));
 
-// Colori per tema scuro (NON usare #0a0a0a sul testo → invisibile).
+// Colors for dark theme (do NOT use #0a0a0a on text → invisible).
 const FG = "white";
 const ACCENT = "cyan";
 const MUTED = "gray";
@@ -34,14 +34,14 @@ function Tip({ cmd, desc }: { cmd: string; desc: string }) {
   );
 }
 
-// Branding-only: l'input è condiviso (gestito da App), così gli slash e
-// l'autocomplete funzionano anche dalla home.
+// Branding-only: the input is shared (managed by App), so slashes and
+// autocomplete work from the home screen too.
 export function Welcome({ provider, model, sessionCount, update }: Props) {
   return (
     <Box flexDirection="column" marginBottom={1}>
-      {/* Banner aggiornamento (it. 28): discreto, solo se c'è una versione più recente */}
+      {/* Update banner (it. 28): subtle, only if a newer version exists */}
       {update && (
-        <Box justifyContent="center" marginBottom={1}>
+        <Box marginBottom={1}>
           <Text color={ACCENT}>
             interference {CURRENT_VERSION} → {update}
           </Text>
@@ -49,8 +49,8 @@ export function Welcome({ provider, model, sessionCount, update }: Props) {
           <Text color={ACCENT}>/update</Text>
         </Box>
       )}
-      {/* Header centrato: wordmark su pannello (sfondo reale via Text) + tagline */}
-      <Box flexDirection="column" alignItems="center" marginBottom={1}>
+      {/* Header: wordmark on panel (actual background via Text) + tagline */}
+      <Box flexDirection="column" marginBottom={1}>
         <Box flexDirection="column">
           {WM_LINES.map((line, i) => (
             <Text key={i} bold color={FG} backgroundColor={PANEL}>
@@ -63,22 +63,22 @@ export function Welcome({ provider, model, sessionCount, update }: Props) {
         </Box>
       </Box>
 
-      {/* Stato: provider · model · thinking */}
-      <Box justifyContent="center">
+      {/* Status: provider · model · thinking */}
+      <Box>
         <Text color={MUTED}>
           {provider} · {model} · <Text color="magenta">◇ {currentThinking()}</Text>
         </Text>
       </Box>
       {sessionCount > 0 && (
-        <Box justifyContent="center">
+        <Box>
           <Text color={MUTED}>
             {sessionCount} previous session{sessionCount !== 1 ? "s" : ""} · <Text color={ACCENT}>--continue</Text> to resume
           </Text>
         </Box>
       )}
 
-      {/* Tips (blocco, centrato) — i due comandi fondamentali in cima */}
-      <Box flexDirection="column" alignItems="center" marginTop={1}>
+      {/* Tips — top two core commands at the top */}
+      <Box flexDirection="column" marginTop={1}>
         <Box marginBottom={1}>
           <Text color={MUTED}>Get started — connect a provider, then pick a model:</Text>
         </Box>
@@ -90,8 +90,8 @@ export function Welcome({ provider, model, sessionCount, update }: Props) {
         </Box>
       </Box>
 
-      {/* Made in Italy (discreto) */}
-      <Box marginTop={1} justifyContent="center">
+      {/* Made in Italy (subtle) */}
+      <Box marginTop={1}>
         <Text backgroundColor={GREEN}> </Text>
         <Text backgroundColor="white"> </Text>
         <Text backgroundColor={RED}> </Text>

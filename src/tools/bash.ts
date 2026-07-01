@@ -10,7 +10,8 @@ export const bash = tool({
     "Execute a shell command in the workspace. " +
     "Use this for git operations, running tests, installing packages, building, etc. " +
     "Never use interactive commands (no -i, no editors). " +
-    "Explain what the command does before running it.",
+    "Explain what the command does before running it. " +
+    "Destructive commands (rm -rf, sudo, curl|sh, force push) are blocked by policy.",
   inputSchema: z.object({
     command: z.string().describe("The shell command to execute"),
     timeout: z
@@ -41,11 +42,11 @@ export const bash = tool({
       stderr: "pipe",
     });
 
-    // Esecuzione (lettura stream + exit) in gara col timeout. Allo scadere
-    // uccidiamo il processo e ritorniamo SUBITO senza aspettare l'EOF: un figlio
-    // orfano (es. `sleep`) può tenere la pipe aperta dopo la morte della shell e
-    // bloccherebbe la lettura. (L'opzione `timeout` di Bun.spawn non è affidabile
-    // su tutti i runner.)
+    // Execution (stream read + exit) races against the timeout. On expiry
+    // we kill the process and return IMMEDIATELY without waiting for EOF: an orphan
+    // child (e.g. `sleep`) can keep the pipe open after the shell dies and would
+    // block the read. (Bun.spawn's `timeout` option is not reliable across all
+    // runners.)
     const finished = (async () => {
       const [stdout, stderr] = await Promise.all([
         readStream(proc.stdout, OUTPUT_CAP),

@@ -6,14 +6,14 @@ import { BG_PANEL, DIFF_ADD_BG, DIFF_REM_BG, panelWidth } from "./theme.ts";
 
 const fill = (w: number, used: number) => " ".repeat(Math.max(0, w - used));
 
-// Riga di diff: numero riga + marker + testo, su sfondo verde/rosso attenuato (it. 20).
+// Diff row: line number + marker + text, on muted green/red background (it. 20).
 function DiffLineRow({ d, w }: { d: DiffLine; w: number }) {
   const bg = d.type === "add" ? DIFF_ADD_BG : d.type === "remove" ? DIFF_REM_BG : BG_PANEL;
   const fg = d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined;
   const num = String((d.type === "add" ? d.newNo : d.oldNo) ?? "").padStart(4, " ");
   const mark = d.type === "add" ? "+ " : d.type === "remove" ? "- " : "  ";
   const text = d.text.slice(0, Math.max(0, w - 9));
-  const used = 2 + 4 + 1 + 2 + text.length; // barra + numero + spazio + marker + testo
+  const used = 2 + 4 + 1 + 2 + text.length; // bar + number + space + marker + text
   return (
     <Text backgroundColor={bg}>
       <Text color="gray" bold backgroundColor={bg}>
@@ -31,7 +31,7 @@ function DiffLineRow({ d, w }: { d: DiffLine; w: number }) {
   );
 }
 
-// Vista di un tool step (call → result). Allineata a ToolEntry in App.tsx.
+// View of a tool step (call → result). Aligned with ToolEntry in App.tsx.
 export interface ToolView {
   toolName: string;
   input: unknown;
@@ -40,7 +40,7 @@ export interface ToolView {
   diff?: DiffLine[] | null;
 }
 
-// Icone per tipo (convenzione opencode, adattata — fonte: opencode-dev/packages/tui).
+// Icons by type (conventional icon convention, adapted).
 const ICON: Record<string, string> = {
   bash: "$",
   read: "→",
@@ -56,7 +56,7 @@ const ICON: Record<string, string> = {
   task: "│",
 };
 
-// Testo descrittivo durante l'esecuzione (it. 21, stile opencode `~ <verbo>…`).
+// Descriptive text during execution (it. 21, conventional style ~ <verb>…).
 const PENDING: Record<string, string> = {
   bash: "Running command…",
   read: "Reading file…",
@@ -71,14 +71,14 @@ const PENDING: Record<string, string> = {
 };
 const pendingText = (name: string) => PENDING[name] ?? "Working…";
 
-// Tool con output complesso → blocco con bordo sinistro. Gli altri → riga inline.
+// Tools with complex output → block with left border. Others → inline row.
 const BLOCK = new Set(["bash", "write", "edit"]);
 
 function rec(input: unknown): Record<string, unknown> {
   return input && typeof input === "object" ? (input as Record<string, unknown>) : {};
 }
 
-// Descrizione sintetica (path/comando/pattern) invece del JSON grezzo.
+// Synthetic description (path/command/pattern) instead of raw JSON.
 function describe(toolName: string, input: unknown): string {
   const i = rec(input);
   const s = (v: unknown) => (typeof v === "string" ? v : "");
@@ -142,7 +142,7 @@ function InlineTool({
   return (
     <Box flexDirection="column" paddingLeft={3}>
       <Box>
-        {/* icona a larghezza fissa (2 col) → allineamento tra tool diversi */}
+        {/* fixed-width icon (2 cols) → alignment across different tools */}
         <Box width={2}>
           <Text color={iconColor}>{icon}</Text>
         </Box>
@@ -168,7 +168,7 @@ function InlineTool({
   );
 }
 
-// Riga del pannello: barra "▌ " (2 col) + contenuto + riempimento di sfondo a larghezza.
+// Panel row: bar "▌ " (2 cols) + content + background fill to width.
 function PanelLine({
   w,
   barColor,

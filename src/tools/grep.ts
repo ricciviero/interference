@@ -58,8 +58,8 @@ async function tryRg(
   args.push("--", pattern);
   args.push(cwd);
 
-  // ripgrep può non essere installato: `Bun.spawn(["rg"])` lancia ENOENT prima
-  // ancora di poter leggere stderr → wrappiamo tutto e torniamo null (→ fallback JS).
+  // ripgrep may not be installed: `Bun.spawn(["rg"])` throws ENOENT before
+  // we can even read stderr → wrap everything and return null (→ JS fallback).
   try {
     const proc = Bun.spawn(["rg", ...args], {
       stdout: "pipe",
@@ -80,12 +80,12 @@ async function tryRg(
     }
 
     if (err.includes("command not found") || err.includes("No such file")) {
-      return null; // rg non disponibile → fallback JS
+      return null; // rg not available → JS fallback
     }
 
     return `grep error (exit ${proc.exitCode}): ${err || "unknown error"}`;
   } catch {
-    return null; // rg non installato (ENOENT) → fallback JS
+    return null; // rg not installed (ENOENT) → JS fallback
   }
 }
 

@@ -1,7 +1,7 @@
-// Syntax highlighting MINIMALE per i code block (it. 22). Niente parser/dipendenze:
-// un tokenizer a regex per pochi scope (commento/stringa/numero/keyword) — "good enough"
-// come la subtle-syntax di opencode. Colori per il contenuto (i code block sono per natura
-// colorati); la chrome resta B&W.
+// MINIMAL syntax highlighting for code blocks (it. 22). No parser/dependencies:
+// a regex tokenizer for a few scopes (comment/string/number/keyword) — "good enough"
+// like a typical subtle-syntax highlighter. Colors for the content (code blocks are
+// inherently colorful); the chrome stays B&W.
 
 export interface Tok {
   text: string;
@@ -46,12 +46,12 @@ export function tokenizeLine(line: string, lang: string): Tok[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(line)) !== null) {
     if (m.index > last) out.push({ text: line.slice(last, m.index) });
-    if (m[1]) out.push({ text: m[0], color: "gray", dim: true }); // commento
-    else if (m[2]) out.push({ text: m[0], color: "green" }); // stringa
-    else if (m[3]) out.push({ text: m[0], color: "magenta" }); // numero
+    if (m[1]) out.push({ text: m[0], color: "gray", dim: true }); // comment
+    else if (m[2]) out.push({ text: m[0], color: "green" }); // string
+    else if (m[3]) out.push({ text: m[0], color: "magenta" }); // number
     else out.push({ text: m[0], color: "cyan" }); // keyword
     last = m.index + m[0].length;
-    if (m[0].length === 0) re.lastIndex++; // guard anti-loop
+    if (m[0].length === 0) re.lastIndex++; // anti-loop guard
   }
   if (last < line.length) out.push({ text: line.slice(last) });
   return out.length ? out : [{ text: line }];

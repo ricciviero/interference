@@ -1,14 +1,14 @@
 import * as path from "node:path";
 
 /**
- * Home base dei dati di interference (`~/.interference`).
+ * Base home for interference data (`~/.interference`).
  *
- * `INTERFERENCE_HOME` ridireziona l'intero store dell'app: usato dai test per
- * isolarsi dalla directory reale dell'utente, così nessun test possa scrivere
- * o cancellare dati veri (sessioni, snapshot, credenziali, skill, cache update).
+ * `INTERFERENCE_HOME` redirects the entire app store: used by tests to
+ * isolate from the user's real directory, so no test can write or delete
+ * real data (sessions, snapshots, credentials, skills, update cache).
  *
- * Tutti i consumatori di `~/.interference` DEVONO passare da qui — non
- * ricalcolare la home a mano (vedi store/skills/auth/version).
+ * All consumers of `~/.interference` MUST go through here — do not
+ * recompute the home manually (see store/skills/auth/version).
  */
 export function interferenceHome(): string {
   return (
@@ -19,7 +19,7 @@ export function interferenceHome(): string {
   );
 }
 
-/** Path dentro `~/.interference` (o la home reindirizzata da INTERFERENCE_HOME). */
+/** Path inside `~/.interference` (or the home redirected by INTERFERENCE_HOME). */
 export function interferenceDir(...segments: string[]): string {
   return path.join(interferenceHome(), ".interference", ...segments);
 }

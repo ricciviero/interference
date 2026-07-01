@@ -10,6 +10,7 @@ export const edit = tool({
     "Replace a string in a file with another string. " +
     "The oldString must match EXACTLY ONCE in the file. " +
     "If it matches zero or multiple times, the edit fails. " +
+    "If it matches multiple times, add more surrounding context to make it unique. " +
     "Use `replaceAll: true` to replace all occurrences. " +
     "Prefer this over `write` for targeted changes to existing files.",
   inputSchema: z.object({

@@ -10,9 +10,9 @@ export interface Todo {
   priority?: TodoPriority;
 }
 
-// Stato osservabile della task list (RF-TOOL pattern: tool senza filesystem).
-// La TUI/CLI si iscrive con subscribeTodos per renderizzare i progressi in tempo reale;
-// la sessione lo persiste con getTodos()/setTodos().
+// Observable state of the task list (RF-TOOL pattern: tool without filesystem).
+// The TUI/CLI subscribes via subscribeTodos to render progress in real time;
+// the session persists it with getTodos()/setTodos().
 let currentTodos: Todo[] = [];
 const listeners = new Set<(todos: Todo[]) => void>();
 

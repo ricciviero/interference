@@ -7,7 +7,7 @@ import { interferenceDir } from "../paths.ts";
 
 export interface SessionMeta {
   id: string;
-  title?: string; // nome leggibile (auto dal primo messaggio o via /rename)
+  title?: string; // human-readable name (auto from first message or via /rename)
   workspace: string;
   startedAt: string;
   updatedAt: string;
@@ -28,7 +28,7 @@ function projectDir(): string {
     .update(process.cwd())
     .digest("hex")
     .slice(0, 12);
-  // Home reindirizzabile via INTERFERENCE_HOME (isolamento test) — vedi paths.ts.
+  // Home redirectable via INTERFERENCE_HOME (test isolation) — see paths.ts.
   return interferenceDir(hash);
 }
 

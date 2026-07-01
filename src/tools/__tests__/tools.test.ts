@@ -36,56 +36,56 @@ async function call<R>(t: { execute?: (...args: any[]) => any }, input: any): Pr
 }
 
 describe("_fs.ts — resolveInWorkspace", () => {
-  test("risolve path relativo dentro workspace", () => {
+  test("resolves relative path within workspace", () => {
     const abs = resolveInWorkspace(".test-tmp/a.ts");
     expect(abs).toEndWith(".test-tmp/a.ts");
     expect(abs).toStartWith(process.cwd());
   });
 
-  test("risolve path assoluto dentro workspace", () => {
+  test("resolves absolute path within workspace", () => {
     const absPath = path.join(process.cwd(), ".test-tmp/a.ts");
     const abs = resolveInWorkspace(absPath);
     expect(abs).toBe(absPath);
   });
 
-  test("rifiuta ../ che esce dalla workspace", () => {
+  test("rejects ../ that escapes workspace", () => {
     expect(() => resolveInWorkspace("../../../etc/passwd")).toThrow("escapes workspace");
   });
 
-  test("rifiuta path assoluto fuori workspace", () => {
+  test("rejects absolute path outside workspace", () => {
     expect(() => resolveInWorkspace("/etc/passwd")).toThrow("escapes workspace");
   });
 
-  test("accetta '.' ≡ workspace root", () => {
+  test("accepts '.' as workspace root", () => {
     expect(resolveInWorkspace(".")).toBe(process.cwd());
   });
 });
 
 describe("read tool", () => {
-  test("legge file esistente", async () => {
+  test("reads existing file", async () => {
     const out = await call<string>(read, { path: ".test-tmp/a.ts" });
     expect(out).toContain("export const hello = 42");
     expect(out).toStartWith(".test-tmp/a.ts");
   });
 
-  test("file inesistente → errore chiaro", async () => {
+  test("nonexistent file → clear error", async () => {
     const out = await call<string>(read, { path: ".test-tmp/nonesiste.txt" });
     expect(out).toStartWith("Error: file not found");
   });
 
-  test("offset funziona", async () => {
+  test("offset works", async () => {
     const out = await call<string>(read, { path: ".test-tmp/b.ts", offset: 1 });
     expect(out).not.toContain("function foo");
     expect(out).toContain("function bar");
   });
 
-  test("limit funziona", async () => {
+  test("limit works", async () => {
     const out = await call<string>(read, { path: ".test-tmp/b.ts", offset: 0, limit: 1 });
     expect(out).toContain("function foo");
     expect(out).not.toContain("function bar");
   });
 
-  test("path fuori workspace → errore", async () => {
+  test("path outside workspace → error", async () => {
     try {
       await call<string>(read, { path: "../etc/passwd" });
       expect.unreachable();
@@ -94,14 +94,14 @@ describe("read tool", () => {
     }
   });
 
-  test("legge file binario senza crashare", async () => {
+  test("reads binary file without crashing", async () => {
     const out = await call<string>(read, { path: ".test-tmp/binary.bin" });
     expect(out).toStartWith(".test-tmp/binary.bin");
   });
 });
 
 describe("ls tool", () => {
-  test("elenca directory", async () => {
+  test("lists directory", async () => {
     const out = await call<string>(ls, { path: ".test-tmp" });
     expect(out).toContain("a.ts");
     expect(out).toContain("b.ts");
@@ -110,12 +110,12 @@ describe("ls tool", () => {
     expect(out).toContain("entries");
   });
 
-  test("dir vuota", async () => {
+  test("empty dir", async () => {
     const out = await call<string>(ls, { path: ".test-tmp/empty" });
     expect(out).toContain("(empty)");
   });
 
-  test("dir inesistente → errore", async () => {
+  test("nonexistent dir → error", async () => {
     const out = await call<string>(ls, { path: ".test-tmp/xyzzy" });
     expect(out).toStartWith("Error: directory not found");
   });
@@ -125,13 +125,13 @@ describe("ls tool", () => {
     expect(out).toContain("src");
   });
 
-  test("dir con molti file → troncamento a MAX_ENTRIES", async () => {
+  test("dir with many files → truncated at MAX_ENTRIES", async () => {
     const out = await call<string>(ls, { path: ".test-tmp/bigdir" });
     expect(out).toContain("more entries");
     expect(out).toContain("entries");
   });
 
-  test("path fuori workspace → errore", async () => {
+  test("path outside workspace → error", async () => {
     try {
       await call<string>(ls, { path: "../" });
       expect.unreachable();
@@ -142,19 +142,19 @@ describe("ls tool", () => {
 });
 
 describe("glob tool", () => {
-  test("match semplice", async () => {
+  test("simple match", async () => {
     const out = await call<string>(glob, { pattern: "*.ts", cwd: ".test-tmp" });
     expect(out).toContain("a.ts");
     expect(out).toContain("b.ts");
   });
 
-  test("pattern ricorsivo", async () => {
+  test("recursive pattern", async () => {
     const out = await call<string>(glob, { pattern: "**/*.ts", cwd: ".test-tmp" });
     expect(out).toContain("a.ts");
     expect(out).toContain("sub/c.ts");
   });
 
-  test("nessun match", async () => {
+  test("no matches", async () => {
     const out = await call<string>(glob, { pattern: "*.xyz", cwd: ".test-tmp" });
     expect(out).toContain("No files matched");
   });
@@ -164,7 +164,7 @@ describe("glob tool", () => {
     expect(out).toContain("package.json");
   });
 
-  test("path fuori workspace → errore", async () => {
+  test("path outside workspace → error", async () => {
     try {
       await call<string>(glob, { pattern: "*", cwd: "../etc" });
       expect.unreachable();
@@ -173,20 +173,20 @@ describe("glob tool", () => {
     }
   });
 
-  test("molti match → troncati", async () => {
+  test("many matches → truncated", async () => {
     const out = await call<string>(glob, { pattern: "*", cwd: ".test-tmp/bigdir" });
     expect(out).toContain("truncated");
   });
 });
 
 describe("grep tool", () => {
-  test("match semplice", async () => {
+  test("simple match", async () => {
     const out = await call<string>(grep, { pattern: "hello", path: ".test-tmp" });
     expect(out).toContain("hello");
     expect(out).toContain("a.ts");
   });
 
-  test("nessun match", async () => {
+  test("no matches", async () => {
     const out = await call<string>(grep, { pattern: "zzzNOZZZ", path: ".test-tmp" });
     expect(out).toContain("No matches");
   });
@@ -201,12 +201,12 @@ describe("grep tool", () => {
     expect(out).toContain("export");
   });
 
-  test("regex invalida → errore in fallback JS", async () => {
+  test("invalid regex → error in JS fallback", async () => {
     const out = await call<string>(grep, { pattern: "[invalid", path: ".test-tmp" });
     expect(out).toContain("grep error");
   });
 
-  test("path fuori workspace → errore", async () => {
+  test("path outside workspace → error", async () => {
     try {
       await call<string>(grep, { pattern: "x", path: "../etc" });
       expect.unreachable();

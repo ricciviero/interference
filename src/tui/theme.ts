@@ -1,28 +1,28 @@
-// Palette condivisa della TUI. Brand: bianco/nero (niente colori).
-// Il contrasto nasce dal PANEL (sfondo applicato sui <Text>, non sui <Box>:
-// in Ink il backgroundColor del Box non riempie il padding → si usa il Text).
-// Gerarchia sfondi a 3 livelli (B&W), stile opencode (base < panel < element).
-export const BG_PANEL = "#141414"; // blocchi/dialog (un gradino sopra il nero)
-export const BG_ELEMENT = "#1e1e1e"; // elementi/selezione/pannello utente (un gradino sopra ancora)
-export const PANEL = BG_ELEMENT; // alias storico (messaggio utente, input, welcome)
-export const USER_BAR = "white"; // barra messaggi utente
-export const ASSISTANT_BAR = "gray"; // barra risposte assistant
+// Shared TUI palette. Brand: black/white (no colors).
+// Contrast comes from PANEL (background applied on <Text>, not on <Box>:
+// in Ink the Box backgroundColor doesn't fill padding → use Text).
+// 3-level background hierarchy (B&W), conventional style (base < panel < element).
+export const BG_PANEL = "#141414"; // blocks/dialogs (one step above black)
+export const BG_ELEMENT = "#1e1e1e"; // elements/selection/user panel (one step above panel)
+export const PANEL = BG_ELEMENT; // historical alias (user message, input, welcome)
+export const USER_BAR = "white"; // user message bar
+export const ASSISTANT_BAR = "gray"; // assistant response bar
 
-// Sfondi diff (attenuati, leggibili su terminale scuro) — it. 20.
-export const DIFF_ADD_BG = "#0f2a18"; // riga aggiunta (verde scuro)
-export const DIFF_REM_BG = "#3a1414"; // riga rimossa (rosso scuro)
+// Diff backgrounds (muted, readable on dark terminal) — it. 20.
+export const DIFF_ADD_BG = "#0f2a18"; // added line (dark green)
+export const DIFF_REM_BG = "#3a1414"; // removed line (dark red)
 
-// Ambra: riservata ESCLUSIVAMENTE al pensiero (reasoning), come opencode.
-// Esecuzione (tool) e risposte restano bianco/nero → le tre fasi si distinguono.
-export const THINKING = "#d79921"; // header pensiero (ambra)
-export const THINKING_BODY = "gray"; // corpo pensiero (attenuato)
+// Amber: reserved EXCLUSIVELY for thinking (reasoning), as is conventional.
+// Execution (tools) and responses stay black/white → the three phases stand out.
+export const THINKING = "#d79921"; // thinking header (amber)
+export const THINKING_BODY = "gray"; // thinking body (dimmed)
 
-// Pad a destra fino a w caratteri (per estendere lo sfondo del Text).
+// Pad right up to w characters (to extend the Text background).
 export function padRight(s: string, w: number): string {
   return s.length >= w ? s : s + " ".repeat(w - s.length);
 }
 
-// Larghezza utile del pannello dato lo stdout (clamp ragionevole).
+// Usable panel width given stdout columns (reasonable clamp).
 export function panelWidth(columns: number | undefined, max = 96): number {
   return Math.max(24, Math.min((columns ?? 80) - 4, max));
 }

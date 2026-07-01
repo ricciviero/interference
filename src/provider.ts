@@ -1,58 +1,116 @@
-// Astrazione provider (RF-CORE-03). Risolve un `LanguageModel` del Vercel AI SDK
-// per il provider selezionato. Reasoning/thinking abilitato per ogni provider:
-//  - anthropic/deepseek: via providerOptions (gestito nell'agent loop)
-//  - glm/kimi (openai-compatible): il campo `thinking` viene iniettato nel body
-//    con `transformRequestBody`; un middleware estrae eventuali <think> inline.
+// Provider abstraction (RF-CORE-03). Resolves a `LanguageModel` from the Vercel AI SDK
+// for the selected provider. Reasoning/thinking enabled per provider:
+//  - anthropic/deepseek: via providerOptions (handled in the agent loop)
+//  - glm/kimi/openrouter (openai-compatible): the `thinking` field is injected into the body
+//    with `transformRequestBody`; a middleware extracts any inline <think> tags.
+//  - google/groq/xai/mistral (native, it. 38): no custom reasoning handling.
+//
+// @ai-sdk/* packages are loaded via DYNAMIC IMPORTS (it. 38, fetch + on-disk cache with TTL
+// + embedded snapshot pattern for offline/first-run without network): a new provider is
+// added with an entry in BUNDLED_LOADERS + PROVIDERS (config.ts), without static imports
+// to maintain here.
 
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createDeepSeek } from "@ai-sdk/deepseek";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { extractReasoningMiddleware, wrapLanguageModel, type LanguageModel } from "ai";
-import { currentModel, currentProvider, reasoningConfig, type ProviderDef } from "./config.ts";
+import {
+  currentModel,
+  currentProvider,
+  currentProviderId,
+  PROVIDERS,
+  reasoningConfig,
+  type ProviderDef,
+  type ProviderId,
+  type ThinkingLevel,
+} from "./config.ts";
 
 export class MissingApiKeyError extends Error {
   constructor(provider: ProviderDef) {
     super(
-      `${provider.label}: ${provider.envKey} non è impostata.\n` +
-        `  Aggiungila al file .env (o esportala):  ${provider.envKey}=...`,
+      `${provider.label}: ${provider.envKey} is not set.\n` +
+        `  Add it to the .env file (or export it):  ${provider.envKey}=...`,
     );
     this.name = "MissingApiKeyError";
   }
 }
 
-/** Risolve il modello del provider selezionato. Solleva MissingApiKeyError se manca la key. */
-export function resolveModel(): LanguageModel {
-  const def = currentProvider();
+/** Explicit override of provider/model/thinking, used by cheap subagents (it. 31)
+ *  to run on a different model WITHOUT mutating global state (the main thread
+ *  stays on the user-chosen model). */
+export interface ModelOverride {
+  model?: string;
+  provider?: ProviderId;
+  thinkingLevel?: ThinkingLevel;
+}
+
+// Each loader dynamically imports the package and extracts the `create*` factory. The real
+// signatures are heterogeneous across SDKs (different required opts, own generics) — too
+// divergent for a common type without friction; typed broadly (`any`) here and narrowed
+// back to `LanguageModel` (resolveModel's public type) only at the final return point.
+type ProviderFactory = (opts: any) => (model: string) => any;
+
+const BUNDLED_LOADERS: Record<string, () => Promise<ProviderFactory>> = {
+  "@ai-sdk/anthropic": () => import("@ai-sdk/anthropic").then((m) => m.createAnthropic),
+  "@ai-sdk/deepseek": () => import("@ai-sdk/deepseek").then((m) => m.createDeepSeek),
+  "@ai-sdk/openai-compatible": () => import("@ai-sdk/openai-compatible").then((m) => m.createOpenAICompatible),
+  "@ai-sdk/google": () => import("@ai-sdk/google").then((m) => m.createGoogle),
+  "@ai-sdk/groq": () => import("@ai-sdk/groq").then((m) => m.createGroq),
+  "@ai-sdk/xai": () => import("@ai-sdk/xai").then((m) => m.createXai),
+  "@ai-sdk/mistral": () => import("@ai-sdk/mistral").then((m) => m.createMistral),
+};
+
+async function loadFactory(def: ProviderDef): Promise<ProviderFactory> {
+  const loader = BUNDLED_LOADERS[def.npm];
+  if (!loader) {
+    throw new Error(`Provider ${def.label}: package "${def.npm}" not mapped in provider.ts.`);
+  }
+  try {
+    return await loader();
+  } catch {
+    throw new Error(
+      `Provider ${def.label} requires the package "${def.npm}", not installed.\n` +
+        `  Add it with: bun add ${def.npm}`,
+    );
+  }
+}
+
+/** Resolves the model for the selected provider (or override). Throws MissingApiKeyError
+ *  if the key is missing, or a clear error (no raw stack trace) if the SDK package
+ *  is not installed. Async: the package is loaded on-demand (dynamic import, it. 38). */
+export async function resolveModel(override?: ModelOverride): Promise<LanguageModel> {
+  const def = override?.provider ? PROVIDERS[override.provider] : currentProvider();
   const apiKey = process.env[def.envKey];
   if (!apiKey) throw new MissingApiKeyError(def);
 
-  const model = currentModel();
+  const model = override?.model ?? currentModel();
+  const factory = await loadFactory(def);
 
   switch (def.kind) {
     case "anthropic":
-      return createAnthropic({ apiKey })(model);
-
     case "deepseek":
-      return createDeepSeek({ apiKey })(model);
+    case "native":
+      return factory({ apiKey })(model) as LanguageModel;
 
     case "openai-compatible": {
-      // Opzioni di thinking per il livello corrente (/thinking), calcolate ad ogni turno.
-      const extraBody = reasoningConfig().extraBody;
-      const provider = createOpenAICompatible({
+      // Thinking options for the current level (/thinking) or override, recomputed each turn.
+      const extraBody = reasoningConfig({
+        providerId: override?.provider ?? currentProviderId(),
+        model,
+        level: override?.thinkingLevel,
+      }).extraBody;
+      const provider = factory({
         name: def.label,
         baseURL: def.baseURL ?? "",
         apiKey,
-        // Inietta i campi non-OpenAI-standard (es. `thinking`) nel body grezzo.
+        // Inject non-OpenAI-standard fields (e.g. `thinking`) into the raw body.
         transformRequestBody: extraBody
           ? (body: Record<string, unknown>) => ({ ...body, ...extraBody })
           : undefined,
       });
-      // Fallback: se il modello inlinea il reasoning tra <think>...</think>, estrailo
-      // come reasoning (per chi manda reasoning_content separato è un no-op).
+      // Fallback: if the model inlines reasoning in <think>...</think>, extract it
+      // as reasoning (for those that send reasoning_content separately it's a no-op).
       return wrapLanguageModel({
         model: provider(model),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
-      });
+      }) as LanguageModel;
     }
   }
 }

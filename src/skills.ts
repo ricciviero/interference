@@ -2,7 +2,7 @@ import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { interferenceDir } from "./paths.ts";
 
-/** Directory delle skill (`~/.interference/skills`, reindirizzabile in test). */
+/** Skills directory (`~/.interference/skills`, redirectable in tests). */
 export function skillsDir(): string {
   return interferenceDir("skills");
 }

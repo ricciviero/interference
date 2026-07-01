@@ -97,11 +97,11 @@ function globMatch(str: string, glob: string, sep: string): boolean {
   return new RegExp(`^${p}$`).test(str);
 }
 
-// Conferma delle azioni `ask`. Modello EVENT-DRIVEN (niente race con lo stream):
-// la CLI registra un handler con setConfirmHandler; `requestConfirmation` (invocato
-// dentro l'execute del tool) lo chiama direttamente e ne attende la risposta.
-// Se nessun handler è registrato (es. nei test), si usa il fallback manuale
-// answerConfirmation/needsConfirmation.
+// Confirmation for `ask` actions. EVENT-DRIVEN model (no race with the stream):
+// the CLI registers a handler with setConfirmHandler; `requestConfirmation` (invoked
+// inside the tool's execute) calls it directly and awaits the response.
+// If no handler is registered (e.g. in tests), the fallback
+// answerConfirmation/needsConfirmation is used.
 
 export type ConfirmHandler = (tool: string, preview: string) => Promise<boolean>;
 
@@ -115,7 +115,7 @@ export function setConfirmHandler(handler: ConfirmHandler | null) {
 
 export async function requestConfirmation(tool: string, preview: string): Promise<boolean> {
   if (confirmHandler) return confirmHandler(tool, preview);
-  // Fallback senza handler (test): risolto da answerConfirmation.
+  // Fallback without handler (tests): resolved by answerConfirmation.
   pending = { tool, preview };
   return new Promise<boolean>((resolve) => {
     pendingResolver = resolve;

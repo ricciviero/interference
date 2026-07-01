@@ -33,7 +33,7 @@ describe("todowrite tool", () => {
       ],
     });
     expect(out).toMatch(/only one task/i);
-    // stato invariato
+    // state unchanged
     expect(getTodos()).toEqual([{ content: "existing", status: "pending" }]);
   });
 
@@ -52,6 +52,6 @@ describe("todowrite tool", () => {
     expect(received!).toHaveLength(1);
     unsub();
     await call({ todos: [{ content: "after-unsub", status: "pending" }] });
-    expect(received!).toHaveLength(1); // non più notificato
+    expect(received!).toHaveLength(1); // no longer notified
   });
 });

@@ -9,7 +9,7 @@ describe("version / update (iter 28)", () => {
     expect(isNewer("0.1.1", "0.1.0")).toBe(true);
     expect(isNewer("0.1.0", "0.1.0")).toBe(false);
     expect(isNewer("0.1.0", "0.2.0")).toBe(false);
-    expect(isNewer("v0.3.0", "0.2.9")).toBe(true); // tollera prefisso v
+    expect(isNewer("v0.3.0", "0.2.9")).toBe(true); // tolerates v prefix
   });
 
   test("CURRENT_VERSION matches package.json", async () => {

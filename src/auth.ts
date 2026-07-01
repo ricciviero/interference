@@ -7,7 +7,7 @@ interface ProviderAuth {
   envKey: string;
 }
 
-// Risolti a runtime (non all'import) così INTERFERENCE_HOME isola i test.
+// Resolved at runtime (not at import) so INTERFERENCE_HOME isolates tests.
 const authDir = (): string => interferenceDir();
 const authFile = (): string => path.join(authDir(), "auth.json");
 

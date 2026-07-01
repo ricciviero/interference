@@ -1,8 +1,8 @@
 import { Text, useStdout } from "ink";
 import { BG_ELEMENT, padRight, panelWidth } from "./theme.ts";
 
-// Riga di selezione stile opencode (it. 24): selezione = sfondo a riga piena,
-// `●` per il valore corrente (vs `  `). Niente pointer `▸`.
+// Conventional selection row (it. 24): selection = full-row background,
+// `●` for the current value (vs `  `). No `▸` pointer.
 export function SelectRow({
   label,
   meta,

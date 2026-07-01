@@ -3,12 +3,15 @@ import { readFile } from "node:fs/promises";
 import { setRules, type PermRule } from "./permissions.ts";
 import { setMode, type AgentMode } from "./config.ts";
 import type { InstructionBlock } from "./context.ts";
+import { loadCustomAgents, type CustomAgentConfig } from "./agent/registry.ts";
 
 interface InterferenceConfig {
   model?: string;
   mode?: "plan" | "build";
   permissions?: Record<string, string | Record<string, string>>;
   instructions?: string[];
+  /** Custom agents invocable via the `task` tool (it. 34), beyond the explore/general built-ins. */
+  agents?: CustomAgentConfig[];
 }
 
 let loadedConfig: InterferenceConfig | null = null;
@@ -58,6 +61,10 @@ export function applyConfig(config: InterferenceConfig): void {
   if (config.mode) {
     setMode(config.mode as AgentMode);
   }
+
+  // Custom agents (it. 34): always called, even if absent, to clear any
+  // custom agents from a previous load (e.g. config reload in tests).
+  loadCustomAgents(config.agents);
 
   // Permissions: merge user rules with defaults
   if (config.permissions) {

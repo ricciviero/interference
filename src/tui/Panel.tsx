@@ -1,10 +1,10 @@
 import { Box, Text, useStdout } from "ink";
 import { BG_PANEL, BG_ELEMENT, padRight, panelWidth } from "./theme.ts";
 
-// Pannello con sfondo REALE: ogni riga è un <Text backgroundColor> riempito di
-// spazi fino alla larghezza, così il colore si vede (il bg dei <Box> in Ink non
-// riempie il padding). Barra laterale opzionale come primo carattere della riga.
-// level: "element" (#1e1e1e, messaggi/selezione) | "panel" (#141414, blocchi/dialog).
+// Panel with ACTUAL background: each row is a <Text backgroundColor> filled with
+// spaces up to the width, so the color is visible (Box backgrounds in Ink don't
+// fill padding). Optional sidebar as the first character of each row.
+// level: "element" (#1e1e1e, messages/selection) | "panel" (#141414, blocks/dialogs).
 export function Panel({
   content,
   bar,

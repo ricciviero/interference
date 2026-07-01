@@ -25,7 +25,6 @@ build/
 # Note di lavoro per developer.
 /iterazioni
 /fix
-/opencode-dev
 
 # --- Logs --------------------------------------------------------------------
 logs/
@@ -45,5 +44,4 @@ Thumbs.db
 *.pem
 *.key
 *.p12
-opencode-dev/
 interference.json

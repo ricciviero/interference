@@ -1,12 +1,16 @@
 import { generateText, type ModelMessage } from "ai";
 import { resolveModel } from "../provider.ts";
-import { currentProvider } from "../config.ts";
+import { currentModel, currentProvider, currentProviderId, cheapModelFor } from "../config.ts";
+import { getModelInfo } from "../catalog.ts";
 
 const COMPACT_THRESHOLD = 0.9;
 const DEFAULT_CONTEXT = 200_000;
 
+// Context from catalog (it. 37) with fallback to ProviderDef.contextLimit (config.ts) then
+// to the default constant — no regression if the catalog is missing the id.
 function getContextLimit(): number {
-  return currentProvider().contextLimit ?? DEFAULT_CONTEXT;
+  const info = getModelInfo(currentProviderId(), currentModel());
+  return info?.contextLimit ?? currentProvider().contextLimit ?? DEFAULT_CONTEXT;
 }
 
 function estimateTokens(text: string): number {
@@ -91,8 +95,12 @@ ${serialized.slice(0, 16000)}
 Return ONLY the summary, no preamble.`;
 
   try {
+    // Summary is a mechanical task: runs on the active provider's cheap model,
+    // without touching global state (the main thread stays on the user's model).
+    const pid = currentProviderId();
+    const model = await resolveModel({ provider: pid, model: cheapModelFor(pid) });
     const result = await generateText({
-      model: resolveModel(),
+      model,
       prompt,
       maxOutputTokens: 2000,
     });

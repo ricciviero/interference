@@ -13,12 +13,12 @@ export interface QuestionSpec {
   multiple?: boolean;
 }
 
-// Risposta: per ogni domanda, le label selezionate (più di una se multiple).
+// Answer: for each question, the selected labels (more than one if multiple).
 export type Answers = string[][];
 
-// Meccanismo EVENT-DRIVEN (come requestConfirmation in permissions.ts):
-// la UI registra un handler con setAnswerHandler; il tool, dentro execute, chiama
-// requestAnswer e ne attende l'esito. Senza handler (test/headless) si usa il fallback.
+// EVENT-DRIVEN mechanism (like requestConfirmation in permissions.ts):
+// the UI registers a handler via setAnswerHandler; the tool, inside execute, calls
+// requestAnswer and awaits the result. Without a handler (test/headless) the fallback is used.
 export type AnswerHandler = (questions: QuestionSpec[]) => Promise<Answers>;
 
 let answerHandler: AnswerHandler | null = null;
@@ -29,7 +29,7 @@ export function setAnswerHandler(handler: AnswerHandler | null): void {
 
 export async function requestAnswer(questions: QuestionSpec[]): Promise<Answers> {
   if (answerHandler) return answerHandler(questions);
-  // Fallback senza UI: nessuna risposta (l'agente prosegue con cautela).
+  // Fallback without UI: no answer (the agent proceeds with caution).
   return questions.map(() => []);
 }
 

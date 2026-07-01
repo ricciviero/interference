@@ -1,4 +1,4 @@
-// Esempi rotanti per il placeholder dell'input (it. 25), per modalità.
+// Rotating examples for the input placeholder (it. 25), by mode.
 export const PLACEHOLDERS: Record<"plan" | "build", string[]> = {
   build: [
     "Fix a TODO in the codebase",

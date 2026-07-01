@@ -1,45 +1,100 @@
 import { useState, type FC } from "react";
 import { Box, Text, useInput } from "ink";
-import { currentModel, setModel, setProvider, PROVIDERS, type ProviderId } from "../config.ts";
+import { currentModel, currentProviderId, setModel, setProvider, PROVIDERS, type ProviderId } from "../config.ts";
 import { SelectRow } from "./SelectRow.tsx";
+
+type Row =
+  | { type: "header"; label: string }
+  | { type: "model"; id: string; label: string; providerId: ProviderId };
 
 export const ModelPicker: FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const current = currentModel();
-  const flat: { id: string; label: string; provider: string; providerId: ProviderId }[] = [];
-  for (const [pid, def] of Object.entries(PROVIDERS)) {
+  const currentPid = currentProviderId();
+
+  // Current provider on top (it. 38): the user sees where they are immediately.
+  // Provider with no models in the picker (edge case) won't produce an empty header.
+  const providerIds = Object.keys(PROVIDERS) as ProviderId[];
+  const orderedPids = [currentPid, ...providerIds.filter((p) => p !== currentPid)];
+
+  const rows: Row[] = [];
+  const modelRowIndices: number[] = [];
+  for (const pid of orderedPids) {
+    const def = PROVIDERS[pid];
+    if (def.models.length === 0) continue;
+    rows.push({ type: "header", label: def.label });
     for (const m of def.models) {
-      flat.push({ id: m.id, label: m.label, provider: def.label, providerId: pid as ProviderId });
+      modelRowIndices.push(rows.length);
+      rows.push({ type: "model", id: m.id, label: m.label, providerId: pid });
     }
   }
 
-  const [idx, setIdx] = useState(Math.max(0, flat.findIndex((m) => m.id === current)));
+  const initialIdx = Math.max(
+    0,
+    modelRowIndices.findIndex((ri) => {
+      const row = rows[ri];
+      return row?.type === "model" && row.id === current;
+    }),
+  );
+  // Navigation index scrolls ONLY on "model" rows (modelRowIndices) — headers
+  // are never selectable, arrow keys skip them automatically.
+  const [idx, setIdx] = useState(initialIdx);
+  const selectedRow = modelRowIndices[idx];
 
   useInput(
     (input, key) => {
-      if (key.upArrow || input === "k") setIdx((i) => (i > 0 ? i - 1 : flat.length - 1));
-      else if (key.downArrow || input === "j") setIdx((i) => (i < flat.length - 1 ? i + 1 : 0));
-      else if (key.return) {
-        const m = flat[idx];
-        if (m) { setProvider(m.providerId); setModel(m.id); onCancel(); }
+      if (modelRowIndices.length === 0) {
+        if (key.escape || input === "q") onCancel();
+        return;
       }
-      else if (key.escape || input === "q") onCancel();
+      if (key.upArrow || input === "k") {
+        setIdx((i) => (i > 0 ? i - 1 : modelRowIndices.length - 1));
+      } else if (key.downArrow || input === "j") {
+        setIdx((i) => (i < modelRowIndices.length - 1 ? i + 1 : 0));
+      } else if (key.return) {
+        const ri = modelRowIndices[idx];
+        const row = ri !== undefined ? rows[ri] : undefined;
+        if (row?.type === "model") {
+          setProvider(row.providerId);
+          setModel(row.id);
+          onCancel();
+        }
+      } else if (key.escape || input === "q") {
+        onCancel();
+      }
     },
     { isActive: true },
   );
 
+  if (modelRowIndices.length === 0) {
+    return (
+      <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
+        <Text>No models available.</Text>
+        <Box marginTop={1}>
+          <Text dimColor>Esc/q cancel</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
-      <Box marginBottom={1}><Text bold>Select model</Text></Box>
-      {flat.map((m, i) => (
-        <SelectRow
-          key={m.id}
-          label={m.label}
-          meta={`· ${m.provider}`}
-          selected={i === idx}
-          current={m.id === current}
-        />
-      ))}
-      <Box marginTop={1}><Text dimColor>↑↓ j/k navigate · Enter select · Esc cancel</Text></Box>
+      <Box marginBottom={1}>
+        <Text bold>Select model</Text>
+      </Box>
+      {rows.map((row, i) =>
+        row.type === "header" ? (
+          <Box key={`h-${row.label}`} marginTop={i === 0 ? 0 : 1}>
+            <Text dimColor bold>
+              {row.label}
+            </Text>
+          </Box>
+        ) : (
+          <SelectRow key={row.id} label={row.label} selected={i === selectedRow} current={row.id === current} />
+        ),
+      )}
+      <Box marginTop={1}>
+        <Text dimColor>↑↓ j/k navigate · Enter select · Esc cancel</Text>
+      </Box>
     </Box>
   );
 };

@@ -2,12 +2,12 @@ import { Box, Text } from "ink";
 import type { ReactNode } from "react";
 import { tokenizeLine, normalizeLang } from "./syntax.ts";
 
-// Rendering markdown minimale per il terminale (no dipendenze):
-// - fenced code ``` → blocco dim
+// Minimal markdown rendering for the terminal (no dependencies):
+// - fenced code ``` → dimmed block
 // - heading #..###### → bold
 // - bullet -, * → •
-// - inline **bold** e `code`
-// Volutamente conservativo: meglio testo pulito che parsing fragile.
+// - inline **bold** and `code`
+// Deliberately conservative: clean text is better than fragile parsing.
 
 function renderInline(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
@@ -47,10 +47,10 @@ export function MarkdownText({ content }: { content: string }) {
         inFence = false;
         lang = "";
       }
-      return; // nascondi i marker di fence
+      return; // hide fence markers
     }
     if (inFence) {
-      if (++fenceLines > 200) return; // cap di sicurezza
+      if (++fenceLines > 200) return; // safety cap
       const toks = tokenizeLine(line, lang);
       blocks.push(
         <Text key={i}>

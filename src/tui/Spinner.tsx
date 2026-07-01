@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Text } from "ink";
 
-// Spinner d'interferenza (it. 26), eco del mark animato del brand
-// (logo/interference-mark-animated.svg): due sorgenti `◉` i cui fronti d'onda `‹ ›`
-// si espandono verso il centro e interferiscono in `✕`, poi svaniscono e ripartono.
-// Tutti i frame larghi 7 → niente jitter.
+// Interference spinner (it. 26), echo of the animated brand mark
+// (logo/interference-mark-animated.svg): two `◉` sources whose wavefronts `‹ ›`
+// expand toward the center and interfere in `✕`, then fade and restart.
+// All frames are 7 wide → no jitter.
 const FRAMES = [
   "◉     ◉",
   "◉‹   ›◉",
@@ -15,7 +15,7 @@ const FRAMES = [
   "◉  ·  ◉",
 ];
 
-// Variante compatta (3 col) per le righe inline dei tool.
+// Compact variant (3 cols) for inline tool rows.
 const FRAMES_INLINE = ["‹✕›", "·✕·", " ✕ ", "‹ ›"];
 
 function useFrame(frames: string[], ms: number): string {

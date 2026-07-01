@@ -2,11 +2,11 @@ import { describe, test, expect } from "bun:test";
 import { reasoningSummary } from "../reasoning.ts";
 
 describe("reasoningSummary (iter 23)", () => {
-  test("prima frase breve", () => {
-    expect(reasoningSummary("Devo controllare i file. Poi rispondo.")).toBe("Devo controllare i file.");
+  test("short first sentence", () => {
+    expect(reasoningSummary("I need to check the files. Then I'll answer.")).toBe("I need to check the files.");
   });
 
-  test("strip markdown iniziale e cap a 60", () => {
+  test("strip leading markdown and cap at 60", () => {
     const long = "## " + "x".repeat(80);
     const out = reasoningSummary(long);
     expect(out.startsWith("x")).toBe(true);
@@ -14,11 +14,11 @@ describe("reasoningSummary (iter 23)", () => {
     expect(out.endsWith("…")).toBe(true);
   });
 
-  test("salta righe vuote, prende la prima significativa", () => {
-    expect(reasoningSummary("\n\n- Analizzo il loop")).toBe("Analizzo il loop");
+  test("skip blank lines, take the first meaningful one", () => {
+    expect(reasoningSummary("\n\n- Analyzing the loop")).toBe("Analyzing the loop");
   });
 
-  test("testo vuoto → stringa vuota", () => {
+  test("empty text → empty string", () => {
     expect(reasoningSummary("   \n  ")).toBe("");
   });
 });
