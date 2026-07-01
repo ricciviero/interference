@@ -5,6 +5,29 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-07-01
+
+### Added
+- **Agent registry**: declarative subagent definitions (explore, general, review) with custom agents from `interference.json#agents`.
+- **Review agent**: `/review` command scans the working diff for bugs, security issues, and simplification opportunities.
+- **Model catalog from models.dev**: real-time pricing and context window data via fetch + disk cache + embedded offline snapshot, replacing hardcoded metadata.
+- **5 new providers**: Google, Groq, xAI, Mistral (native SDKs) and OpenRouter (OpenAI-compatible) — 10 providers total. Dynamic import loading via `@ai-sdk/*`.
+- **Model picker grouped by provider**: section headers, current provider on top, arrow navigation skipping headers.
+- **Model family prompts**: Claude-specific behavioral notes in the system prompt for better response quality.
+- **Prompt caching**: Anthropic opt-in ephemeral caching with cache-aware cost tracking across all providers.
+- **Multi-subagent parallelism**: multiple `task` tools in the same step run in parallel via `Promise.all`; UI indicators and correct result correlation via `toolCallId`.
+
+### Fixed
+- **Startup without API key**: app no longer exits — use `/provider` to configure keys first.
+- **Auth key loading order**: `loadAuth()` now runs before the API key check, fixing spurious "key not set" on cold start.
+- **Model picker viewport**: fixed 12-row visible window prevents header clipping on any terminal size. Applied to `SessionList` too.
+- **Parallel tool-call correlation**: `toolCallId` (from SDK) correctly correlates results with calls when multiple subagents run in the same step.
+
+### Changed
+- **All source comments translated to English** (~200 lines). Project is now fully English-only.
+- **External project references removed** from source code, comments, and CHANGELOG.
+- **`.gitignore`/`.npmignore`**: cleaned up stale entries for relocated reference directory.
+
 ## [0.2.3]
 
 ### Fixed
@@ -49,7 +72,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/ricciviero/interference/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ricciviero/interference/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ricciviero/interference/compare/v0.1.0...v0.2.2
 [0.1.0]: https://github.com/ricciviero/interference/releases/tag/v0.1.0
