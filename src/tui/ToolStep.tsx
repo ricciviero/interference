@@ -1,19 +1,11 @@
-import type { ReactNode } from "react";
 import { Box, Text, useStdout } from "ink";
 import { SpinnerInline } from "./Spinner.tsx";
 import type { DiffLine } from "./DiffView.tsx";
-import { BG_PANEL, DIFF_ADD_BG, DIFF_REM_BG, panelWidth } from "./theme.ts";
+import { panelWidth } from "./theme.ts";
 
-const fill = (w: number, used: number) => " ".repeat(Math.max(0, w - used));
-
-// Diff row: line number + marker + text, on muted green/red background (it. 20).
+// Diff row: line number + colored +/- marker and text (green add / red remove),
+// on the terminal background — no full-width fill (light, consistent with the block).
 function DiffLineRow({ d, w }: { d: DiffLine; w: number }) {
-  const bg =
-    d.type === "add"
-      ? DIFF_ADD_BG
-      : d.type === "remove"
-        ? DIFF_REM_BG
-        : BG_PANEL;
   const fg =
     d.type === "add" ? "green" : d.type === "remove" ? "red" : undefined;
   const num = String((d.type === "add" ? d.newNo : d.oldNo) ?? "").padStart(
@@ -21,21 +13,14 @@ function DiffLineRow({ d, w }: { d: DiffLine; w: number }) {
     " ",
   );
   const mark = d.type === "add" ? "+ " : d.type === "remove" ? "- " : "  ";
-  const text = d.text.slice(0, Math.max(0, w - 9));
-  const used = 2 + 4 + 1 + 2 + text.length; // bar + number + space + marker + text
+  const text = d.text.slice(0, Math.max(0, w - 8));
   return (
-    <Text backgroundColor={bg}>
-      <Text color="gray" bold backgroundColor={bg}>
-        {"▌ "}
-      </Text>
-      <Text dimColor backgroundColor={bg}>
-        {num}{" "}
-      </Text>
-      <Text color={fg} dimColor={d.type === "same"} backgroundColor={bg}>
+    <Text>
+      <Text dimColor>{num} </Text>
+      <Text color={fg} dimColor={d.type === "same"}>
         {mark}
         {text}
       </Text>
-      <Text backgroundColor={bg}>{fill(w, used)}</Text>
     </Text>
   );
 }
@@ -62,7 +47,8 @@ const ICON: Record<string, string> = {
   websearch: "◈",
   todowrite: "⚙",
   question: "?",
-  task: "│",
+  // Distinct from the block-tool left border "│" (bash/write/edit) — reads as delegate/branch.
+  task: "▸",
 };
 
 // Descriptive text during execution (it. 21, conventional style ~ <verb>…).
@@ -72,6 +58,8 @@ const PENDING: Record<string, string> = {
   ls: "Listing…",
   glob: "Finding files…",
   grep: "Searching content…",
+  write: "Writing file…",
+  edit: "Editing file…",
   webfetch: "Fetching…",
   websearch: "Searching web…",
   todowrite: "Updating todos…",
@@ -129,14 +117,14 @@ function oneLine(s: string, max = 120): string {
   return flat.length > max ? flat.slice(0, max) + "…" : flat;
 }
 
-export function ToolStep({ tool }: { tool: ToolView }) {
+export function ToolStep({ tool, collapsed }: { tool: ToolView; collapsed?: boolean }) {
   const icon = ICON[tool.toolName] ?? "·";
   const desc = describe(tool.toolName, tool.input);
   const pending = tool.output === undefined;
   return BLOCK.has(tool.toolName) ? (
-    <BlockTool tool={tool} icon={icon} desc={desc} pending={pending} />
+    <BlockTool tool={tool} icon={icon} desc={desc} pending={pending} collapsed={collapsed} />
   ) : (
-    <InlineTool tool={tool} icon={icon} desc={desc} pending={pending} />
+    <InlineTool tool={tool} icon={icon} desc={desc} pending={pending} collapsed={collapsed} />
   );
 }
 
@@ -145,13 +133,18 @@ function InlineTool({
   icon,
   desc,
   pending,
+  collapsed,
 }: {
   tool: ToolView;
   icon: string;
   desc: string;
   pending: boolean;
+  collapsed?: boolean;
 }) {
   const iconColor = tool.isError ? "red" : "white";
+  // Collapsed (Ctrl+O): show only the synthetic row, hide the output preview.
+  // Errors always stay visible (they matter even when collapsed).
+  const showOutput = !pending && tool.output && (!collapsed || tool.isError);
   return (
     <Box flexDirection="column" paddingLeft={3}>
       <Box>
@@ -173,37 +166,14 @@ function InlineTool({
           </Text>
         )}
       </Box>
-      {!pending && tool.output && (
+      {showOutput && (
         <Box paddingLeft={2}>
           <Text dimColor color={tool.isError ? "red" : undefined}>
-            {oneLine(tool.output)}
+            {oneLine(tool.output!)}
           </Text>
         </Box>
       )}
     </Box>
-  );
-}
-
-// Panel row: bar "▌ " (2 cols) + content + background fill to width.
-function PanelLine({
-  w,
-  barColor,
-  used,
-  children,
-}: {
-  w: number;
-  barColor: string;
-  used: number;
-  children: ReactNode;
-}) {
-  return (
-    <Text backgroundColor={BG_PANEL}>
-      <Text color={barColor} bold>
-        {"▌ "}
-      </Text>
-      {children}
-      <Text backgroundColor={BG_PANEL}>{fill(w - 2, used)}</Text>
-    </Text>
   );
 }
 
@@ -212,11 +182,13 @@ function BlockTool({
   icon,
   desc,
   pending,
+  collapsed,
 }: {
   tool: ToolView;
   icon: string;
   desc: string;
   pending: boolean;
+  collapsed?: boolean;
 }) {
   const { stdout } = useStdout();
   const w = panelWidth(stdout?.columns);
@@ -225,61 +197,51 @@ function BlockTool({
     tool.toolName === "bash" ? oneLine(desc, 160) : `${tool.toolName} ${desc}`;
   const titleClip = title.slice(0, w - 6);
 
-  const diff = tool.diff && tool.diff.length > 0 ? tool.diff : null;
+  // Collapsed (Ctrl+O): show the title row only, hide the diff/output body — unless
+  // it's an error, which stays visible.
+  const hideDetail = collapsed && !tool.isError;
+  const diff = !hideDetail && tool.diff && tool.diff.length > 0 ? tool.diff : null;
   const outLines =
-    !diff && !pending && tool.output ? clip(tool.output).split("\n") : [];
+    !diff && !hideDetail && !pending && tool.output ? clip(tool.output).split("\n") : [];
 
+  // Left-border block (like the assistant message), on the terminal background — no
+  // heavy full-width fill. The gray/red bar delimits the tool block; content breathes.
   return (
-    <Box flexDirection="column" marginTop={10} marginBottom={1}>
-      <PanelLine w={w} barColor={barColor} used={2 + titleClip.length}>
-        <Text
-          color={tool.isError ? "red" : "white"}
-          bold
-          backgroundColor={BG_PANEL}
-        >
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={barColor}
+      borderTop={false}
+      borderRight={false}
+      borderBottom={false}
+      paddingLeft={1}
+      marginBottom={1}
+    >
+      <Box>
+        <Text color={tool.isError ? "red" : "white"} bold>
           {icon}{" "}
         </Text>
-        <Text bold backgroundColor={BG_PANEL}>
-          {titleClip}
-        </Text>
-      </PanelLine>
+        <Text bold>{titleClip}</Text>
+      </Box>
 
       {pending && (
-        <PanelLine
-          w={w}
-          barColor={barColor}
-          used={2 + pendingText(tool.toolName).length}
-        >
-          <Text dimColor backgroundColor={BG_PANEL}>
-            ~ {pendingText(tool.toolName)}
-          </Text>
-        </PanelLine>
+        <Box>
+          <Text dimColor>~ {pendingText(tool.toolName)} </Text>
+          <SpinnerInline />
+        </Box>
       )}
 
       {diff &&
         diff.slice(0, 15).map((d, i) => <DiffLineRow key={i} d={d} w={w} />)}
       {diff && diff.length > 15 && (
-        <PanelLine w={w} barColor={barColor} used={2 + 14}>
-          <Text dimColor backgroundColor={BG_PANEL}>
-            … {diff.length - 15} more
-          </Text>
-        </PanelLine>
+        <Text dimColor>… {diff.length - 15} more</Text>
       )}
 
-      {outLines.map((ln, i) => {
-        const t = ln.slice(0, w - 2);
-        return (
-          <PanelLine key={i} w={w} barColor={barColor} used={t.length}>
-            <Text
-              dimColor
-              color={tool.isError ? "red" : undefined}
-              backgroundColor={BG_PANEL}
-            >
-              {t}
-            </Text>
-          </PanelLine>
-        );
-      })}
+      {outLines.map((ln, i) => (
+        <Text key={i} dimColor color={tool.isError ? "red" : undefined}>
+          {ln.slice(0, w - 2)}
+        </Text>
+      ))}
     </Box>
   );
 }

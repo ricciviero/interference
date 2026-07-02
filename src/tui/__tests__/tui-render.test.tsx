@@ -27,11 +27,44 @@ describe("ToolStep rendering (iter 18)", () => {
     expect(bash).toContain("~ Running command…");
   });
 
-  test("bash block: command rendered with $ and output, on a panel (▌ bar)", () => {
+  test("bash block: command rendered with $ and output, on a left-border block", () => {
     const out = frame(<ToolStep tool={{ toolName: "bash", input: { command: "bun test" }, output: "77 pass" }} />);
     expect(out).toContain("$ bun test");
     expect(out).toContain("77 pass");
-    expect(out).toContain("▌"); // panel (it. 19): side bar on background
+    expect(out).toContain("│"); // left border (no heavy full-width fill)
+  });
+
+  test("write block: title + content as added (+) lines with numbers", () => {
+    const content = 'export const x = 1;\nexport const y = 2;\n';
+    const out = frame(
+      <ToolStep
+        tool={{ toolName: "write", input: { path: "src/new.ts" }, output: "ok", diff: computeDiff([], content.split("\n")) }}
+      />,
+    );
+    expect(out).toContain("← write src/new.ts");
+    expect(out).toContain("+ export const x = 1;");
+    expect(out).toContain("+ export const y = 2;");
+    expect(out).toContain("│"); // left-border block, no heavy fill
+  });
+
+  test("write/edit pending show a descriptive verb, not the generic 'Working…'", () => {
+    const w = frame(<ToolStep tool={{ toolName: "write", input: { path: "a.ts" } }} />);
+    expect(w).toContain("Writing file…");
+    expect(w).not.toContain("Working…");
+    const e = frame(<ToolStep tool={{ toolName: "edit", input: { path: "a.ts" } }} />);
+    expect(e).toContain("Editing file…");
+  });
+
+  test("task inline icon is distinct from the block-tool border (no '│' collision)", () => {
+    const out = frame(<ToolStep tool={{ toolName: "task", input: { description: "explore auth" }, output: "done" }} />);
+    expect(out).toContain("▸ task explore auth");
+    expect(out).not.toContain("│"); // must not reuse the block border glyph
+  });
+
+  test("block pending shows the descriptive verb (bash)", () => {
+    const out = frame(<ToolStep tool={{ toolName: "bash", input: { command: "bun test" } }} />);
+    expect(out).toContain("$ bun test");
+    expect(out).toContain("~ Running command…");
   });
 
   test("edit block: diff lines with +/-", () => {

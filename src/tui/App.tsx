@@ -25,6 +25,7 @@ import { getGitBranch } from "../git.ts";
 import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
+import { ReverseSearch } from "./ReverseSearch.tsx";
 import { SessionList } from "./SessionList.tsx";
 import { useToast, ToastContainer } from "./Toast.tsx";
 import { Welcome } from "./Welcome.tsx";
@@ -77,6 +78,9 @@ export default function App({ session }: { session: Session }) {
   const [showThinking, setShowThinking] = useState(false);
   const [showModel, setShowModel] = useState(false);
   const [showProvider, setShowProvider] = useState(false);
+  const [showTodos, setShowTodos] = useState(true); // Ctrl+T toggle (fix/08 A2)
+  const [collapsedTools, setCollapsedTools] = useState(false); // Ctrl+O toggle (fix/08 A4)
+  const [showReverseSearch, setShowReverseSearch] = useState(false); // Ctrl+R (fix/08 A6)
   const [acIdx, setAcIdx] = useState(0);
   const [draft, setDraft] = useState("");
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
@@ -155,8 +159,54 @@ export default function App({ session }: { session: Session }) {
   const cmdHistory = useRef<string[]>([]);
   const cmdHistoryIdx = useRef(-1);
 
+  // Direct keyboard shortcuts (fix/08 Percorso A) — the frequent actions get a single
+  // key instead of a text command, matching mature terminal agents. Guarded so they
+  // never fire while a dialog/picker is open or disrupt normal typing.
+  useInput((input, key) => {
+    if (
+      confirmPreview ||
+      questions ||
+      showThinking ||
+      showSessions ||
+      showModel ||
+      showProvider ||
+      showReverseSearch
+    )
+      return;
+
+    // A1 — Esc interrupts the current turn (reuses the existing AbortController).
+    // The work done so far is kept (see doTurn's abort branch).
+    if (key.escape && busy) {
+      aborterRef.current?.abort();
+      return;
+    }
+    // A3 — Shift+Tab cycles Plan/Build (same setMode codepath as /plan and /build).
+    if (key.tab && key.shift) {
+      const next = currentMode() === "plan" ? "build" : "plan";
+      setMode(next);
+      sessionRef.current.meta.mode = next;
+      addToast(`${next === "plan" ? "Plan" : "Build"} mode`, "info");
+      return;
+    }
+    // A2 — Ctrl+T toggles the todo list.
+    if (key.ctrl && input === "t") {
+      setShowTodos((s) => !s);
+      return;
+    }
+    // A4 — Ctrl+O collapses/expands the tool output detail.
+    if (key.ctrl && input === "o") {
+      setCollapsedTools((c) => !c);
+      return;
+    }
+    // A6 — Ctrl+R opens reverse search over the prompt history.
+    if (key.ctrl && input === "r" && !busy && cmdHistory.current.length > 0) {
+      setShowReverseSearch(true);
+      return;
+    }
+  });
+
   useInput((_input, key) => {
-    if (confirmPreview || questions || showThinking || showSessions || showModel || showProvider) return;
+    if (confirmPreview || questions || showThinking || showSessions || showModel || showProvider || showReverseSearch) return;
 
     // Command history: up/down arrow without active slash
     if (!draft.startsWith("/")) {
@@ -314,11 +364,31 @@ export default function App({ session }: { session: Session }) {
         addToast(`Compacted: ${pct}% → ${getUsagePercent(messagesRef.current)}%`, "info");
       }
     } catch (err) {
+      // Esc interrupt (fix/08 A1): the AbortController's signal is set. Keep the work
+      // done so far visible (partial text/reasoning → history), drop the half-recorded
+      // turn from the model context so the next turn starts clean.
+      const aborted = aborterRef.current?.signal.aborted ?? false;
       messagesRef.current.pop();
-      if (err instanceof MissingApiKeyError) {
+      if (aborted) {
+        if (acc || reasoningAcc) {
+          if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
+          setHistory((h) => [
+            ...h,
+            {
+              id: nextId(),
+              role: "assistant",
+              content: acc,
+              reasoning: reasoningAcc || undefined,
+              reasoningMs: reasoningMs || undefined,
+              durationMs: Date.now() - turnStart,
+              mode: currentMode(),
+              model: currentModel(),
+            },
+          ]);
+        }
+        addToast("Interrupted", "info");
+      } else if (err instanceof MissingApiKeyError) {
         setStreaming(`\n${err.message}`);
-      } else if (aborterRef.current === null) {
-        // interrupted
       } else {
         const msg = err instanceof Error ? err.message : String(err);
         setStreaming(`\n[error] ${msg}`);
@@ -581,7 +651,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             {(m) => <MsgBlock key={m.id} item={m} />}
           </Static>
 
-          <TodoList todos={todos} />
+          {showTodos && <TodoList todos={todos} />}
 
           {reasoning && <ReasoningBlock text={reasoning} live />}
 
@@ -593,10 +663,10 @@ ${args ? `Additional context: ${args}` : ""}`;
             </Box>
           )}
           {toolSteps.map((t) => (
-            <ToolStep key={t.id} tool={t} />
+            <ToolStep key={t.id} tool={t} collapsed={collapsedTools} />
           ))}
 
-          {busy && !streaming && toolSteps.length === 0 && !confirmPreview && (
+          {busy && !streaming && !reasoning && !hasPendingTool(toolSteps) && !confirmPreview && (
             <Box marginBottom={1}>
               <Spinner label="thinking" />
             </Box>
@@ -641,7 +711,23 @@ ${args ? `Additional context: ${args}` : ""}`;
             </Box>
           )}
 
-          {!confirmPreview && !questions && !showSessions && (
+          {/* Queued prompts: show the TEXT of what's waiting, not just the count
+              (the data is already there as a string[]) — fix 05. */}
+          {!confirmPreview && !questions && <QueuedPrompts queue={messageQueue} />}
+
+          {showReverseSearch && (
+            <ReverseSearch
+              history={cmdHistory.current}
+              onAccept={(value) => {
+                setShowReverseSearch(false);
+                setDraft(value);
+                setAcIdx(0);
+              }}
+              onCancel={() => setShowReverseSearch(false)}
+            />
+          )}
+
+          {!confirmPreview && !questions && !showSessions && !showReverseSearch && (
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
               <Text color="white" bold>{"› "}</Text>
               <TextInput
@@ -671,6 +757,25 @@ ${args ? `Additional context: ${args}` : ""}`;
             outputTokens={getUsageStats().outputTokens}
           />
         </>
+      )}
+    </Box>
+  );
+}
+
+// Queued prompts waiting to run (fix 05): shows the TEXT (first 3, truncated) + a
+// "+N more" tail, not just the count. Renders nothing when the queue is empty.
+export function QueuedPrompts({ queue }: { queue: string[] }) {
+  if (queue.length === 0) return null;
+  return (
+    <Box flexDirection="column" paddingLeft={1} marginBottom={1}>
+      {queue.slice(0, 3).map((q, i) => (
+        <Text key={i} dimColor>
+          {"› "}
+          {q.length > 60 ? q.slice(0, 60) + "…" : q}
+        </Text>
+      ))}
+      {queue.length > 3 && (
+        <Text dimColor>{`  … +${queue.length - 3} more queued`}</Text>
       )}
     </Box>
   );
@@ -810,4 +915,13 @@ export function applyToolResult(
 // than one task tool-call in the same step (Promise.all under the hood).
 export function countPendingTasks(steps: ToolEntry[]): number {
   return steps.filter((t) => t.toolName === "task" && t.output === undefined).length;
+}
+
+// True if any tool-call in this turn is still executing (no result yet). Used to
+// decide the "thinking" spinner: turn HISTORY (past, completed tool steps) must not
+// suppress it — only something running RIGHT NOW should. Fixes the case where the
+// spinner never reappeared after the first tool step (toolSteps accumulates and is
+// never emptied mid-turn).
+export function hasPendingTool(steps: ToolEntry[]): boolean {
+  return steps.some((t) => t.output === undefined);
 }

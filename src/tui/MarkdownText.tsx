@@ -9,6 +9,47 @@ import { tokenizeLine, normalizeLang } from "./syntax.ts";
 // - inline **bold** and `code`
 // Deliberately conservative: clean text is better than fragile parsing.
 
+// --- Table detection (GitHub-style, leading pipe) --------------------------
+function isTableRow(line: string): boolean {
+  const t = line.trim();
+  return t.startsWith("|") && t.length > 1;
+}
+
+function isTableSeparator(line: string): boolean {
+  const t = line.trim();
+  return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(t);
+}
+
+function parseTableCells(line: string): string[] {
+  const t = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return t.split("|").map((c) => c.trim());
+}
+
+// Renders a markdown table with left-aligned, width-computed columns. Cells over
+// CELL_CAP are truncated (not wrapped) — same principle as the fence line cap.
+function TableBlock({ header, rows }: { header: string[]; rows: string[][] }) {
+  const CELL_CAP = 30;
+  const cols = header.length;
+  const widths = Array.from({ length: cols }, (_, c) =>
+    Math.min(
+      CELL_CAP,
+      Math.max(header[c]?.length ?? 0, ...rows.map((r) => r[c]?.length ?? 0)),
+    ),
+  );
+  const fmtRow = (cells: string[]) =>
+    widths.map((w, ci) => (cells[ci] ?? "").slice(0, w).padEnd(w)).join("  ");
+
+  return (
+    <Box flexDirection="column">
+      <Text bold>{fmtRow(header)}</Text>
+      <Text dimColor>{widths.map((w) => "─".repeat(w)).join("  ")}</Text>
+      {rows.map((r, i) => (
+        <Text key={i}>{fmtRow(r)}</Text>
+      ))}
+    </Box>
+  );
+}
+
 function renderInline(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
   const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
@@ -36,7 +77,10 @@ export function MarkdownText({ content }: { content: string }) {
   let lang = "";
   let fenceLines = 0;
 
-  lines.forEach((line, i) => {
+  // Indexed loop (not forEach) so a table block can consume several consecutive
+  // lines and advance `i` past them.
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
     const t = line.trimStart();
     if (t.startsWith("```")) {
       if (!inFence) {
@@ -47,10 +91,10 @@ export function MarkdownText({ content }: { content: string }) {
         inFence = false;
         lang = "";
       }
-      return; // hide fence markers
+      continue; // hide fence markers
     }
     if (inFence) {
-      if (++fenceLines > 200) return; // safety cap
+      if (++fenceLines > 200) continue; // safety cap
       const toks = tokenizeLine(line, lang);
       blocks.push(
         <Text key={i}>
@@ -62,12 +106,12 @@ export function MarkdownText({ content }: { content: string }) {
           ))}
         </Text>,
       );
-      return;
+      continue;
     }
     const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
       blocks.push(<Text key={i} bold>{heading[2]}</Text>);
-      return;
+      continue;
     }
     const bullet = /^(\s*)[-*]\s+(.*)$/.exec(line);
     if (bullet) {
@@ -76,10 +120,23 @@ export function MarkdownText({ content }: { content: string }) {
           {bullet[1]}• {renderInline(bullet[2] ?? "", `l${i}`)}
         </Text>,
       );
-      return;
+      continue;
+    }
+    // Table: header row + separator row (|---|---|) + data rows.
+    if (isTableRow(line) && lines[i + 1] && isTableSeparator(lines[i + 1]!)) {
+      const header = parseTableCells(line);
+      let j = i + 2;
+      const rows: string[][] = [];
+      while (j < lines.length && isTableRow(lines[j]!)) {
+        rows.push(parseTableCells(lines[j]!));
+        j++;
+      }
+      blocks.push(<TableBlock key={i} header={header} rows={rows} />);
+      i = j - 1; // consumed through row j-1; loop i++ moves to j
+      continue;
     }
     blocks.push(<Text key={i}>{renderInline(line, `l${i}`)}</Text>);
-  });
+  }
 
   return <Box flexDirection="column">{blocks}</Box>;
 }
