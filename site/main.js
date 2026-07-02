@@ -17,7 +17,7 @@ const I18N = {
     "hero.title": "The Italian<br />Open Source<br /><span class=\"ital\">Coding Agent.</span>",
     "hero.lede": "interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.",
     "hero.cta_start": "Get started",
-    "hero.cta_source": "View source ↗",
+    "hero.cta_source": "GitHub ↗",
 
     "term.title": "interference — ~/project",
 
@@ -115,7 +115,7 @@ const I18N = {
     "hero.title": "L'agente di coding<br />open source<br /><span class=\"ital\">italiano.</span>",
     "hero.lede": "interference legge il tuo codice, modifica file ed esegue comandi attraverso un agent loop — con permessi espliciti e una modalità Plan in sola lettura. Nessun vincolo all'editor. Solo il terminale.",
     "hero.cta_start": "Inizia",
-    "hero.cta_source": "Sorgente ↗",
+    "hero.cta_source": "GitHub ↗",
 
     "term.title": "interference — ~/progetto",
 
@@ -363,25 +363,29 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 
 // ── 3. Copy install command ───────────────────────────
+// Multiple .install-row blocks can exist (hero + quickstart) — each button
+// copies the <code> in its own row, not a page-wide singleton id.
 (function () {
-  var btn = document.getElementById("copybtn");
-  var cmd = document.getElementById("installcmd");
-  if (!btn || !cmd) return;
+  document.querySelectorAll(".install-row").forEach(function (row) {
+    var btn = row.querySelector(".copy");
+    var cmd = row.querySelector("code");
+    if (!btn || !cmd) return;
 
-  btn.addEventListener("click", function () {
-    var text = cmd.textContent.trim();
-    try {
-      navigator.clipboard.writeText(text);
-    } catch (_) {
-      var r = document.createRange(); r.selectNode(cmd);
-      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-      try { document.execCommand("copy"); } catch (_) {}
-      sel.removeAllRanges();
-    }
-    var prev = btn.textContent;
-    var copiedText = I18N[lang()]["ui.copied"];
-    btn.textContent = copiedText; btn.classList.add("done");
-    setTimeout(function () { btn.textContent = prev; btn.classList.remove("done"); }, 1600);
+    btn.addEventListener("click", function () {
+      var text = cmd.textContent.trim();
+      try {
+        navigator.clipboard.writeText(text);
+      } catch (_) {
+        var r = document.createRange(); r.selectNode(cmd);
+        var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        try { document.execCommand("copy"); } catch (_) {}
+        sel.removeAllRanges();
+      }
+      var prev = btn.textContent;
+      var copiedText = I18N[lang()]["ui.copied"];
+      btn.textContent = copiedText; btn.classList.add("done");
+      setTimeout(function () { btn.textContent = prev; btn.classList.remove("done"); }, 1600);
+    });
   });
 
   // GitHub star count

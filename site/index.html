@@ -32,7 +32,7 @@
   <a class="brand" href="#top" aria-label="interference home">
     <img class="brand-mark" src="assets/interference-mark.svg" alt="" width="28" height="28" />
     <span class="brand-word">interference</span>
-    <span class="beta-badge">Beta</span>
+    <span class="beta-badge">Alpha</span>
   </a>
   <nav class="nav-links">
     <a href="#how" data-i18n="nav.how">How it works</a>
@@ -56,20 +56,27 @@
 <main id="top">
 
   <!-- ── HERO ────────────────────────────────────────── -->
-  <section class="hero">
-    <div class="hero-grid">
-      <div class="hero-copy">
-        <span class="hero-badge reveal" style="--d:0">Beta</span>
-        <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The Italian<br />Open Source<br /><span class="ital">Coding Agent.</span></h1>
-        <p class="lede reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.</p>
-        <div class="hero-actions reveal" style="--d:3">
-          <a class="btn btn-ink" href="#start" data-i18n="hero.cta_start">Get started</a>
-          <a class="btn btn-ghost" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener" data-i18n="hero.cta_source">View source ↗</a>
+  <section class="hero hero--centered">
+    <div class="hero-bg-mark" aria-hidden="true">
+      <img src="assets/interference-mark-animated.svg" alt="" />
+    </div>
+    <div class="hero-copy hero-copy--center">
+      <span class="hero-badge reveal" style="--d:0">Alpha</span>
+      <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The Italian<br />Open Source<br /><span class="ital">Coding Agent.</span></h1>
+      <p class="lede lede--center reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.</p>
+
+      <div class="install install--hero reveal" style="--d:3">
+        <div class="install-row">
+          <code>bun install -g interference-agent</code>
+          <button class="copy" type="button" aria-label="Copy command" data-i18n="ui.copy">copy</button>
         </div>
       </div>
 
-      <div class="hero-mark reveal" style="--d:2" aria-hidden="true">
-        <img src="assets/interference-mark-animated.svg" alt="" />
+      <div class="hero-actions hero-actions--center reveal" style="--d:4">
+        <a class="btn btn-ghost btn-gh" href="https://github.com/ricciviero/interference" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span data-i18n="hero.cta_source">GitHub ↗</span>
+        </a>
       </div>
     </div>
   </section>
@@ -172,7 +179,7 @@
   <!-- ── FEATURES ────────────────────────────────────── -->
   <section id="features" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="features.eyebrow">/ 02 — what's inside</span>
+      <span class="eyebrow" data-i18n="features.eyebrow">/ 03 — what's inside</span>
       <h2 data-i18n="features.title">Small surface. Serious capability.</h2>
     </div>
     <div class="feat-grid">
@@ -227,7 +234,7 @@
   <!-- ── WHY ─────────────────────────────────────────── -->
   <section id="why" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="why.eyebrow">/ 03 — why interference</span>
+      <span class="eyebrow" data-i18n="why.eyebrow">/ 04 — why interference</span>
       <h2 data-i18n="why.title">Not just another agent.</h2>
     </div>
     <div class="why-grid">
@@ -252,7 +259,7 @@
   <!-- ── QUICKSTART ──────────────────────────────────── -->
   <section id="start" class="band-ink section">
     <div class="sec-head sec-head--center">
-      <span class="eyebrow" data-i18n="start.eyebrow">/ 04 — quickstart</span>
+      <span class="eyebrow" data-i18n="start.eyebrow">/ 05 — quickstart</span>
       <h2 data-i18n="start.title">In your terminal in a minute.</h2>
     </div>
       <div class="install reveal-up">
