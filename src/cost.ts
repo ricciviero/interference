@@ -4,6 +4,12 @@ import { getModelInfo } from "./catalog.ts";
 interface Pricing {
   inputPer1M: number;
   outputPer1M: number;
+  /** Absolute price per 1M cache-read tokens, from the catalog (models.dev).
+   *  When absent, getTotalCost() falls back to inputPer1M * 0.1 (Anthropic-style). */
+  cacheReadPer1M?: number;
+  /** Absolute price per 1M cache-write tokens, from the catalog (models.dev).
+   *  When absent, getTotalCost() falls back to inputPer1M * 1.25 (Anthropic-style). */
+  cacheWritePer1M?: number;
 }
 
 // Safety net (it. 37): used only if the models.dev catalog lacks the id (offline
@@ -29,17 +35,23 @@ export function getPricing(modelId?: string, providerId?: ProviderId): Pricing {
   const pid = providerId ?? currentProviderId();
   const fromCatalog = getModelInfo(pid, id);
   if (fromCatalog?.cost) {
-    return { inputPer1M: fromCatalog.cost.input, outputPer1M: fromCatalog.cost.output };
+    return {
+      inputPer1M: fromCatalog.cost.input,
+      outputPer1M: fromCatalog.cost.output,
+      cacheReadPer1M: fromCatalog.cost.cacheRead,
+      cacheWritePer1M: fromCatalog.cost.cacheWrite,
+    };
   }
   return PRICING[id] ?? { inputPer1M: 2.0, outputPer1M: 8.0 };
 }
 
-// Prompt caching (it. 35): tokens read from cache cost ~10% of full input price;
-// those written to cache (Anthropic only, opt-in) cost ~125%. Standard Anthropic
-// coefficients; DeepSeek/OpenAI-compatible don't expose a separate write cost
-// (cacheWriteTokens stays 0 for them → no effect on cost).
-const CACHE_READ_DISCOUNT = 0.1;
-const CACHE_WRITE_PREMIUM = 1.25;
+// Prompt caching (it. 35): when the catalog provides absolute per-1M prices for
+// cache reads/writes (cacheReadPer1M / cacheWritePer1M), those are used directly.
+// Otherwise, fall back to Anthropic-style coefficients (10% read, 125% write) —
+// this handles models where only input/output prices are known (e.g. fallback
+// PRICING map, or a catalog entry with no cache_read/cache_write).
+const DEFAULT_CACHE_READ_DISCOUNT = 0.1;
+const DEFAULT_CACHE_WRITE_PREMIUM = 1.25;
 
 let totalNoCacheInputTokens = 0;
 let totalOutputTokens = 0;
@@ -62,10 +74,14 @@ export function trackUsage(
 
 export function getTotalCost(): number {
   const pricing = getPricing(currentModel());
+  const cacheReadPrice =
+    pricing.cacheReadPer1M ?? pricing.inputPer1M * DEFAULT_CACHE_READ_DISCOUNT;
+  const cacheWritePrice =
+    pricing.cacheWritePer1M ?? pricing.inputPer1M * DEFAULT_CACHE_WRITE_PREMIUM;
   return (
     (totalNoCacheInputTokens / 1_000_000) * pricing.inputPer1M +
-    (totalCacheReadTokens / 1_000_000) * pricing.inputPer1M * CACHE_READ_DISCOUNT +
-    (totalCacheWriteTokens / 1_000_000) * pricing.inputPer1M * CACHE_WRITE_PREMIUM +
+    (totalCacheReadTokens / 1_000_000) * cacheReadPrice +
+    (totalCacheWriteTokens / 1_000_000) * cacheWritePrice +
     (totalOutputTokens / 1_000_000) * pricing.outputPer1M
   );
 }
