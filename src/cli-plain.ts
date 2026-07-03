@@ -48,16 +48,28 @@ export default async function plain(session: Session): Promise<void> {
   const messages = session.messages;
   let aborter: AbortController | null = null;
 
-  setConfirmHandler(async (toolName, preview) => {
-    stdout.write(`\n${YELLOW}${preview}${RESET}\n${YELLOW}  Allow ${toolName}?${RESET} [y/N] `);
-    let ans: string;
-    try { ans = (await rl.question("")).trim().toLowerCase(); } catch { ans = "n"; }
-    const ok = ans === "y" || ans === "yes";
-    stdout.write(ok ? `${DIM}  → executing…${RESET}\n` : `${DIM}  → refused${RESET}\n`);
-    return ok;
-  });
+  // Serialize interactive prompts (fix/01): the AI SDK runs a step's tool-calls with
+  // Promise.all, so 2+ "ask" tools would call the handler concurrently and race on the
+  // single stdin/readline. Chain them so requests are prompted one at a time, in order.
+  let ioChain: Promise<unknown> = Promise.resolve();
+  function serialize<T>(fn: () => Promise<T>): Promise<T> {
+    const run = ioChain.then(fn, fn);
+    ioChain = run.then(() => {}, () => {});
+    return run;
+  }
 
-  setAnswerHandler(async (qs) => {
+  setConfirmHandler((toolName, preview) =>
+    serialize(async () => {
+      stdout.write(`\n${YELLOW}${preview}${RESET}\n${YELLOW}  Allow ${toolName}?${RESET} [y/N] `);
+      let ans: string;
+      try { ans = (await rl.question("")).trim().toLowerCase(); } catch { ans = "n"; }
+      const ok = ans === "y" || ans === "yes";
+      stdout.write(ok ? `${DIM}  → executing…${RESET}\n` : `${DIM}  → refused${RESET}\n`);
+      return ok;
+    }),
+  );
+
+  setAnswerHandler((qs) => serialize(async () => {
     const answers: Answers = [];
     for (const q of qs) {
       stdout.write(`\n${BOLD}${q.header ? `[${q.header}] ` : ""}${q.question}${RESET}\n`);
@@ -75,7 +87,7 @@ export default async function plain(session: Session): Promise<void> {
       answers.push(picked);
     }
     return answers;
-  });
+  }));
 
   rl.on("SIGINT", () => {
     if (aborter) { aborter.abort(); aborter = null; stdout.write(`\n${DIM}[interrupted]${RESET}\n`); }

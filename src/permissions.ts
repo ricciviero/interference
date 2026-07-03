@@ -106,8 +106,10 @@ function globMatch(str: string, glob: string, sep: string): boolean {
 export type ConfirmHandler = (tool: string, preview: string) => Promise<boolean>;
 
 let confirmHandler: ConfirmHandler | null = null;
-let pendingResolver: ((answer: boolean) => void) | null = null;
-let pending: { tool: string; preview: string } | null = null;
+// Fallback without a registered handler (e.g. tests): a QUEUE, not a single slot, so
+// concurrent requests don't overwrite each other's resolver — the same fix/01 deadlock
+// the TUI handler had. Head of queue = current pending request.
+const pendingQueue: Array<{ tool: string; preview: string; resolve: (answer: boolean) => void }> = [];
 
 export function setConfirmHandler(handler: ConfirmHandler | null) {
   confirmHandler = handler;
@@ -115,21 +117,17 @@ export function setConfirmHandler(handler: ConfirmHandler | null) {
 
 export async function requestConfirmation(tool: string, preview: string): Promise<boolean> {
   if (confirmHandler) return confirmHandler(tool, preview);
-  // Fallback without handler (tests): resolved by answerConfirmation.
-  pending = { tool, preview };
   return new Promise<boolean>((resolve) => {
-    pendingResolver = resolve;
+    pendingQueue.push({ tool, preview, resolve });
   });
 }
 
 export function needsConfirmation(): { tool: string; preview: string } | null {
-  return pending;
+  const head = pendingQueue[0];
+  return head ? { tool: head.tool, preview: head.preview } : null;
 }
 
 export function answerConfirmation(answer: boolean) {
-  if (pendingResolver) {
-    pendingResolver(answer);
-    pendingResolver = null;
-    pending = null;
-  }
+  const head = pendingQueue.shift();
+  if (head) head.resolve(answer);
 }

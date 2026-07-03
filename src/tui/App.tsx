@@ -26,6 +26,7 @@ import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
 import { ReverseSearch } from "./ReverseSearch.tsx";
+import { createStreamFlusher } from "./streamFlush.ts";
 import { SessionList } from "./SessionList.tsx";
 import { useToast, ToastContainer } from "./Toast.tsx";
 import { Welcome } from "./Welcome.tsx";
@@ -71,8 +72,13 @@ export default function App({ session }: { session: Session }) {
   const [reasoning, setReasoning] = useState("");
   const [toolSteps, setToolSteps] = useState<ToolEntry[]>([]);
   const [busy, setBusy] = useState(false);
-  const [confirmPreview, setConfirmPreview] = useState<string | null>(null);
-  const [confirmTool, setConfirmTool] = useState<string>("");
+  // Confirmation requests as a QUEUE, not a single slot (fix/01). Multiple mutating
+  // tools can request "ask" confirmation in the SAME parallel step (the AI SDK runs
+  // tool-calls with Promise.all): a single resolver would be overwritten by the 2nd
+  // request and the 1st Promise would hang forever, deadlocking the turn. Head = active.
+  const [confirmQueue, setConfirmQueue] = useState<
+    Array<{ id: number; tool: string; preview: string; resolve: (v: boolean) => void }>
+  >([]);
   const [statusText, setStatusText] = useState<string>("");
   const [showSessions, setShowSessions] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
@@ -86,12 +92,18 @@ export default function App({ session }: { session: Session }) {
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const [gitBranch, setGitBranch] = useState("");
   const [todos, setTodosState] = useState<Todo[]>(session.todos ?? []);
-  const [questions, setQuestions] = useState<QuestionSpec[] | null>(null);
+  // Same queue treatment for the question tool (fix/01): same deadlock if the model
+  // invokes `question` 2+ times in one step.
+  const [questionQueue, setQuestionQueue] = useState<
+    Array<{ id: number; questions: QuestionSpec[]; resolve: (a: Answers) => void }>
+  >([]);
+  const reqIdRef = useRef(0); // monotonic id for confirm/question requests (React key)
   const [phIdx, setPhIdx] = useState(0); // placeholder example index (it. 25)
   const [update, setUpdate] = useState<string | null>(null); // newer version (it. 28)
   const { toasts, addToast } = useToast();
-  const confirmResolveRef = useRef<((v: boolean) => void) | null>(null);
-  const answerResolveRef = useRef<((a: Answers) => void) | null>(null);
+  // Head-of-queue = the request currently shown to the user (null if none).
+  const confirm = confirmQueue[0] ?? null;
+  const question = questionQueue[0] ?? null;
   const messagesRef = useRef<ModelMessage[]>(session.messages);
   const aborterRef = useRef<AbortController | null>(null);
   const sessionRef = useRef(session);
@@ -112,46 +124,28 @@ export default function App({ session }: { session: Session }) {
   }, []);
 
   useEffect(() => {
-    const handler: ConfirmHandler = async (tool, preview) => {
-      setConfirmTool(tool);
-      setConfirmPreview(preview);
-      return new Promise<boolean>((resolve) => {
-        confirmResolveRef.current = resolve;
+    // Enqueue instead of overwriting a single slot (fix/01): each concurrent request
+    // keeps its own resolver; the UI shows the head and advances on answer.
+    const handler: ConfirmHandler = (tool, preview) =>
+      new Promise<boolean>((resolve) => {
+        const id = ++reqIdRef.current;
+        setConfirmQueue((q) => [...q, { id, tool, preview, resolve }]);
       });
-    };
     setConfirmHandler(handler);
     return () => setConfirmHandler(null);
   }, []);
 
-  // Question tool (RF-15): event-driven handler, same pattern as confirmation.
+  // Question tool (RF-15): event-driven handler, same queue treatment as confirmation.
   useEffect(() => {
-    setAnswerHandler(async (qs) => {
-      setQuestions(qs);
-      return new Promise<Answers>((resolve) => {
-        answerResolveRef.current = resolve;
-      });
-    });
+    setAnswerHandler(
+      (qs) =>
+        new Promise<Answers>((resolve) => {
+          const id = ++reqIdRef.current;
+          setQuestionQueue((q) => [...q, { id, questions: qs, resolve }]);
+        }),
+    );
     return () => setAnswerHandler(null);
   }, []);
-
-  useInput((input, key) => {
-    if (questions) return;
-    if (!confirmResolveRef.current || confirmPreview) return;
-    const c = input.toLowerCase();
-    if (c === "y" || key.return) {
-      const r = confirmResolveRef.current;
-      confirmResolveRef.current = null;
-      setConfirmTool("");
-      setConfirmPreview(null);
-      r(true);
-    } else if (c === "n" || key.escape) {
-      const r = confirmResolveRef.current;
-      confirmResolveRef.current = null;
-      setConfirmTool("");
-      setConfirmPreview(null);
-      r(false);
-    }
-  });
 
   // Autocomplete navigation: arrow keys ↑↓ move selection when draft is "/…".
   // Enter (TextInput.onSubmit) runs the highlighted command → no conflict.
@@ -164,8 +158,8 @@ export default function App({ session }: { session: Session }) {
   // never fire while a dialog/picker is open or disrupt normal typing.
   useInput((input, key) => {
     if (
-      confirmPreview ||
-      questions ||
+      confirm ||
+      question ||
       showThinking ||
       showSessions ||
       showModel ||
@@ -206,7 +200,7 @@ export default function App({ session }: { session: Session }) {
   });
 
   useInput((_input, key) => {
-    if (confirmPreview || questions || showThinking || showSessions || showModel || showProvider || showReverseSearch) return;
+    if (confirm || question || showThinking || showSessions || showModel || showProvider || showReverseSearch) return;
 
     // Command history: up/down arrow without active slash
     if (!draft.startsWith("/")) {
@@ -297,6 +291,12 @@ export default function App({ session }: { session: Session }) {
     let reasoningStart = 0;
     let reasoningMs = 0;
 
+    // Throttle live streaming updates (fix/07): flush at ~12.5 Hz instead of per chunk,
+    // so the terminal has room to process mouse scroll during a turn. Final text unchanged.
+    const nowMs = () => Date.now();
+    const streamFlush = createStreamFlusher(setStreaming, nowMs);
+    const reasoningFlush = createStreamFlusher(setReasoning, nowMs);
+
     try {
       const chunks = runTurn(messagesRef.current, aborterRef.current.signal, undefined, skillBodies);
 
@@ -305,13 +305,13 @@ export default function App({ session }: { session: Session }) {
           case "reasoning":
             if (!reasoningStart) reasoningStart = Date.now();
             reasoningAcc += chunk.text;
-            setReasoning(reasoningAcc);
+            reasoningFlush.push(reasoningAcc);
             break;
 
           case "text":
             if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
             acc += chunk.text;
-            setStreaming(acc);
+            streamFlush.push(acc);
             break;
 
           case "tool-call":
@@ -328,6 +328,10 @@ export default function App({ session }: { session: Session }) {
             break;
         }
       }
+
+      // Flush the final streamed text/reasoning (throttle may have withheld the last chunk).
+      streamFlush.finish();
+      reasoningFlush.finish();
 
       if (acc || reasoningAcc) {
         if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
@@ -666,46 +670,57 @@ ${args ? `Additional context: ${args}` : ""}`;
             <ToolStep key={t.id} tool={t} collapsed={collapsedTools} />
           ))}
 
-          {busy && !streaming && !reasoning && !hasPendingTool(toolSteps) && !confirmPreview && (
+          {busy && !streaming && !reasoning && !hasPendingTool(toolSteps) && !confirm && (
             <Box marginBottom={1}>
               <Spinner label="thinking" />
             </Box>
           )}
 
-          {confirmPreview && (
-            <ConfirmDialog
-              tool={confirmTool}
-              preview={confirmPreview}
-              onResolve={(allowed) => {
-                if (confirmResolveRef.current) {
-                  confirmResolveRef.current(allowed);
-                  confirmResolveRef.current = null;
-                }
-                setConfirmTool("");
-                setConfirmPreview(null);
-              }}
-            />
+          {/* Head-of-queue confirmation (fix/01). Keyed by request id so each one starts
+              fresh (default Deny). On answer: resolve THIS request, advance the queue. */}
+          {confirm && (
+            <>
+              <ConfirmDialog
+                key={confirm.id}
+                tool={confirm.tool}
+                preview={confirm.preview}
+                onResolve={(allowed) => {
+                  confirm.resolve(allowed);
+                  setConfirmQueue((q) => q.slice(1));
+                }}
+              />
+              {confirmQueue.length > 1 && (
+                <Box paddingLeft={1}>
+                  <Text dimColor>+{confirmQueue.length - 1} more confirmation(s) waiting</Text>
+                </Box>
+              )}
+            </>
           )}
 
-          {questions && (
-            <QuestionDialog
-              questions={questions}
-              onResolve={(answers) => {
-                if (answerResolveRef.current) {
-                  answerResolveRef.current(answers);
-                  answerResolveRef.current = null;
-                }
-                setQuestions(null);
-              }}
-            />
+          {question && (
+            <>
+              <QuestionDialog
+                key={question.id}
+                questions={question.questions}
+                onResolve={(answers) => {
+                  question.resolve(answers);
+                  setQuestionQueue((q) => q.slice(1));
+                }}
+              />
+              {questionQueue.length > 1 && (
+                <Box paddingLeft={1}>
+                  <Text dimColor>+{questionQueue.length - 1} more question(s) waiting</Text>
+                </Box>
+              )}
+            </>
           )}
 
-          {draft.startsWith("/") && !questions && (
+          {draft.startsWith("/") && !question && (
             <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
           {/* Command/status notice: directly ABOVE the input (conventional TUI style), not in the footer */}
-          {statusText && !confirmPreview && !questions && !showSessions && (
+          {statusText && !confirm && !question && !showSessions && (
             <Box paddingLeft={1}>
               <Text dimColor>{statusText}</Text>
             </Box>
@@ -713,7 +728,7 @@ ${args ? `Additional context: ${args}` : ""}`;
 
           {/* Queued prompts: show the TEXT of what's waiting, not just the count
               (the data is already there as a string[]) — fix 05. */}
-          {!confirmPreview && !questions && <QueuedPrompts queue={messageQueue} />}
+          {!confirm && !question && <QueuedPrompts queue={messageQueue} />}
 
           {showReverseSearch && (
             <ReverseSearch
@@ -727,7 +742,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             />
           )}
 
-          {!confirmPreview && !questions && !showSessions && !showReverseSearch && (
+          {!confirm && !question && !showSessions && !showReverseSearch && (
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
               <Text color="white" bold>{"› "}</Text>
               <TextInput
