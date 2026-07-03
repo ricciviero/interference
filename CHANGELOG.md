@@ -5,6 +5,20 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-03
+
+### Added
+- **Direct keyboard shortcuts** in the TUI: `Esc` interrupts the current turn (keeping the work done so far), `Shift+Tab` cycles Plan/Build, `Ctrl+T` toggles the todo list, `Ctrl+O` collapses/expands tool output, `Ctrl+R` reverse-searches the prompt history.
+- **Markdown tables** rendered with aligned columns.
+- **Queued prompts** show their text (not just a count) above the input.
+
+### Fixed
+- **"Thinking" spinner** reappears between tool steps — it was suppressed for the rest of the turn after the first tool call.
+- **Provider-aware cache pricing**: cache read/write tokens are priced from the models.dev catalog per provider instead of Anthropic's coefficients (was ~12x too high on DeepSeek).
+
+### Changed
+- **Lighter tool blocks**: bash/write/edit render with a left border instead of a heavy full-width dark background; distinct `task` icon, descriptive pending text (Writing/Editing file…), and a spinner while running.
+
 ## [0.2.4] — 2026-07-01
 
 ### Added
@@ -72,7 +86,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ricciviero/interference/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/ricciviero/interference/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ricciviero/interference/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ricciviero/interference/compare/v0.1.0...v0.2.2
