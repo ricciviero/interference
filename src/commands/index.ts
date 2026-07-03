@@ -81,7 +81,9 @@ register("version", "Show the interference version", () => {
 });
 
 register("update", "Update interference to the latest version", async () => {
-  const proc = Bun.spawn(["npm", "i", "-g", "interference-agent@latest"], {
+  // Self-update via Bun (the runtime the CLI already runs on) — a Bun-installed user may
+  // not have npm/Node at all, so `npm i -g` here would fail with "command not found".
+  const proc = Bun.spawn(["bun", "install", "-g", "interference-agent@latest"], {
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -90,7 +92,7 @@ register("update", "Update interference to the latest version", async () => {
     return "Updated to the latest version. Restart interference to use it.";
   }
   const err = (await new Response(proc.stderr).text()).trim().slice(0, 300);
-  return `Update failed (exit ${code}).${err ? `\n${err}` : ""}\nTry manually: npm i -g interference-agent@latest`;
+  return `Update failed (exit ${code}).${err ? `\n${err}` : ""}\nTry manually: bun install -g interference-agent@latest`;
 });
 
 register("help", "Show available commands", () => {
