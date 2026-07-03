@@ -5,6 +5,17 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-07-03
+
+### Fixed
+- **Parallel tool confirmations no longer deadlock the turn** — two mutating tools requesting confirmation in the same step used to overwrite each other's resolver, hanging the turn forever. Confirmations and questions are now per-request queues, shown one at a time.
+- **Context % estimate** now counts tool-call/result I/O and the system prompt — it previously ignored the bulk of the real context and read far too low.
+- **`/update` now uses Bun** instead of npm — a Bun-installed user may not have npm, which made self-update fail.
+
+### Changed
+- Live streaming re-renders are throttled (~12.5 Hz) to reduce flicker and CPU during a turn.
+- README and landing now state the **Bun 1.3+ requirement** clearly, with a Bun-first Quickstart.
+
 ## [0.3.0] — 2026-07-03
 
 ### Added
@@ -86,7 +97,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/ricciviero/interference/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ricciviero/interference/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/ricciviero/interference/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ricciviero/interference/compare/v0.2.2...v0.2.3
