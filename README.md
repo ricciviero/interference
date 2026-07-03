@@ -24,13 +24,14 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Session persistence** — messages saved per-project, resume with `--continue`; `/sessions` picker
 - **Undo / redo** — file snapshots before every mutation; `/undo` `/redo`
 - **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename` `/provider` `/thinking` `/review`
+- **Keyboard shortcuts** — `Esc` interrupts the current turn (keeps the work done so far), `Shift+Tab` cycles Plan/Build, `Ctrl+T` toggles the todo list, `Ctrl+O` collapses/expands tool output, `Ctrl+R` reverse-searches prompt history
 - **`/init`** — analyzes your project and generates `AGENTS.md`
 - **`/provider`** — manage API keys interactively (stored in `~/.interference/auth.json`)
 - **Skill invocation** — explicit `/skill-name` + automatic keyword matching on description
 - **Context compaction** — auto-summarizes conversation at ~90% context limit
 - **Config file** — per-project `interference.json` (model, permissions, mode, instructions)
 - **Diff view** — color-coded (+/-, green/red) in TUI for every edit/write
-- **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, status footer (model / mode / context% / cost / git branch), pickers (model, provider, thinking), slash autocomplete, session list, toast, welcome screen
+- **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, status footer (model / mode / context% / cost / git branch), pickers (model, provider, thinking), slash autocomplete, session list, toast, welcome screen, aligned markdown tables, reverse search over prompt history
 - **Multi-provider** — DeepSeek, OpenAI, Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi), Google (Gemini), Groq, xAI (Grok), Mistral, OpenRouter + any OpenAI-compatible endpoint; model picker grouped by provider; pricing/context from a live model catalog
 - **Reasoning/thinking** — distinct `┄ thinking` blocks for every provider, enabled at max
 - **Cost tracking** — real-time cost estimation per model
