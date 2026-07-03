@@ -90,9 +90,12 @@ const I18N = {
     "why.3_title": "Privacy by architecture",
     "why.3_desc": "There\u2019s no interference server. Chats and sessions stay local in ~/.interference/, never uploaded. We don\u2019t save your conversations, don\u2019t collect your data, and don\u2019t train on anything \u2014 what you send your LLM provider is between you and them.",
 
+    "hero.requires": "Requires <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ — the runtime interference runs on.",
     "start.eyebrow": "/ 05 — quickstart",
     "start.title": "In your terminal in a minute.",
-    "start.note": "Then run <code>interference</code>. Add keys with <code>/provider</code> on first launch.",
+    "start.step1": "<strong>1</strong> — Install <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ (skip if you already have it):",
+    "start.step2": "<strong>2</strong> — Install interference:",
+    "start.note": "Then run <code>interference</code>. Add your API keys with <code>/provider</code> on first launch. State is stored in <code>~/.interference/</code>.",
     "start.cta": "GitHub ↗",
 
     "footer.builtin": "Built in Italy \uD83C\uDDEE\uD83C\uDDF9",
@@ -188,9 +191,12 @@ const I18N = {
     "why.3_title": "Privacy per architettura",
     "why.3_desc": "Non esiste un server interference. Chat e sessioni restano locali in ~/.interference/, mai caricate altrove. Non salviamo le tue conversazioni, non raccogliamo i tuoi dati, non facciamo training su nulla — quello che invii al tuo provider LLM riguarda solo te e lui.",
 
+    "hero.requires": "Richiede <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ — il runtime su cui gira interference.",
     "start.eyebrow": "/ 05 — inizia",
     "start.title": "Nel tuo terminale in un minuto.",
-    "start.note": "Poi esegui <code>interference</code>. Aggiungi le chiavi con <code>/provider</code> al primo avvio.",
+    "start.step1": "<strong>1</strong> — Installa <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ (salta se ce l'hai già):",
+    "start.step2": "<strong>2</strong> — Installa interference:",
+    "start.note": "Poi esegui <code>interference</code>. Aggiungi le tue API key con <code>/provider</code> al primo avvio. Lo stato è in <code>~/.interference/</code>.",
     "start.cta": "GitHub ↗",
 
     "footer.builtin": "Fatto in Italia \uD83C\uDDEE\uD83C\uDDF9",

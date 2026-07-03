@@ -12,6 +12,10 @@
 codebase and edits files or runs commands through an agentic tool-calling loop — with explicit
 permissions and a read-only **Plan** mode so nothing happens without your say-so.
 
+> ⚠️ **Requires [Bun](https://bun.sh) 1.3+.** interference runs on the Bun runtime — the CLI
+> itself needs Bun installed, whether you install via `bun` or `npm`. Get Bun first:
+> `curl -fsSL https://bun.sh/install | bash` (macOS/Linux; see [bun.sh](https://bun.sh) for Windows).
+
 ## Features
 
 - **11 tools**: `read` · `ls` · `glob` · `grep` · `webfetch` · `write` · `edit` · `bash` · `todowrite` · `question` · `task` (subagent)
@@ -51,6 +55,14 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 
 ## Quickstart
 
+**1. Install [Bun](https://bun.sh) 1.3+** — the runtime interference needs (skip if you already have it):
+
+```bash
+curl -fsSL https://bun.sh/install | bash   # macOS / Linux · Windows: see bun.sh
+```
+
+**2. Install and run interference:**
+
 ```bash
 bun install -g interference-agent
 interference
@@ -60,7 +72,7 @@ On first run, use `/provider` to add your API keys. They're saved in `~/.interfe
 
 interference stores its state in `~/.interference/` — sessions, skills, snapshots, and auth.
 
-> Requires **Bun 1.3+**.
+> `npm i -g interference-agent` works too, but **Bun must still be installed** to run the CLI (the `interference` binary runs on Bun).
 
 ## Updating
 

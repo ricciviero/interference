@@ -319,7 +319,16 @@ a { color: inherit; text-decoration: none; }
 .copy:hover { background: var(--paper); color: var(--ink); }
 .copy.done { background: var(--paper); color: var(--ink); }
 .install-note { text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--paper-dim); margin: 18px 0 0; }
-.install-note code { color: var(--paper); }
+.install-note code, .install-note a { color: var(--paper); }
+.install-note a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Bun requirement, communicated on both install surfaces */
+.hero-requires { text-align: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; color: rgba(10, 10, 10, 0.6); margin: 14px 0 0; }
+.hero-requires a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.install-step { text-align: left; font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; color: var(--paper-dim); margin: 22px 0 8px; }
+.install-step:first-child { margin-top: 0; }
+.install-step strong, .install-step a { color: var(--paper); }
+.install-step a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ── FOOTER ──────────────────────────────────────────── */
 .foot { position: relative; z-index: 1; max-width: var(--maxw); margin: 0 auto; padding: 40px var(--pad) 56px; border-top: 1px solid var(--line); }
