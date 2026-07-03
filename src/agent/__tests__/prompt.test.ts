@@ -2,10 +2,13 @@ import { describe, test, expect } from "bun:test";
 import { buildSystemPrompt, systemPrompt, pickModelProfile, type PromptContext } from "../prompt.ts";
 import type { InstructionBlock } from "../../context.ts";
 
-// Normalize cwd and date (they change on every run/day) for a stable snapshot over time.
+// Normalize cwd, OS and date (they change across machine/day) for a snapshot that is
+// stable over time AND portable across platforms — otherwise CI (linux) never matches a
+// snapshot recorded on macOS (darwin), which kept the publish workflow permanently red.
 function normalize(text: string): string {
   return text
     .replaceAll(process.cwd(), "<CWD>")
+    .replace(/OS: \w+/, "OS: <OS>")
     .replace(/Date: \d{4}-\d{2}-\d{2}/, "Date: <TODAY>");
 }
 

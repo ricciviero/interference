@@ -5,7 +5,7 @@ exports[`buildSystemPrompt (iter 32, composable sections) snapshot build mode, w
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 Your available tools are provided via the API's tool schemas (name, description,
@@ -29,7 +29,7 @@ exports[`buildSystemPrompt (iter 32, composable sections) snapshot plan mode, wi
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 Your available tools are provided via the API's tool schemas (name, description,
@@ -48,7 +48,7 @@ exports[`buildSystemPrompt (iter 32, composable sections) snapshot build mode, w
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 <instructions>
@@ -81,7 +81,7 @@ exports[`modelProfileSection in the assembled prompt (iter 33) snapshot anthropi
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 Your available tools are provided via the API's tool schemas (name, description,
@@ -106,7 +106,7 @@ exports[`modelProfileSection in the assembled prompt (iter 33) snapshot anthropi
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 Your available tools are provided via the API's tool schemas (name, description,
@@ -126,7 +126,7 @@ exports[`modelProfileSection in the assembled prompt (iter 33) snapshot default 
 
 <environment>
 Working directory: <CWD>
-OS: darwin
+OS: <OS>
 Date: <TODAY>
 </environment>
 Your available tools are provided via the API's tool schemas (name, description,
