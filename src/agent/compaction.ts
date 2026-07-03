@@ -1,7 +1,8 @@
 import { generateText, type ModelMessage } from "ai";
 import { resolveModel } from "../provider.ts";
-import { currentModel, currentProvider, currentProviderId, cheapModelFor } from "../config.ts";
+import { currentModel, currentProvider, currentProviderId, currentMode, cheapModelFor } from "../config.ts";
 import { getModelInfo } from "../catalog.ts";
+import { systemPrompt } from "./prompt.ts";
 
 const COMPACT_THRESHOLD = 0.9;
 const DEFAULT_CONTEXT = 200_000;
@@ -17,14 +18,29 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3.5);
 }
 
+// The system prompt is sent on EVERY request but lives outside `messages` (loop.ts
+// passes it as the separate `system` param) — include it so the estimate reflects what
+// the model actually receives. Uses the module's cached instructions/skills, same as loop.ts.
+function estimateSystemPromptTokens(): number {
+  return estimateTokens(systemPrompt(currentMode(), undefined, currentModel()));
+}
+
 export function estimateMessagesTokens(messages: ModelMessage[]): number {
-  let total = 0;
+  let total = estimateSystemPromptTokens();
   for (const m of messages) {
     if (typeof m.content === "string") {
       total += estimateTokens(m.content);
     } else if (Array.isArray(m.content)) {
-      for (const part of m.content as Array<{ text?: string; type: string }>) {
+      for (const part of m.content as Array<{ text?: string; input?: unknown; output?: unknown; type: string }>) {
+        // tool-call parts carry `input`, tool-result parts carry `output` — neither has a
+        // `text` field, so the old `if (part.text)` skipped them and undercounted the
+        // context drastically (file reads, bash/grep output are often the bulk of it).
         if (part.text) total += estimateTokens(part.text);
+        else if (part.input !== undefined) total += estimateTokens(JSON.stringify(part.input));
+        else if (part.output !== undefined) {
+          const out = typeof part.output === "string" ? part.output : JSON.stringify(part.output);
+          total += estimateTokens(out);
+        }
       }
     }
   }
