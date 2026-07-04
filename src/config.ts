@@ -222,6 +222,29 @@ export const config = {
   modelOverride: process.env.INTERFERENCE_MODEL,
 };
 
+// --- Agent loop budget (fix/09) --------------------------------------------
+// The old hardcoded `stepCountIs(20)` cap silently truncated long multi-step tasks
+// (the agent "stopped mid-task" no matter what the prompt said). Now the per-call
+// step budget and the number of automatic continuations are configurable. Total
+// ceiling = maxSteps × maxContinuations (high but bounded; Esc always aborts).
+const DEFAULT_MAX_STEPS = 100;
+const DEFAULT_MAX_CONTINUATIONS = 25;
+
+function parsePositiveInt(raw: string | undefined, fallback: number): number {
+  const n = Number.parseInt(raw ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+/** Max steps in a single streamText call (env INTERFERENCE_MAX_STEPS or interference.json). */
+export function maxStepsPerCall(): number {
+  return parsePositiveInt(process.env.INTERFERENCE_MAX_STEPS, DEFAULT_MAX_STEPS);
+}
+
+/** Max automatic continuations of a single turn (runaway backstop). */
+export function maxContinuations(): number {
+  return parsePositiveInt(process.env.INTERFERENCE_MAX_CONTINUATIONS, DEFAULT_MAX_CONTINUATIONS);
+}
+
 /** Definition of the currently selected provider (runtime override > env var > default). */
 let _providerOverride: ProviderId | null = null;
 

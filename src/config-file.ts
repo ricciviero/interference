@@ -12,6 +12,9 @@ interface InterferenceConfig {
   instructions?: string[];
   /** Custom agents invocable via the `task` tool (it. 34), beyond the explore/general built-ins. */
   agents?: CustomAgentConfig[];
+  /** Agent loop budget (fix/09): steps per streamText call / max automatic continuations. */
+  maxSteps?: number;
+  maxContinuations?: number;
 }
 
 let loadedConfig: InterferenceConfig | null = null;
@@ -60,6 +63,14 @@ export function applyConfig(config: InterferenceConfig): void {
   // Mode
   if (config.mode) {
     setMode(config.mode as AgentMode);
+  }
+
+  // Agent loop budget (fix/09): env wins over the config file, like model above.
+  if (config.maxSteps && !process.env.INTERFERENCE_MAX_STEPS) {
+    process.env.INTERFERENCE_MAX_STEPS = String(config.maxSteps);
+  }
+  if (config.maxContinuations && !process.env.INTERFERENCE_MAX_CONTINUATIONS) {
+    process.env.INTERFERENCE_MAX_CONTINUATIONS = String(config.maxContinuations);
   }
 
   // Custom agents (it. 34): always called, even if absent, to clear any
