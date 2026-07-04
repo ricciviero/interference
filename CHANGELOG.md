@@ -5,6 +5,16 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-07-04
+
+### Fixed
+- **The agent no longer stops mid-task.** A hardcoded 20-step cap silently ended long multi-step turns regardless of the prompt — "complete everything without stopping" couldn't override it. The turn now keeps working until the task is actually done (or you press Esc), with the step budget configurable via `INTERFERENCE_MAX_STEPS` / `interference.json` (`maxSteps`, `maxContinuations`) and a runaway backstop.
+- **Footer context reading**: the status footer now shows the **current** context tokens and window (e.g. `13.6K/1.0M · 1%`) instead of the cumulative session token total, which read as a contradictory "1.8M tok · 1%".
+- **Session cost persists across reloads**: resuming with `--continue` no longer resets the cost to ~$0 — it is saved with the session and restored (`/clear` resets it, as expected).
+
+### Changed
+- Removed the turn counter (`#N`) from the status footer.
+
 ## [0.3.1] — 2026-07-03
 
 ### Fixed
@@ -97,7 +107,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/ricciviero/interference/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ricciviero/interference/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ricciviero/interference/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/ricciviero/interference/compare/v0.2.3...v0.2.4
