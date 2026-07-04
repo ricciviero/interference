@@ -5,14 +5,14 @@ interface Props {
   model: string;
   provider: string;
   thinking: string;
-  contextPct: number;
+  // Current CHAT context (fix/10): how full the context window is right now — NOT the
+  // cumulative session tokens (which are billing-oriented and belong to `cost`).
+  contextTokens: number;
+  contextLimit: number;
   busy: boolean;
   statusLine: string;
-  turnCount: number;
   cost: string;
   gitBranch: string;
-  inputTokens: number;
-  outputTokens: number;
 }
 
 function fmt(n: number): string {
@@ -26,18 +26,16 @@ export function StatusFooter({
   model,
   provider,
   thinking,
-  contextPct,
+  contextTokens,
+  contextLimit,
   busy,
   statusLine,
-  turnCount,
   cost,
   gitBranch,
-  inputTokens,
-  outputTokens,
 }: Props) {
   const modeColor = mode === "build" ? "yellow" : "blue";
-  const tokenTotal = inputTokens + outputTokens;
-  const contextColor = contextPct > 80 ? "yellow" : contextPct > 60 ? undefined : undefined;
+  const contextPct = contextLimit > 0 ? Math.round((contextTokens / contextLimit) * 100) : 0;
+  const contextColor = contextPct > 80 ? "yellow" : undefined;
 
   return (
     <Box flexDirection="column">
@@ -54,12 +52,10 @@ export function StatusFooter({
           )}
           <Text dimColor>·</Text>
           <Text dimColor color={contextColor}>
-            {fmt(tokenTotal)} tok {contextPct}%
+            {fmt(contextTokens)}/{fmt(contextLimit)} · {contextPct}%
           </Text>
           <Text dimColor>·</Text>
           <Text dimColor>{cost}</Text>
-          <Text dimColor>·</Text>
-          <Text dimColor>#{turnCount}</Text>
           {gitBranch && <Text dimColor>⎇ {gitBranch}</Text>}
         </Box>
         <Box>

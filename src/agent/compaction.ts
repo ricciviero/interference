@@ -9,7 +9,7 @@ const DEFAULT_CONTEXT = 200_000;
 
 // Context from catalog (it. 37) with fallback to ProviderDef.contextLimit (config.ts) then
 // to the default constant — no regression if the catalog is missing the id.
-function getContextLimit(): number {
+export function getContextLimit(): number {
   const info = getModelInfo(currentProviderId(), currentModel());
   return info?.contextLimit ?? currentProvider().contextLimit ?? DEFAULT_CONTEXT;
 }

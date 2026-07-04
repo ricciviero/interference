@@ -104,3 +104,42 @@ export function getUsageStats() {
     cacheWriteTokens: totalCacheWriteTokens,
   };
 }
+
+// --- Session persistence of cost (fix/11) ----------------------------------
+// The counters above live in process memory, so on --continue the cost restarted
+// from zero (footer showed a big #turnCount but ~$0). Persist the RAW buckets in the
+// session (distinct no-cache/read/write are needed to re-price correctly) and re-seed
+// them on load so the session cost survives a reload.
+
+export interface RawUsage {
+  noCacheInput: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+}
+
+export function getRawUsage(): RawUsage {
+  return {
+    noCacheInput: totalNoCacheInputTokens,
+    output: totalOutputTokens,
+    cacheRead: totalCacheReadTokens,
+    cacheWrite: totalCacheWriteTokens,
+  };
+}
+
+/** Re-seed the cumulative counters from a persisted session (no-op if absent). */
+export function restoreUsage(u: RawUsage | undefined | null): void {
+  if (!u) return;
+  totalNoCacheInputTokens = u.noCacheInput ?? 0;
+  totalOutputTokens = u.output ?? 0;
+  totalCacheReadTokens = u.cacheRead ?? 0;
+  totalCacheWriteTokens = u.cacheWrite ?? 0;
+}
+
+/** Zero the counters (e.g. /clear starts a fresh conversation → fresh cost). */
+export function resetUsage(): void {
+  totalNoCacheInputTokens = 0;
+  totalOutputTokens = 0;
+  totalCacheReadTokens = 0;
+  totalCacheWriteTokens = 0;
+}

@@ -15,7 +15,7 @@ import { dispatch, isSlashCommand } from "./commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
 import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
-import { estimateCost, formatCost } from "./cost.ts";
+import { estimateCost, formatCost, getRawUsage, restoreUsage } from "./cost.ts";
 import { estimateMessagesTokens } from "./agent/compaction.ts";
 
 const DIM = "\x1b[2m";
@@ -128,6 +128,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             try {
               await consumeTurn(runTurn(messages, aborter.signal));
               session.meta.turnCount++;
+              session.usage = getRawUsage();
               await finalizeSnapshots();
               await saveSession(session);
               return "AGENTS.md generated successfully.";
@@ -143,6 +144,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             try {
               await consumeTurn(runTurn(messages, aborter.signal, undefined, [body]));
               session.meta.turnCount++;
+              session.usage = getRawUsage();
               await finalizeSnapshots();
               await saveSession(session);
               return `Skill '${name}' executed.`;
@@ -170,6 +172,7 @@ ${args ? `Additional context: ${args}` : ""}`;
                 messages.push(...loaded.messages);
                 session.meta = loaded.meta;
                 session.messages = loaded.messages;
+                restoreUsage(loaded.usage);
                 return `Resumed session ${list[idx]!.id.slice(0, 12)} (${loaded.meta.turnCount} turns).`;
               }
               return "Session not found.";
@@ -211,6 +214,7 @@ ${args ? `Additional context: ${args}` : ""}`;
         await consumeTurn(runTurn(messages, aborter.signal, undefined, skillBodies.length > 0 ? skillBodies : undefined));
         stdout.write("\n\n");
         session.meta.turnCount++;
+        session.usage = getRawUsage();
         await finalizeSnapshots();
         await saveSession(session);
 

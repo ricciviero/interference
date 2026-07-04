@@ -18,9 +18,9 @@ import type { Session } from "../session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "../session/snapshot.ts";
 import { dispatch, isSlashCommand } from "../commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "../skills.ts";
-import { shouldCompact, compactMessages, getUsagePercent } from "../agent/compaction.ts";
+import { shouldCompact, compactMessages, getUsagePercent, estimateMessagesTokens, getContextLimit } from "../agent/compaction.ts";
 import { computeDiff, type DiffLine } from "./DiffView.tsx";
-import { formatCost, getTotalCost, getUsageStats } from "../cost.ts";
+import { formatCost, getTotalCost, getRawUsage, restoreUsage, resetUsage } from "../cost.ts";
 import { getGitBranch } from "../git.ts";
 import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
@@ -352,6 +352,7 @@ export default function App({ session }: { session: Session }) {
 
       sessionRef.current.meta.turnCount++;
       sessionRef.current.todos = getTodos();
+      sessionRef.current.usage = getRawUsage();
       await finalizeSnapshots();
       await saveSession(sessionRef.current);
       addToast("Session saved", "success");
@@ -455,6 +456,7 @@ export default function App({ session }: { session: Session }) {
             messagesRef.current = [];
             setHistory([]);
             setTodos([]);
+            resetUsage();
             setStatusText("Conversation cleared.");
           },
           doInit: async (args) => {
@@ -581,6 +583,7 @@ ${args ? `Additional context: ${args}` : ""}`;
               messagesRef.current = loaded.messages;
               sessionRef.current = loaded;
               setTodos(loaded.todos ?? []);
+              restoreUsage(loaded.usage);
               // Rebuild history from saved messages. Content can be a string or an
               // ARRAY of parts ({type:"text"|"reasoning"|...}): extract text and
               // reasoning instead of stringifying (was rendered as raw JSON).
@@ -762,14 +765,12 @@ ${args ? `Additional context: ${args}` : ""}`;
             model={currentModel()}
             provider={currentProvider().label}
             thinking={currentThinking()}
-            contextPct={messagesRef.current.length > 0 ? getUsagePercent(messagesRef.current) : 0}
+            contextTokens={messagesRef.current.length > 0 ? estimateMessagesTokens(messagesRef.current) : 0}
+            contextLimit={getContextLimit()}
             busy={busy}
             statusLine=""
-            turnCount={sessionRef.current.meta.turnCount}
             cost={formatCost(getTotalCost())}
             gitBranch={gitBranch}
-            inputTokens={getUsageStats().inputTokens}
-            outputTokens={getUsageStats().outputTokens}
           />
         </>
       )}

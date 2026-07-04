@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, afterAll } from "bun:test";
-import { trackUsage, getTotalCost, getUsageStats, formatCost } from "../cost.ts";
+import { trackUsage, getTotalCost, getUsageStats, formatCost, getRawUsage, restoreUsage, resetUsage } from "../cost.ts";
 import { setProvider, setModel, resetModel } from "../config.ts";
 import { _resetCatalogForTests } from "../catalog.ts";
 
@@ -156,5 +156,36 @@ describe("cache pricing from catalog (absolute prices, not coefficients)", () =>
       delta = costDelta(() => trackUsage(0, 0, 1_000_000, 0));
     });
     expect(delta).toBeCloseTo(0.5, 5);
+  });
+});
+
+describe("usage persistence across reload (fix/11)", () => {
+  test("getRawUsage/restoreUsage round-trip: cost survives a simulated reload", () => {
+    resetUsage();
+    trackUsage(1000, 200, 500, 100);
+    const snapshot = getRawUsage();
+    const costBefore = getTotalCost();
+    // simulate process restart: in-memory counters wiped
+    resetUsage();
+    expect(getTotalCost()).toBe(0);
+    // simulate --continue: re-seed from the persisted session
+    restoreUsage(snapshot);
+    expect(getRawUsage()).toEqual(snapshot);
+    expect(getTotalCost()).toBeCloseTo(costBefore, 10);
+  });
+
+  test("restoreUsage(undefined) is a no-op (new session, nothing to restore)", () => {
+    resetUsage();
+    trackUsage(50, 10, 0, 0);
+    const before = getRawUsage();
+    restoreUsage(undefined);
+    expect(getRawUsage()).toEqual(before);
+  });
+
+  test("resetUsage zeroes the counters (/clear -> fresh cost)", () => {
+    trackUsage(999, 999, 999, 999);
+    resetUsage();
+    expect(getRawUsage()).toEqual({ noCacheInput: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+    expect(getTotalCost()).toBe(0);
   });
 });

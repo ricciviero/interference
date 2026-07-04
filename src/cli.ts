@@ -2,6 +2,7 @@
 import { stdin, stdout } from "node:process";
 import { currentModel, currentProvider } from "./config.ts";
 import { createSession, latestSession, loadSession, saveSession, initStore } from "./session/store.ts";
+import { restoreUsage } from "./cost.ts";
 import { initSnapshot } from "./session/snapshot.ts";
 import { initInstructions } from "./agent/prompt.ts";
 import { bootstrapSkills } from "./skills.ts";
@@ -74,6 +75,10 @@ async function main(): Promise<void> {
       model: currentModel(),
     });
   }
+
+  // Restore cumulative cost from the (possibly resumed) session so it survives --continue
+  // — covers both the TUI and the plain fallback below (fix/11).
+  restoreUsage(session.usage);
 
   initSnapshot(session.meta.id);
 

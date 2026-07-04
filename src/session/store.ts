@@ -21,6 +21,9 @@ export interface Session {
   meta: SessionMeta;
   messages: ModelMessage[];
   todos?: Todo[];
+  // Cumulative token usage (fix/11): persisted so cost survives a reload. Shape matches
+  // cost.ts RawUsage (inlined to keep the store decoupled from cost).
+  usage?: { noCacheInput: number; output: number; cacheRead: number; cacheWrite: number };
 }
 
 function projectDir(): string {
