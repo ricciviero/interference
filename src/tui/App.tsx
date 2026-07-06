@@ -52,7 +52,18 @@ type HistoryItem = {
   durationMs?: number;
   mode?: string;
   model?: string;
+  /** Render as a visible error (red). Set when a turn fails (e.g. provider 402/429/network). */
+  isError?: boolean;
 };
+
+/** Turn a failed-turn error into a clear, permanent one-liner (no stack trace). A
+ *  MissingApiKeyError already carries actionable multi-line text, so pass it through. */
+export function formatTurnError(err: unknown): string {
+  if (err instanceof MissingApiKeyError) return err.message;
+  const msg = err instanceof Error ? err.message : String(err);
+  const firstLine = (msg.split("\n")[0] ?? msg).trim();
+  return `⚠ Request failed: ${firstLine || "unknown error"}`;
+}
 
 export type ToolEntry = {
   // Real toolCallId from the SDK (not an internal counter): correlates call/result
@@ -392,11 +403,29 @@ export default function App({ session }: { session: Session }) {
           ]);
         }
         addToast("Interrupted", "info");
-      } else if (err instanceof MissingApiKeyError) {
-        setStreaming(`\n${err.message}`);
       } else {
-        const msg = err instanceof Error ? err.message : String(err);
-        setStreaming(`\n[error] ${msg}`);
+        // A failed turn (provider 402 "no credit", 429, network, invalid model, …). Commit any
+        // partial text first, then a VISIBLE, permanent error message. Previously this went to
+        // `streaming`, which the finally below immediately cleared → the failure showed as an
+        // empty turn with zero feedback (e.g. an OpenRouter account with no credit).
+        if (acc || reasoningAcc) {
+          if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
+          setHistory((h) => [
+            ...h,
+            {
+              id: nextId(),
+              role: "assistant",
+              content: acc,
+              reasoning: reasoningAcc || undefined,
+              reasoningMs: reasoningMs || undefined,
+              durationMs: Date.now() - turnStart,
+              mode: currentMode(),
+              model: currentModel(),
+            },
+          ]);
+        }
+        setHistory((h) => [...h, { id: nextId(), role: "assistant", content: formatTurnError(err), isError: true }]);
+        addToast("Turn failed", "error");
       }
     } finally {
       setStreaming("");
@@ -860,7 +889,14 @@ function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?:
   );
 }
 
-function MsgBlock({ item }: { item: HistoryItem }) {
+export function MsgBlock({ item }: { item: HistoryItem }) {
+  if (item.isError) {
+    return (
+      <Box paddingLeft={1}>
+        <Text color="red">{item.content}</Text>
+      </Box>
+    );
+  }
   const isUser = item.role === "user";
   const secs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}s` : "");
   const footer =
