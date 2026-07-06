@@ -1,5 +1,5 @@
-import type { AgentMode, ThinkingLevel } from "../config.ts";
-import { currentProvider, currentThinking, setThinking, currentModel, setModel } from "../config.ts";
+import type { AgentMode, ThinkingLevel, ProviderId } from "../config.ts";
+import { currentProvider, currentThinking, setThinking, currentModel, setModel, setProvider, currentProviderId, PROVIDERS } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
 import { CURRENT_VERSION } from "../version.ts";
@@ -125,10 +125,24 @@ register(
   { delegate: true },
 );
 
-register("model", "Change the model (usage: /model <model-id>)", (args, _ctx) => {
-  if (!args.trim()) return `Usage: /model <model-id>\nCurrent model: ${currentModel()}`;
-  setModel(args.trim());
-  return `Model set to '${args.trim()}'. Effective on next turn.`;
+register("model", "Change the model (usage: /model [provider] <model-id>)", (args, _ctx) => {
+  const trimmed = args.trim();
+  if (!trimmed) {
+    return `Usage: /model [provider] <model-id>\nCurrent: ${currentProviderId()} · ${currentModel()}`;
+  }
+  // `/model <provider> <model-id>` switches both (e.g. `/model openrouter anthropic/claude-opus-4-8`),
+  // needed for aggregators like OpenRouter that require their own endpoint. Otherwise `/model <id>`
+  // sets the model on the current provider.
+  const parts = trimmed.split(/\s+/);
+  if (parts.length >= 2 && parts[0]! in PROVIDERS) {
+    const pid = parts[0] as ProviderId;
+    const model = parts.slice(1).join(" ");
+    setProvider(pid);
+    setModel(model);
+    return `Provider '${pid}', model '${model}'. Effective on next turn.`;
+  }
+  setModel(trimmed);
+  return `Model set to '${trimmed}'. Effective on next turn.`;
 });
 
 register(

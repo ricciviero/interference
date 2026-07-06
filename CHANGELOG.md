@@ -5,6 +5,16 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-07-07
+
+### Added
+- **OpenRouter: full dynamic model catalog.** OpenRouter now loads its complete live model list (hundreds of models) from its `/models` endpoint, with **type-to-filter** in the `/model` picker — pick any of them, not a hardcoded few. Per-model pricing and context are read directly from OpenRouter, so cost and context% are accurate. The recommended ranking headers (`HTTP-Referer` / `X-Title`) are sent.
+- **Reasoning control for OpenRouter models**: `/thinking` (off/low/medium/high) is mapped to OpenRouter's unified `reasoning.effort`. Note: a provider's proprietary "max" (e.g. DeepSeek) is not exposed through OpenRouter — use that provider directly for it.
+- `/model <provider> <id>` switches provider and model together (handy for aggregators, e.g. `/model openrouter anthropic/claude-opus-4-8`).
+
+### Fixed
+- **Failed turns are no longer swallowed silently in the TUI.** A provider error (no credit / HTTP 402, 429, network, invalid model) used to show as an empty turn with zero feedback; it now surfaces a clear error message in the chat.
+
 ## [0.3.2] — 2026-07-04
 
 ### Fixed
@@ -107,7 +117,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/ricciviero/interference/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/ricciviero/interference/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ricciviero/interference/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ricciviero/interference/compare/v0.2.4...v0.3.0

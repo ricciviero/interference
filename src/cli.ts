@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { stdin, stdout } from "node:process";
-import { currentModel, currentProvider } from "./config.ts";
+import { currentModel, currentProvider, currentProviderId } from "./config.ts";
+import { loadOpenRouterModels } from "./openrouter.ts";
 import { createSession, latestSession, loadSession, saveSession, initStore } from "./session/store.ts";
 import { restoreUsage } from "./cost.ts";
 import { initSnapshot } from "./session/snapshot.ts";
@@ -47,6 +48,10 @@ async function main(): Promise<void> {
   // Model catalog (it. 37): on-disk cache -> remote fetch -> embedded offline snapshot.
   // Never throws; if slow (first run, expired cache) doesn't block beyond the fetch.
   await loadCatalog();
+  // OpenRouter's live model catalog (its /models endpoint) — only when that provider is
+  // selected, so users on other providers don't pay the fetch. Makes cost/context accurate
+  // from the first turn; the /model picker loads it too when opened. Never throws.
+  if (currentProviderId() === "openrouter") await loadOpenRouterModels();
 
   const args = Bun.argv.slice(2);
   const resumeId = args.includes("--continue")

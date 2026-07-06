@@ -39,6 +39,9 @@ export interface ProviderDef {
   npm: string;
   /** For kind "openai-compatible": EXACT baseURL (do not normalize). */
   baseURL?: string;
+  /** For kind "openai-compatible": extra HTTP headers sent on every request
+   *  (e.g. OpenRouter's ranking headers HTTP-Referer / X-Title). */
+  headers?: Record<string, string>;
   /** Context window size in tokens (for compaction threshold). Default 200K. */
   contextLimit?: number;
   /** Supported thinking levels (for /thinking). off = disabled. */
@@ -194,10 +197,20 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     kind: "openai-compatible",
     npm: "@ai-sdk/openai-compatible",
     baseURL: "https://openrouter.ai/api/v1",
-    thinkingLevels: ["off"],
+    // Recommended by the OpenRouter quickstart: identify the app for their rankings.
+    headers: {
+      "HTTP-Referer": "https://interferenceagent.it",
+      "X-Title": "interference",
+    },
+    // OpenRouter unifies reasoning across models via the `reasoning` body field, so /thinking
+    // works for reasoning-capable models routed through it (e.g. deepseek-v4-pro). Models
+    // without reasoning simply ignore it. Default off: reasoning is opt-in (avoids surprise
+    // token spend), and the underlying model's default still applies.
+    thinkingLevels: ["off", "low", "medium", "high"],
     defaultThinking: "off",
-    // OpenRouter is an aggregator for hundreds of third-party models: the user can always
-    // write `/model <exact-id>` (e.g. "anthropic/claude-opus-4-8") beyond these examples.
+    // OpenRouter is an aggregator for hundreds of third-party models. The picker loads the
+    // FULL live catalog from its /models endpoint (src/openrouter.ts); these curated entries
+    // are only the offline fallback. The user can also always `/model <exact-id>`.
     models: [
       { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)" },
       { id: "anthropic/claude-opus-4-8", label: "Claude Opus 4.8 (via OpenRouter)" },
@@ -368,10 +381,15 @@ export function reasoningConfig(override?: ReasoningOverride): ReasoningConfig {
       return { extraBody: { thinking: { type: "enabled", keep: "all" } }, maxOutputTokens: 16_000 };
     }
 
-    case "openrouter":
-      // OpenAI-compatible but without a reasoning mechanism known/documented by us:
-      // no custom extraBody (default behavior of the model chosen via OpenRouter).
-      return {};
+    case "openrouter": {
+      // OpenRouter unifies reasoning via the `reasoning` body field. `effort` (low/medium/high)
+      // is normalized by OpenRouter to each model's native mechanism (e.g. max_tokens for
+      // Anthropic/Gemini, always-on for DeepSeek). Models without reasoning ignore it.
+      // off → send nothing (the model's own default applies).
+      if (level === "off") return {};
+      const effort = level === "max" ? "high" : level; // OpenRouter effort tops out at "high"
+      return { extraBody: { reasoning: { effort } } };
+    }
 
     case "google":
     case "groq":

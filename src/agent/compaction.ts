@@ -2,6 +2,7 @@ import { generateText, type ModelMessage } from "ai";
 import { resolveModel } from "../provider.ts";
 import { currentModel, currentProvider, currentProviderId, currentMode, cheapModelFor } from "../config.ts";
 import { getModelInfo } from "../catalog.ts";
+import { getOpenRouterModelInfo } from "../openrouter.ts";
 import { systemPrompt } from "./prompt.ts";
 
 const COMPACT_THRESHOLD = 0.9;
@@ -10,7 +11,13 @@ const DEFAULT_CONTEXT = 200_000;
 // Context from catalog (it. 37) with fallback to ProviderDef.contextLimit (config.ts) then
 // to the default constant — no regression if the catalog is missing the id.
 export function getContextLimit(): number {
-  const info = getModelInfo(currentProviderId(), currentModel());
+  const pid = currentProviderId();
+  // OpenRouter: per-model context from its own /models catalog (not in models.dev's snapshot).
+  if (pid === "openrouter") {
+    const or = getOpenRouterModelInfo(currentModel());
+    if (or && or.contextLimit > 0) return or.contextLimit;
+  }
+  const info = getModelInfo(pid, currentModel());
   return info?.contextLimit ?? currentProvider().contextLimit ?? DEFAULT_CONTEXT;
 }
 

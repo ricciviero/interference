@@ -25,3 +25,29 @@ describe("reasoningConfig (regression: haiku does not support adaptive/effort)",
     expect(cfg.providerOptions).toEqual({ anthropic: { effort: "low" } });
   });
 });
+
+describe("reasoningConfig — OpenRouter (unified `reasoning.effort`)", () => {
+  test("off sends nothing (model default applies)", () => {
+    const cfg = reasoningConfig({ providerId: "openrouter", model: "deepseek/deepseek-v4-pro", level: "off" });
+    expect(cfg.extraBody).toBeUndefined();
+    expect(cfg.providerOptions).toBeUndefined();
+  });
+
+  test("high maps to reasoning.effort:high (OpenRouter's ceiling)", () => {
+    const cfg = reasoningConfig({ providerId: "openrouter", model: "deepseek/deepseek-v4-pro", level: "high" });
+    expect(cfg.extraBody).toEqual({ reasoning: { effort: "high" } });
+  });
+
+  test("medium maps to reasoning.effort:medium", () => {
+    const cfg = reasoningConfig({ providerId: "openrouter", model: "openai/gpt-5.5", level: "medium" });
+    expect(cfg.extraBody).toEqual({ reasoning: { effort: "medium" } });
+  });
+
+  test("max is clamped to high — OpenRouter does not expose a provider's proprietary 'max'", () => {
+    // Verified against OpenRouter /models: deepseek models advertise only ["reasoning",
+    // "include_reasoning"] — no reasoning_effort / "max". The native max is reachable only
+    // via the direct DeepSeek provider.
+    const cfg = reasoningConfig({ providerId: "openrouter", model: "deepseek/deepseek-v4-pro", level: "max" });
+    expect(cfg.extraBody).toEqual({ reasoning: { effort: "high" } });
+  });
+});

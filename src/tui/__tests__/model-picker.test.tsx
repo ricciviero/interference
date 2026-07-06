@@ -1,15 +1,25 @@
-import { describe, test, expect, afterEach } from "bun:test";
+import { describe, test, expect, afterEach, beforeEach } from "bun:test";
 import React from "react";
 import { render } from "ink-testing-library";
 import { ModelPicker } from "../ModelPicker.tsx";
-import { setProvider, resetModel, currentModel } from "../../config.ts";
+import { setProvider, resetModel, currentModel, currentProviderId } from "../../config.ts";
+import { _seedOpenRouterForTests, _resetOpenRouterForTests, type OpenRouterModel } from "../../openrouter.ts";
 
 const ARROW_DOWN = "[B";
 const ENTER = "\r";
 
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+// Seed the OpenRouter in-memory cache to EMPTY so the picker's useEffect resolves without a
+// real network fetch (deterministic, offline) and falls back to the curated OpenRouter entries.
+beforeEach(() => {
+  _seedOpenRouterForTests([]);
+});
+
 afterEach(() => {
   resetModel();
   setProvider("deepseek");
+  _resetOpenRouterForTests();
 });
 
 describe("ModelPicker grouped by provider (iter 38)", () => {
@@ -98,6 +108,66 @@ describe("ModelPicker grouped by provider (iter 38)", () => {
     const out = lastFrame() ?? "";
     expect(out).toContain("Claude Opus 4.8 (via OpenRouter)");
     expect(out).toContain("more above");
+    unmount();
+  });
+});
+
+describe("ModelPicker filtering (OpenRouter dynamic catalog)", () => {
+  const OR: OpenRouterModel[] = [
+    { id: "anthropic/claude-opus-4-8", name: "Claude Opus", contextLimit: 200000, inputPer1M: 5, outputPer1M: 25, toolCall: true, reasoning: true },
+    { id: "openai/gpt-5.5", name: "GPT-5.5", contextLimit: 400000, inputPer1M: 5, outputPer1M: 30, toolCall: true, reasoning: false },
+    { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3", contextLimit: 131072, inputPer1M: 0, outputPer1M: 0, toolCall: false, reasoning: false },
+  ];
+
+  test("loads the dynamic OpenRouter catalog (raw ids) into the list", async () => {
+    setProvider("openrouter");
+    _seedOpenRouterForTests(OR);
+    const { lastFrame, unmount } = render(<ModelPicker onCancel={() => {}} />);
+    await tick(); // let the useEffect commit the loaded list
+    const out = lastFrame() ?? "";
+    expect(out).toContain("meta-llama/llama-3.3-70b-instruct:free");
+    unmount();
+  });
+
+  test("typing narrows the list in real time", async () => {
+    setProvider("openrouter");
+    _seedOpenRouterForTests(OR);
+    const { lastFrame, stdin, unmount } = render(<ModelPicker onCancel={() => {}} />);
+    await tick();
+    stdin.write("gpt");
+    await tick();
+    const out = lastFrame() ?? "";
+    expect(out).toContain("openai/gpt-5.5");
+    expect(out).not.toContain("llama-3.3-70b");
+    expect(out).toContain("Filter: gpt");
+    unmount();
+  });
+
+  test("a filter with no matches shows an explicit empty state", async () => {
+    setProvider("openrouter");
+    _seedOpenRouterForTests(OR);
+    const { lastFrame, stdin, unmount } = render(<ModelPicker onCancel={() => {}} />);
+    await tick();
+    stdin.write("zzzznope");
+    await tick();
+    const out = lastFrame() ?? "";
+    expect(out).toContain("No models match");
+    unmount();
+  });
+
+  test("Enter on a filtered OpenRouter model switches provider+model", async () => {
+    setProvider("deepseek"); // start elsewhere: selecting an OR model must switch provider
+    _seedOpenRouterForTests(OR);
+    let cancelled = false;
+    const { stdin, unmount } = render(<ModelPicker onCancel={() => { cancelled = true; }} />);
+    await tick();
+    stdin.write("openai/gpt"); // matches only the OpenRouter id, not curated "gpt-5.5"
+    await tick();
+    stdin.write(ENTER);
+    await tick();
+    expect(cancelled).toBe(true);
+    expect(currentProviderId()).toBe("openrouter");
+    expect(currentModel()).toBe("openai/gpt-5.5");
     unmount();
   });
 });

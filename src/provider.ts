@@ -100,6 +100,8 @@ export async function resolveModel(override?: ModelOverride): Promise<LanguageMo
         name: def.label,
         baseURL: def.baseURL ?? "",
         apiKey,
+        // Extra headers (e.g. OpenRouter ranking headers) sent on every request.
+        headers: def.headers,
         // Inject non-OpenAI-standard fields (e.g. `thinking`) into the raw body.
         transformRequestBody: extraBody
           ? (body: Record<string, unknown>) => ({ ...body, ...extraBody })

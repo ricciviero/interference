@@ -1,5 +1,6 @@
 import { currentModel, currentProviderId, type ProviderId } from "./config.ts";
 import { getModelInfo } from "./catalog.ts";
+import { getOpenRouterModelInfo } from "./openrouter.ts";
 
 interface Pricing {
   inputPer1M: number;
@@ -33,6 +34,14 @@ const PRICING: Record<string, Pricing> = {
 export function getPricing(modelId?: string, providerId?: ProviderId): Pricing {
   const id = modelId ?? currentModel();
   const pid = providerId ?? currentProviderId();
+  // OpenRouter is an aggregator not carried in models.dev's snapshot: take per-model pricing
+  // from its own /models catalog (loaded via openrouter.ts) when the model is known.
+  if (pid === "openrouter") {
+    const or = getOpenRouterModelInfo(id);
+    if (or && (or.inputPer1M > 0 || or.outputPer1M > 0)) {
+      return { inputPer1M: or.inputPer1M, outputPer1M: or.outputPer1M };
+    }
+  }
   const fromCatalog = getModelInfo(pid, id);
   if (fromCatalog?.cost) {
     return {
