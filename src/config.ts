@@ -7,6 +7,8 @@
 //  - openai-compatible (glm/kimi)  → `thinking` field injected in the body (extraBody)
 // `reasoningConfig()` translates the current level into the right options per provider.
 
+import { interferenceDir } from "./paths.ts";
+
 export type ProviderId =
   | "anthropic"
   | "deepseek"
@@ -287,6 +289,62 @@ export function setModel(modelId: string) {
 
 export function resetModel() {
   _modelOverride = null;
+}
+
+// --- Preference persistence (survives restarts) ------------------------------
+
+interface Preferences {
+  provider?: string;
+  model?: string;
+}
+
+function preferencesPath(): string {
+  return interferenceDir("preferences.json");
+}
+
+/**
+ * Persist the current provider and model choice to disk so it survives
+ * restarts. Called explicitly from user-facing selection points (ModelPicker,
+ * /model and /provider commands), NOT from the low-level setters — otherwise
+ * every `setProvider("deepseek")` in test cleanup would write to the real
+ * filesystem.
+ */
+export async function savePreferences(): Promise<void> {
+  const prefs: Preferences = {};
+  if (_providerOverride) prefs.provider = _providerOverride;
+  if (_modelOverride) prefs.model = _modelOverride;
+  try {
+    await Bun.write(preferencesPath(), JSON.stringify(prefs, null, 2));
+  } catch {
+    // Best-effort: if the write fails, the in-memory state is correct.
+  }
+}
+
+/**
+ * Restore the last provider/model choice from the preferences file.
+ * Called once at startup, before session creation. If the persisted
+ * provider or model no longer exists in the registry, the entry is
+ * silently ignored (fallback to env var / provider default).
+ */
+export async function loadPreferences(): Promise<void> {
+  let raw: string;
+  try {
+    raw = await Bun.file(preferencesPath()).text();
+  } catch {
+    return; // File doesn't exist yet — first run.
+  }
+  let prefs: Preferences;
+  try {
+    prefs = JSON.parse(raw);
+  } catch {
+    return; // Corrupted JSON — ignore.
+  }
+  if (prefs.provider && prefs.provider in PROVIDERS) {
+    _providerOverride = prefs.provider as ProviderId;
+  }
+  if (prefs.model && typeof prefs.model === "string") {
+    _modelOverride = prefs.model;
+  }
 }
 
 // --- Mode (Plan/Build) ------------------------------------------------------

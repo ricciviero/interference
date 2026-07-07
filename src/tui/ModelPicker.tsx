@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from "react";
 import { Box, Text, useInput } from "ink";
-import { currentModel, currentProviderId, setModel, setProvider, PROVIDERS, type ProviderId } from "../config.ts";
+import { currentModel, currentProviderId, setModel, setProvider, savePreferences, PROVIDERS, type ProviderId } from "../config.ts";
 import { loadOpenRouterModels } from "../openrouter.ts";
 import { SelectRow } from "./SelectRow.tsx";
 import { computeWindow, useMaxVisibleRows } from "./viewport.ts";
@@ -84,6 +84,7 @@ export const ModelPicker: FC<{ onCancel: () => void }> = ({ onCancel }) => {
         if (row?.type === "model") {
           setProvider(row.providerId);
           setModel(row.id);
+          savePreferences();
           onCancel();
         }
         return;

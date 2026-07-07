@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { stdin, stdout } from "node:process";
-import { currentModel, currentProvider, currentProviderId } from "./config.ts";
+import { currentModel, currentProvider, currentProviderId, loadPreferences } from "./config.ts";
 import { loadOpenRouterModels } from "./openrouter.ts";
 import { createSession, latestSession, loadSession, saveSession, initStore } from "./session/store.ts";
 import { restoreUsage } from "./cost.ts";
@@ -33,6 +33,10 @@ async function main(): Promise<void> {
   const provider = currentProvider();
 
   await initStore();
+  // Restore the last provider/model choice (saved on every /model or /provider selection).
+  // After this, currentProvider()/currentModel() reflect the persisted preference,
+  // falling back to env var / provider default if the file doesn't exist yet.
+  await loadPreferences();
   await bootstrapSkills();
 
   const auth = await loadAuth();
