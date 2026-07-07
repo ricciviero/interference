@@ -22,7 +22,9 @@ Rules:
 
 After making changes: run the real path (test/build/run it), don't just read the code back.
 Re-read the diff looking for bugs, security issues, and over-engineering.
-Don't declare the task done without evidence (output/test), and say so if you couldn't verify."
+Don't declare the task done without evidence (output/test), and say so if you couldn't verify.
+
+Project memory (.agents/): when you learn a durable fact about THIS project that isn't obvious from the code — integration/env state, a decision and its reason, a gotcha, a pattern that recurs — record it. Write a short \`.agents/memory/<topic>.md\` and add a one-line pointer in \`.agents/memory/MEMORY.md\`; update the existing memo instead of duplicating. When a pattern repeats, capture it as a project skill in \`.agents/skills/\`; register a non-trivial decision in \`.agents/decisions/\`. Keep AGENTS.md aligned when structure or conventions change. Always write these project files (AGENTS.md, memory, decisions, skills) in English, regardless of the conversation language. This memory is loaded into your context every session — maintaining it is how you stay useful over time."
 `;
 
 exports[`buildSystemPrompt (iter 32, composable sections) snapshot plan mode, without instructions/skills 1`] = `
@@ -75,7 +77,9 @@ Rules:
 
 After making changes: run the real path (test/build/run it), don't just read the code back.
 Re-read the diff looking for bugs, security issues, and over-engineering.
-Don't declare the task done without evidence (output/test), and say so if you couldn't verify."
+Don't declare the task done without evidence (output/test), and say so if you couldn't verify.
+
+Project memory (.agents/): when you learn a durable fact about THIS project that isn't obvious from the code — integration/env state, a decision and its reason, a gotcha, a pattern that recurs — record it. Write a short \`.agents/memory/<topic>.md\` and add a one-line pointer in \`.agents/memory/MEMORY.md\`; update the existing memo instead of duplicating. When a pattern repeats, capture it as a project skill in \`.agents/skills/\`; register a non-trivial decision in \`.agents/decisions/\`. Keep AGENTS.md aligned when structure or conventions change. Always write these project files (AGENTS.md, memory, decisions, skills) in English, regardless of the conversation language. This memory is loaded into your context every session — maintaining it is how you stay useful over time."
 `;
 
 exports[`modelProfileSection in the assembled prompt (iter 33) snapshot anthropic × build 1`] = `
@@ -101,7 +105,9 @@ Rules:
 
 After making changes: run the real path (test/build/run it), don't just read the code back.
 Re-read the diff looking for bugs, security issues, and over-engineering.
-Don't declare the task done without evidence (output/test), and say so if you couldn't verify."
+Don't declare the task done without evidence (output/test), and say so if you couldn't verify.
+
+Project memory (.agents/): when you learn a durable fact about THIS project that isn't obvious from the code — integration/env state, a decision and its reason, a gotcha, a pattern that recurs — record it. Write a short \`.agents/memory/<topic>.md\` and add a one-line pointer in \`.agents/memory/MEMORY.md\`; update the existing memo instead of duplicating. When a pattern repeats, capture it as a project skill in \`.agents/skills/\`; register a non-trivial decision in \`.agents/decisions/\`. Keep AGENTS.md aligned when structure or conventions change. Always write these project files (AGENTS.md, memory, decisions, skills) in English, regardless of the conversation language. This memory is loaded into your context every session — maintaining it is how you stay useful over time."
 `;
 
 exports[`modelProfileSection in the assembled prompt (iter 33) snapshot anthropic × plan 1`] = `
@@ -146,5 +152,7 @@ Rules:
 
 After making changes: run the real path (test/build/run it), don't just read the code back.
 Re-read the diff looking for bugs, security issues, and over-engineering.
-Don't declare the task done without evidence (output/test), and say so if you couldn't verify."
+Don't declare the task done without evidence (output/test), and say so if you couldn't verify.
+
+Project memory (.agents/): when you learn a durable fact about THIS project that isn't obvious from the code — integration/env state, a decision and its reason, a gotcha, a pattern that recurs — record it. Write a short \`.agents/memory/<topic>.md\` and add a one-line pointer in \`.agents/memory/MEMORY.md\`; update the existing memo instead of duplicating. When a pattern repeats, capture it as a project skill in \`.agents/skills/\`; register a non-trivial decision in \`.agents/decisions/\`. Keep AGENTS.md aligned when structure or conventions change. Always write these project files (AGENTS.md, memory, decisions, skills) in English, regardless of the conversation language. This memory is loaded into your context every session — maintaining it is how you stay useful over time."
 `;

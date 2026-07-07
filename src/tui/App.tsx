@@ -27,6 +27,7 @@ import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
 import { FileMentionMenu } from "./FileMentionMenu.tsx";
 import { scanProjectFiles, rankFileMentions, getAtQuery, insertMention } from "./fileMentions.ts";
+import { scaffoldAgents } from "../projectMemory.ts";
 import { ReverseSearch } from "./ReverseSearch.tsx";
 import { createStreamFlusher } from "./streamFlush.ts";
 import { SessionList } from "./SessionList.tsx";
@@ -115,6 +116,7 @@ export default function App({ session }: { session: Session }) {
   const reqIdRef = useRef(0); // monotonic id for confirm/question requests (React key)
   const [phIdx, setPhIdx] = useState(0); // placeholder example index (it. 25)
   const [update, setUpdate] = useState<string | null>(null); // newer version (it. 28)
+  const [sessionTitle, setSessionTitle] = useState(session.meta.title || "");
   const { toasts, addToast } = useToast();
   // Head-of-queue = the request currently shown to the user (null if none).
   const confirm = confirmQueue[0] ?? null;
@@ -136,6 +138,12 @@ export default function App({ session }: { session: Session }) {
   useEffect(() => {
     checkForUpdate().then(setUpdate).catch(() => {});
   }, []);
+
+  // Set the terminal tab/window title to reflect the session name.
+  useEffect(() => {
+    const title = sessionTitle ? `i: ${sessionTitle}` : "interference";
+    process.stdout.write(`\x1b]0;${title}\x07`);
+  }, [sessionTitle]);
 
   // Todos: restore from session and re-render on each tool update.
   useEffect(() => {
@@ -324,6 +332,7 @@ export default function App({ session }: { session: Session }) {
     if (!sessionRef.current.meta.title) {
       sessionRef.current.meta.title = deriveTitle(userText);
     }
+    setSessionTitle(sessionRef.current.meta.title ?? "");
     messagesRef.current.push({ role: "user", content: userText });
     aborterRef.current = new AbortController();
 
@@ -489,19 +498,24 @@ export default function App({ session }: { session: Session }) {
           doInit: async (args) => {
             setBusy(true);
             try {
-            const template = `Generate or update the AGENTS.md file at the project root.
+            // Scaffold the .agents/ memory/decisions/skills skeleton + gitignore it (F3),
+            // deterministically, before the LLM writes AGENTS.md.
+            await scaffoldAgents(process.cwd());
+            const template = `Set up this project for AI agents. The \`.agents/{memory,decisions,skills}/\` skeleton has already been created and gitignored. Write everything you create (AGENTS.md, memory) in English.
 
-Follow the bundled agents-setup skill (see system prompt). Key sections:
+Generate or update the AGENTS.md file at the project root. Key sections:
 - Project overview, stack, directory structure
 - Build/test commands, code conventions
 - Agent skills and triggers
+- The memory workflow: record durable facts in .agents/memory/<topic>.md + index them in .agents/memory/MEMORY.md
 - Non-negotiable rules
 
 How to proceed:
 1. Use ls, glob, grep, and read to explore the project thoroughly
 2. Identify languages, frameworks, build system, test setup, conventions
 3. Write AGENTS.md at the project root using the write tool
-4. Confirm the file was created and summarize its contents
+4. If you discovered durable facts not obvious from the code, record them in .agents/memory/
+5. Confirm what was created and summarize it
 
 ${args ? `Additional context: ${args}` : ""}`;
             nextTurn();
@@ -558,6 +572,7 @@ ${args ? `Additional context: ${args}` : ""}`;
           doRename: async (name) => {
             sessionRef.current.meta.title = name;
             await saveSession(sessionRef.current);
+            setSessionTitle(name);
             return `Session renamed to '${name}'.`;
           },
           doCompact: async () => {
@@ -641,6 +656,7 @@ ${args ? `Additional context: ${args}` : ""}`;
               setStreaming("");
               setReasoning("");
               setToolSteps([]);
+              setSessionTitle(loaded.meta.title || "");
               addToast(`Resumed '${loaded.meta.title || id.slice(0, 12)}' (${loaded.meta.turnCount} turns)`, "success");
             } else {
               addToast(`Session ${id.slice(0, 12)} not found`, "error");

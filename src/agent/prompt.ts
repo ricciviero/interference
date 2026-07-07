@@ -1,13 +1,16 @@
 import { loadInstructions, formatInstructionBlock, type InstructionBlock } from "../context.ts";
 import { loadSkillRegistry, bootstrapSkills } from "../skills.ts";
+import { loadProjectMemory } from "../projectMemory.ts";
 import { ANTHROPIC_PROFILE } from "./prompts/anthropic.ts";
 import { DEFAULT_PROFILE } from "./prompts/default.ts";
 
 let cachedInstructions: InstructionBlock[] | null = null;
 let skillsSummary: string | null = null;
+let cachedMemory: string | null = null;
 
 export async function initInstructions(): Promise<InstructionBlock[]> {
   cachedInstructions = await loadInstructions();
+  cachedMemory = await loadProjectMemory();
   const registry = await loadSkillRegistry();
   if (registry.length > 0) {
     skillsSummary = "Available skills (use /<name> or trigger by description):\n" +
@@ -16,12 +19,20 @@ export async function initInstructions(): Promise<InstructionBlock[]> {
   return cachedInstructions;
 }
 
+/** Reload the project memory (call after the agent writes/updates a memo so the current
+ *  session sees it too — cross-session reload happens naturally at startup). */
+export async function refreshProjectMemory(): Promise<void> {
+  cachedMemory = await loadProjectMemory();
+}
+
 /** Context for assembling the system prompt. Extensible (agent/model, it. 33/34)
  *  without breaking the signature of `buildSystemPrompt`. */
 export interface PromptContext {
   mode: "plan" | "build";
   instructions?: InstructionBlock[];
   skills?: string;
+  /** Project memory (living facts from `.agents/memory/`), injected so the agent remembers. */
+  memory?: string;
   /** Current model id — selects the family profile (it. 33). Absent → no profile. */
   model?: string;
 }
@@ -61,6 +72,12 @@ function instructionsSection(ctx: PromptContext): string {
 
 function skillsSection(ctx: PromptContext): string {
   return ctx.skills ? "\n<available_skills>\n" + ctx.skills + "\n</available_skills>\n" : "";
+}
+
+/** Living project facts loaded from `.agents/memory/`. Injected so the agent starts each
+ *  session already knowing what it learned before (integration state, gotchas, decisions). */
+function projectMemorySection(ctx: PromptContext): string {
+  return ctx.memory ? "\n<project_memory>\n" + ctx.memory + "\n</project_memory>\n" : "";
 }
 
 function toolsNoteSection(): string {
@@ -103,6 +120,15 @@ function verifySection(ctx: PromptContext): string {
   return ctx.mode === "build" ? VERIFY_TEXT : "";
 }
 
+// The maintenance discipline that makes the agent keep its own project knowledge alive. Only in
+// Build (Plan can't write). Mirrors what <project_memory> is loaded from, closing the loop:
+// read at start of session → maintain during work → reloaded next session.
+const MEMORY_RULES = `Project memory (.agents/): when you learn a durable fact about THIS project that isn't obvious from the code — integration/env state, a decision and its reason, a gotcha, a pattern that recurs — record it. Write a short \`.agents/memory/<topic>.md\` and add a one-line pointer in \`.agents/memory/MEMORY.md\`; update the existing memo instead of duplicating. When a pattern repeats, capture it as a project skill in \`.agents/skills/\`; register a non-trivial decision in \`.agents/decisions/\`. Keep AGENTS.md aligned when structure or conventions change. Always write these project files (AGENTS.md, memory, decisions, skills) in English, regardless of the conversation language. This memory is loaded into your context every session — maintaining it is how you stay useful over time.`;
+
+function memoryRulesSection(ctx: PromptContext): string {
+  return ctx.mode === "build" ? MEMORY_RULES : "";
+}
+
 /** Family profile text for the current model. Empty for `default` (no specific
  *  notes emerged) → no section added, no bloat for most providers. */
 function modelProfileSection(ctx: PromptContext): string {
@@ -113,19 +139,22 @@ function modelProfileSection(ctx: PromptContext): string {
  *  a local change to this function (nothing else touches the final string). */
 export function buildSystemPrompt(ctx: PromptContext): string {
   const verify = verifySection(ctx);
+  const memoryRules = memoryRulesSection(ctx);
   const profile = modelProfileSection(ctx);
   return (
     identitySection() +
     "\n\n" +
     environmentSection() +
     instructionsSection(ctx) +
+    projectMemorySection(ctx) +
     skillsSection(ctx) +
     "\n" +
     toolsNoteSection() +
     "\n" +
     (profile ? profile + "\n" : "") +
     rulesSection(ctx) +
-    (verify ? "\n\n" + verify : "")
+    (verify ? "\n\n" + verify : "") +
+    (memoryRules ? "\n\n" + memoryRules : "")
   );
 }
 
@@ -138,6 +167,7 @@ export function systemPrompt(
     mode,
     instructions: instructions ?? cachedInstructions ?? [],
     skills: skillsSummary ?? undefined,
+    memory: cachedMemory ?? undefined,
     model,
   });
 }

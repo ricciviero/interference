@@ -13,6 +13,7 @@ import type { Session } from "./session/store.ts";
 import { nextTurn, undo, redo, finalizeSnapshots } from "./session/snapshot.ts";
 import { dispatch, isSlashCommand } from "./commands/index.ts";
 import { matchSkills, getCachedRegistry, loadSkillBody } from "./skills.ts";
+import { scaffoldAgents } from "./projectMemory.ts";
 import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compaction.ts";
 import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
 import { estimateCost, formatCost, getRawUsage, restoreUsage } from "./cost.ts";
@@ -106,20 +107,23 @@ export default async function plain(session: Session): Promise<void> {
           setMode: (m) => { setMode(m); session.meta.mode = m; },
           clearMessages: () => { messages.length = 0; },
           doInit: async (args) => {
-            // /init delegates to the agent — run a turn with the init template
-            const template = `Generate or update the AGENTS.md file at the project root.
+            // /init: scaffold the .agents/ skeleton + gitignore (F3), then delegate AGENTS.md.
+            await scaffoldAgents(process.cwd());
+            const template = `Set up this project for AI agents. The \`.agents/{memory,decisions,skills}/\` skeleton has already been created and gitignored. Write everything you create (AGENTS.md, memory) in English.
 
-Follow the bundled agents-setup skill (see system prompt). Key sections:
+Generate or update the AGENTS.md file at the project root. Key sections:
 - Project overview, stack, directory structure
-- Build/test commands, code conventions  
+- Build/test commands, code conventions
 - Agent skills and triggers
+- The memory workflow: record durable facts in .agents/memory/<topic>.md + index them in .agents/memory/MEMORY.md
 - Non-negotiable rules
 
 How to proceed:
 1. Use ls, glob, grep, and read to explore the project thoroughly
 2. Identify languages, frameworks, build system, test setup, conventions
 3. Write AGENTS.md at the project root using the write tool
-4. Confirm the file was created and summarize its contents
+4. If you discovered durable facts not obvious from the code, record them in .agents/memory/
+5. Confirm what was created and summarize it
 
 ${args ? `Additional context: ${args}` : ""}`;
             nextTurn();
@@ -180,7 +184,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             return "Cancelled.";
           },
           doRename: async (name) => {
-            session.meta.id = name;
+            session.meta.title = name;
             await saveSession(session);
             return `Session renamed to '${name}'.`;
           },

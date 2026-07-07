@@ -29,6 +29,7 @@ permissions and a read-only **Plan** mode so nothing happens without your say-so
 - **Undo / redo** — file snapshots before every mutation; `/undo` `/redo`
 - **Slash commands** — `/help` `/clear` `/init` `/model` `/plan` `/build` `/undo` `/redo` `/compact` `/sessions` `/rename` `/provider` `/thinking` `/review`
 - **`@`-file mentions** — type `@` to fuzzy-pick a project file (Tab/Enter inserts its path)
+- **Living project memory** — the agent records durable facts about your project in `.agents/memory/` and reloads them every session, so it remembers what isn't in the code (`/init` sets it up, `/remember`/`/memory` manage it)
 - **Keyboard shortcuts** — `Esc` interrupts the current turn (keeps the work done so far), `Shift+Tab` cycles Plan/Build, `Ctrl+T` toggles the todo list, `Ctrl+O` collapses/expands tool output, `Ctrl+R` reverse-searches prompt history
 - **`/init`** — analyzes your project and generates `AGENTS.md`
 - **`/provider`** — manage API keys interactively (stored in `~/.interference/auth.json`)

@@ -1,7 +1,9 @@
 import type { AgentMode, ThinkingLevel, ProviderId } from "../config.ts";
-import { currentProvider, currentThinking, setThinking, currentModel, setModel, setProvider, currentProviderId, PROVIDERS } from "../config.ts";
+import { currentProvider, currentThinking, setThinking, currentModel, setModel, setProvider, savePreferences, currentProviderId, PROVIDERS } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
+import { loadProjectMemory, addMemory } from "../projectMemory.ts";
+import { refreshProjectMemory } from "../agent/prompt.ts";
 import { CURRENT_VERSION } from "../version.ts";
 
 export interface CommandInfo {
@@ -139,9 +141,11 @@ register("model", "Change the model (usage: /model [provider] <model-id>)", (arg
     const model = parts.slice(1).join(" ");
     setProvider(pid);
     setModel(model);
+    savePreferences();
     return `Provider '${pid}', model '${model}'. Effective on next turn.`;
   }
   setModel(trimmed);
+  savePreferences();
   return `Model set to '${trimmed}'. Effective on next turn.`;
 });
 
@@ -186,6 +190,20 @@ register("compact", "Compact conversation context to save tokens", (args, ctx) =
 
 register("provider", "Manage connected AI providers and API keys", () => {
   return "Opening provider settings...";
+});
+
+register("memory", "Show what the agent remembers about this project (.agents/memory)", async () => {
+  const m = await loadProjectMemory();
+  return m || "No project memory yet. Run /init to set up .agents/, then I'll record durable facts as we work (or use /remember <fact>).";
+});
+
+register("remember", "Record a fact in project memory (usage: /remember <fact>)", async (args) => {
+  const fact = args.trim();
+  if (!fact) return "Usage: /remember <fact>";
+  const fp = await addMemory(process.cwd(), fact);
+  await refreshProjectMemory(); // so the current session sees it too
+  const rel = fp.startsWith(process.cwd()) ? fp.slice(process.cwd().length + 1) : fp;
+  return `Remembered — saved to ${rel} and indexed in MEMORY.md.`;
 });
 
 register("sessions", "List and resume previous sessions", (_args, ctx) => {
