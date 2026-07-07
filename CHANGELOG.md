@@ -5,6 +5,20 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-07
+
+### Added
+- **Living project memory.** The agent now maintains project knowledge in `.agents/` and reloads it every session, so it remembers what isn't in the code (integration state, decisions, gotchas). `/init` scaffolds `.agents/{memory,decisions,skills}/` (gitignored by default) and generates `AGENTS.md`; `.agents/memory/` (a `MEMORY.md` index + one file per fact) is injected into the context each session; the agent is instructed to record durable facts, decisions and recurring patterns as it works. New commands: `/remember <fact>` and `/memory`. Files the agent creates (AGENTS.md, memory) are written in English.
+- **`@`-file mentions** — type `@` to fuzzy-pick a project file; Tab/Enter inserts its path (path only, no content expansion). The scanner respects `.gitignore`.
+- **Persistent model/provider selection** — the `/model` and `/provider` choices are saved and restored at startup, so the CLI reopens on the last-used model.
+
+### Changed
+- **Chronological turn rendering.** A turn now reads top-to-bottom in the real order things happen — reasoning, tool runs and the answer are committed to the scrollback as they occur, instead of "all thinking up top, all tools at the bottom". Tools persist in the scrollback; past thoughts collapse to their header.
+- **Todos** show only active tasks and sit just above the input, so the list disappears when the work is done.
+
+### Fixed
+- Failed turns are no longer swallowed silently in the TUI — a provider error (no credit/402, 429, network, invalid model) now shows a clear message in the chat.
+
 ## [0.3.3] — 2026-07-07
 
 ### Added
@@ -117,7 +131,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ricciviero/interference/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/ricciviero/interference/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/ricciviero/interference/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ricciviero/interference/compare/v0.3.0...v0.3.1
