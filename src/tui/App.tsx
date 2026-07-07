@@ -25,6 +25,8 @@ import { getGitBranch } from "../git.ts";
 import { StatusFooter } from "./StatusFooter.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { SlashAutocomplete } from "./SlashAutocomplete.tsx";
+import { FileMentionMenu } from "./FileMentionMenu.tsx";
+import { scanProjectFiles, rankFileMentions, getAtQuery, insertMention } from "./fileMentions.ts";
 import { ReverseSearch } from "./ReverseSearch.tsx";
 import { createStreamFlusher } from "./streamFlush.ts";
 import { SessionList } from "./SessionList.tsx";
@@ -43,18 +45,16 @@ import { checkForUpdate, CURRENT_VERSION } from "../version.ts";
 import { USER_BAR, ASSISTANT_BAR, THINKING, THINKING_BODY } from "./theme.ts";
 import { Panel } from "./Panel.tsx";
 
-type HistoryItem = {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-  reasoning?: string;
-  reasoningMs?: number;
-  durationMs?: number;
-  mode?: string;
-  model?: string;
-  /** Render as a visible error (red). Set when a turn fails (e.g. provider 402/429/network). */
-  isError?: boolean;
-};
+// The chat scrollback is a chronological list of typed blocks (thought, tool, text, …),
+// committed in the order they happen during a turn — so reasoning, tool runs and the answer
+// read top-to-bottom in real order, instead of "all thinking up top, all tools at the bottom".
+// (ToolEntry is declared just below; type aliases are hoisted so the forward reference is fine.)
+type HistoryItem =
+  | { kind: "user"; id: number; content: string }
+  | { kind: "assistant"; id: number; content: string; durationMs?: number; mode?: string; model?: string }
+  | { kind: "thought"; id: number; content: string; ms?: number }
+  | { kind: "tool"; id: number; tool: ToolEntry }
+  | { kind: "error"; id: number; content: string };
 
 /** Turn a failed-turn error into a clear, permanent one-liner (no stack trace). A
  *  MissingApiKeyError already carries actionable multi-line text, so pass it through. */
@@ -99,6 +99,10 @@ export default function App({ session }: { session: Session }) {
   const [collapsedTools, setCollapsedTools] = useState(false); // Ctrl+O toggle (fix/08 A4)
   const [showReverseSearch, setShowReverseSearch] = useState(false); // Ctrl+R (fix/08 A6)
   const [acIdx, setAcIdx] = useState(0);
+  // @-file mentions: the project file list (scanned once), kept both in state (for reactive
+  // render) and in a ref (for onSubmit, which can't depend on it without stale closures).
+  const [projectFiles, setProjectFiles] = useState<string[]>([]);
+  const projectFilesRef = useRef<string[]>([]);
   const [draft, setDraft] = useState("");
   const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const [gitBranch, setGitBranch] = useState("");
@@ -120,6 +124,13 @@ export default function App({ session }: { session: Session }) {
   const sessionRef = useRef(session);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Scan the project files once for @-mentions (non-blocking, best-effort).
+  useEffect(() => {
+    scanProjectFiles(process.cwd())
+      .then((f) => { projectFilesRef.current = f; setProjectFiles(f); })
+      .catch(() => {});
+  }, []);
 
   // Update check (it. 28): non-blocking, throttled, silent offline.
   useEffect(() => {
@@ -210,8 +221,32 @@ export default function App({ session }: { session: Session }) {
     }
   });
 
+  // Active @-file mention token + its ranked matches (recomputed each render; fresh in the
+  // useInput/onSubmit closures). Slash commands take priority over @.
+  const atToken = draft.startsWith("/") ? null : getAtQuery(draft);
+  const fileMatches = atToken ? rankFileMentions(projectFiles, atToken.query) : [];
+
   useInput((_input, key) => {
     if (confirm || question || showThinking || showSessions || showModel || showProvider || showReverseSearch) return;
+
+    // @-file mention menu open: arrows navigate (throttled like the slash menu), Tab inserts
+    // the highlighted path. Enter is handled in onSubmit (same pattern as slash).
+    if (fileMatches.length > 0 && atToken) {
+      if (key.upArrow || key.downArrow) {
+        const now = Date.now();
+        if (now - acLastKey.current < 120) return;
+        acLastKey.current = now;
+        if (key.upArrow) setAcIdx((i) => (i > 0 ? i - 1 : fileMatches.length - 1));
+        else setAcIdx((i) => (i < fileMatches.length - 1 ? i + 1 : 0));
+        return;
+      }
+      if (key.tab) {
+        const sel = fileMatches[((acIdx % fileMatches.length) + fileMatches.length) % fileMatches.length]!;
+        setDraft(insertMention(draft, atToken.at, sel));
+        setAcIdx(0);
+        return;
+      }
+    }
 
     // Command history: up/down arrow without active slash
     if (!draft.startsWith("/")) {
@@ -282,12 +317,7 @@ export default function App({ session }: { session: Session }) {
     setReasoning("");
     setToolSteps([]);
 
-    const userMsg: HistoryItem = {
-      id: nextId(),
-      role: "user",
-      content: userText,
-    };
-    setHistory((h) => [...h, userMsg]);
+    setHistory((h) => [...h, { kind: "user", id: nextId(), content: userText }]);
 
     nextTurn();
     // Auto-title on first interaction (if not already renamed by the user).
@@ -296,11 +326,25 @@ export default function App({ session }: { session: Session }) {
     }
     messagesRef.current.push({ role: "user", content: userText });
     aborterRef.current = new AbortController();
-    let acc = "";
-    let reasoningAcc = "";
+
+    // Chronological commit: each completed segment — a thought, a
+    // tool run, a block of answer text — is pushed to `history` (the Static scrollback) IN THE
+    // ORDER it happens, so a turn reads top-to-bottom as it actually occurred (no more "all
+    // thinking up top, all tools at the bottom"). Only the in-progress segment stays in the
+    // live region below. acc/reasoningAcc/liveTools are the source of truth; the throttled
+    // setStreaming/setReasoning only drive the live display.
     const turnStart = Date.now();
-    let reasoningStart = 0;
-    let reasoningMs = 0;
+    let fold = initTurnFold(); // in-progress turn state (source of truth); see foldTurnChunk
+
+    const commit = (item: HistoryItem) => setHistory((h) => [...h, item]);
+    // Turn a completed TurnBlock into a history item (assigns id/model/mode/duration here).
+    const commitBlocks = (blocks: TurnBlock[]) => {
+      for (const b of blocks) {
+        if (b.type === "thought") commit({ kind: "thought", id: nextId(), content: b.content, ms: b.ms });
+        else if (b.type === "tool") commit({ kind: "tool", id: nextId(), tool: b.tool });
+        else commit({ kind: "assistant", id: nextId(), content: b.content, durationMs: Date.now() - turnStart, mode: currentMode(), model: currentModel() });
+      }
+    };
 
     // Throttle live streaming updates (fix/07): flush at ~12.5 Hz instead of per chunk,
     // so the terminal has room to process mouse scroll during a turn. Final text unchanged.
@@ -312,54 +356,26 @@ export default function App({ session }: { session: Session }) {
       const chunks = runTurn(messagesRef.current, aborterRef.current.signal, undefined, skillBodies);
 
       for await (const chunk of chunks) {
-        switch (chunk.type) {
-          case "reasoning":
-            if (!reasoningStart) reasoningStart = Date.now();
-            reasoningAcc += chunk.text;
-            reasoningFlush.push(reasoningAcc);
-            break;
-
-          case "text":
-            if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
-            acc += chunk.text;
-            streamFlush.push(acc);
-            break;
-
-          case "tool-call":
-            // chunk.toolCallId (from the SDK) is the correlation key — not a shared
-            // external variable: with multiple parallel tools (e.g. multiple `task`
-            // subagents), results arrive in an order not guaranteed to match the call
-            // order, and a single "last id" variable would wrongly attribute every
-            // result to the most recently created call.
-            setToolSteps((ts) => addToolCall(ts, chunk));
-            break;
-
-          case "tool-result":
-            setToolSteps((ts) => applyToolResult(ts, chunk));
-            break;
+        const { commit: blocks, state } = foldTurnChunk(fold, chunk, Date.now());
+        fold = state;
+        if (blocks.length > 0) {
+          // A boundary happened (a segment closed): commit it, and snap the live display to
+          // the new state at once so the just-closed thought/text doesn't linger below.
+          commitBlocks(blocks);
+          setReasoning(fold.reasoning);
+          setStreaming(fold.text);
+        } else {
+          // Incremental streaming within the same segment: throttle the live display.
+          reasoningFlush.push(fold.reasoning);
+          streamFlush.push(fold.text);
         }
+        setToolSteps(fold.tools);
       }
 
-      // Flush the final streamed text/reasoning (throttle may have withheld the last chunk).
+      // Flush the throttled display, then commit whatever is still open, in order.
       streamFlush.finish();
       reasoningFlush.finish();
-
-      if (acc || reasoningAcc) {
-        if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
-        setHistory((h) => [
-          ...h,
-          {
-            id: nextId(),
-            role: "assistant",
-            content: acc,
-            reasoning: reasoningAcc || undefined,
-            reasoningMs: reasoningMs || undefined,
-            durationMs: Date.now() - turnStart,
-            mode: currentMode(),
-            model: currentModel(),
-          },
-        ]);
-      }
+      commitBlocks(finishTurnFold(fold, Date.now()));
 
       sessionRef.current.meta.turnCount++;
       sessionRef.current.todos = getTodos();
@@ -380,51 +396,19 @@ export default function App({ session }: { session: Session }) {
         addToast(`Compacted: ${pct}% → ${getUsagePercent(messagesRef.current)}%`, "info");
       }
     } catch (err) {
-      // Esc interrupt (fix/08 A1): the AbortController's signal is set. Keep the work
-      // done so far visible (partial text/reasoning → history), drop the half-recorded
-      // turn from the model context so the next turn starts clean.
+      // Esc interrupt (fix/08 A1): the AbortController's signal is set. Keep the work done so
+      // far visible (blocks already committed in order + flush the open partial), and drop the
+      // half-recorded turn from the model context so the next turn starts clean.
       const aborted = aborterRef.current?.signal.aborted ?? false;
+      commitBlocks(finishTurnFold(fold, Date.now()));
       messagesRef.current.pop();
       if (aborted) {
-        if (acc || reasoningAcc) {
-          if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
-          setHistory((h) => [
-            ...h,
-            {
-              id: nextId(),
-              role: "assistant",
-              content: acc,
-              reasoning: reasoningAcc || undefined,
-              reasoningMs: reasoningMs || undefined,
-              durationMs: Date.now() - turnStart,
-              mode: currentMode(),
-              model: currentModel(),
-            },
-          ]);
-        }
         addToast("Interrupted", "info");
       } else {
-        // A failed turn (provider 402 "no credit", 429, network, invalid model, …). Commit any
-        // partial text first, then a VISIBLE, permanent error message. Previously this went to
-        // `streaming`, which the finally below immediately cleared → the failure showed as an
-        // empty turn with zero feedback (e.g. an OpenRouter account with no credit).
-        if (acc || reasoningAcc) {
-          if (reasoningStart && !reasoningMs) reasoningMs = Date.now() - reasoningStart;
-          setHistory((h) => [
-            ...h,
-            {
-              id: nextId(),
-              role: "assistant",
-              content: acc,
-              reasoning: reasoningAcc || undefined,
-              reasoningMs: reasoningMs || undefined,
-              durationMs: Date.now() - turnStart,
-              mode: currentMode(),
-              model: currentModel(),
-            },
-          ]);
-        }
-        setHistory((h) => [...h, { id: nextId(), role: "assistant", content: formatTurnError(err), isError: true }]);
+        // A failed turn (provider 402 "no credit", 429, network, invalid model, …): a VISIBLE,
+        // permanent error block. Any partial work was already committed above. Previously the
+        // error went to `streaming`, which the finally cleared → an empty turn, zero feedback.
+        commit({ kind: "error", id: nextId(), content: formatTurnError(err) });
         addToast("Turn failed", "error");
       }
     } finally {
@@ -447,6 +431,20 @@ export default function App({ session }: { session: Session }) {
     (value: string) => {
       let v = value.trim();
       if (!v) return;
+      // @-file mention menu open: Enter inserts the highlighted path instead of sending.
+      // Use the RAW value (a trailing space means the token is already closed → send).
+      if (!value.startsWith("/")) {
+        const at = getAtQuery(value);
+        if (at) {
+          const matches = rankFileMentions(projectFilesRef.current, at.query);
+          if (matches.length > 0) {
+            const sel = matches[((acIdx % matches.length) + matches.length) % matches.length]!;
+            setDraft(insertMention(value, at.at, sel));
+            setAcIdx(0);
+            return;
+          }
+        }
+      }
       setDraft("");
       if (busy) {
         setMessageQueue((q) => [...q, v]);
@@ -537,7 +535,7 @@ ${args ? `Additional context: ${args}` : ""}`;
                 if (chunk.type === "text") { acc += chunk.text; setStreaming(acc); }
               }
               if (acc) {
-                setHistory((h) => [...h, { id: nextId(), role: "assistant", content: acc }]);
+                setHistory((h) => [...h, { kind: "assistant", id: nextId(), content: acc }]);
               }
               sessionRef.current.meta.turnCount++;
               await finalizeSnapshots();
@@ -631,12 +629,13 @@ ${args ? `Additional context: ${args}` : ""}`;
                   }
                 }
                 if (!text && !reasoning) continue; // skip tool-only messages
-                items.push({
-                  id: nid++,
-                  role: m.role as "user" | "assistant",
-                  content: text,
-                  reasoning: reasoning || undefined,
-                });
+                if (m.role === "user") {
+                  items.push({ kind: "user", id: nid++, content: text });
+                } else {
+                  // A saved assistant turn → its thought (collapsed) then its answer, in order.
+                  if (reasoning) items.push({ kind: "thought", id: nid++, content: reasoning });
+                  if (text) items.push({ kind: "assistant", id: nid++, content: text });
+                }
               }
               setHistory(items);
               setStreaming("");
@@ -686,8 +685,6 @@ ${args ? `Additional context: ${args}` : ""}`;
           <Static items={history}>
             {(m) => <MsgBlock key={m.id} item={m} />}
           </Static>
-
-          {showTodos && <TodoList todos={todos} />}
 
           {reasoning && <ReasoningBlock text={reasoning} live />}
 
@@ -751,6 +748,10 @@ ${args ? `Additional context: ${args}` : ""}`;
             <SlashAutocomplete filter={draft.slice(1)} selected={acIdx} />
           )}
 
+          {atToken && fileMatches.length > 0 && !question && (
+            <FileMentionMenu matches={fileMatches} selected={acIdx} />
+          )}
+
           {/* Command/status notice: directly ABOVE the input (conventional TUI style), not in the footer */}
           {statusText && !confirm && !question && !showSessions && (
             <Box paddingLeft={1}>
@@ -761,6 +762,11 @@ ${args ? `Additional context: ${args}` : ""}`;
           {/* Queued prompts: show the TEXT of what's waiting, not just the count
               (the data is already there as a string[]) — fix 05. */}
           {!confirm && !question && <QueuedPrompts queue={messageQueue} />}
+
+          {/* Todos: moved DOWN here (just above the input) so they don't push the live work
+              off-screen, and shown only when there's an active task (TodoList returns null
+              otherwise). Ctrl+T still hides/shows them. */}
+          {showTodos && <TodoList todos={todos} />}
 
           {showReverseSearch && (
             <ReverseSearch
@@ -858,7 +864,7 @@ function RoleBlock({
 
 // THINKING phase: amber header "✻ Thinking/Thought · duration" + dimmed body.
 // Distinct from execution (tool icons, white) and response (full white markdown).
-function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?: number }) {
+function ReasoningBlock({ text, live, ms, collapsed }: { text: string; live?: boolean; ms?: number; collapsed?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -884,39 +890,35 @@ function ReasoningBlock({ text, live, ms }: { text: string; live?: boolean; ms?:
       <Text color={THINKING} bold>
         {header}
       </Text>
-      <Text color={THINKING_BODY}>{body}</Text>
+      {!collapsed && <Text color={THINKING_BODY}>{body}</Text>}
     </Box>
   );
 }
 
 export function MsgBlock({ item }: { item: HistoryItem }) {
-  if (item.isError) {
-    return (
-      <Box paddingLeft={1}>
-        <Text color="red">{item.content}</Text>
-      </Box>
-    );
+  switch (item.kind) {
+    case "user":
+      return <Panel content={item.content} bar="▌" barColor={USER_BAR} />;
+    // Committed thought: collapsed to its header (✻ Thought: summary · Ns), body hidden —
+    // the reasoning "bubble" closes once the answer arrives.
+    case "thought":
+      return <ReasoningBlock text={item.content} ms={item.ms} collapsed />;
+    case "tool":
+      return <ToolStep tool={item.tool} />;
+    case "error":
+      return (
+        <Box paddingLeft={1}>
+          <Text color="red">{item.content}</Text>
+        </Box>
+      );
+    case "assistant": {
+      const secs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}s` : "");
+      const footer = item.model
+        ? `▣ ${item.mode ?? ""} · ${item.model}${item.durationMs ? ` · ${secs(item.durationMs)}` : ""}`
+        : undefined;
+      return <RoleBlock color={ASSISTANT_BAR} content={item.content} markdown footer={footer} />;
+    }
   }
-  const isUser = item.role === "user";
-  const secs = (ms?: number) => (ms ? `${(ms / 1000).toFixed(1)}s` : "");
-  const footer =
-    !isUser && item.model
-      ? `▣ ${item.mode ?? ""} · ${item.model}${item.durationMs ? ` · ${secs(item.durationMs)}` : ""}`
-      : undefined;
-  if (isUser) {
-    return <Panel content={item.content} bar="▌" barColor={USER_BAR} />;
-  }
-  return (
-    <Box flexDirection="column">
-      {item.reasoning && <ReasoningBlock text={item.reasoning} ms={item.reasoningMs} />}
-      <RoleBlock
-        color={ASSISTANT_BAR}
-        content={item.content}
-        markdown
-        footer={footer}
-      />
-    </Box>
-  );
 }
 
 
@@ -976,4 +978,78 @@ export function countPendingTasks(steps: ToolEntry[]): number {
 // never emptied mid-turn).
 export function hasPendingTool(steps: ToolEntry[]): boolean {
   return steps.some((t) => t.output === undefined);
+}
+
+// Chronological turn folding. A turn is a stream of typed blocks; this pure reducer decides,
+// per streamed chunk, which completed blocks to COMMIT (in order) and how the in-progress
+// "live" state looks — so the UI reads top-to-bottom as it happened (thought → tool → thought
+// → answer), not "all thinking up top, all tools at the bottom". A new kind of event closes
+// any open thought/answer first. Pure (no React/ids/clock beyond injected `now`) → testable;
+// App turns TurnBlocks into HistoryItems (assigning ids/model/mode) and drives the live region.
+export type TurnBlock =
+  | { type: "thought"; content: string; ms?: number }
+  | { type: "tool"; tool: ToolEntry }
+  | { type: "assistant"; content: string };
+
+export interface TurnFold {
+  reasoning: string;
+  reasoningStart: number; // 0 = no thought currently open
+  text: string;
+  tools: ToolEntry[];
+}
+
+export function initTurnFold(): TurnFold {
+  return { reasoning: "", reasoningStart: 0, text: "", tools: [] };
+}
+
+export function foldTurnChunk(state: TurnFold, chunk: Chunk, now: number): { commit: TurnBlock[]; state: TurnFold } {
+  const commit: TurnBlock[] = [];
+  let { reasoning, reasoningStart, text, tools } = state;
+
+  const closeThought = () => {
+    if (reasoning) {
+      commit.push({ type: "thought", content: reasoning, ms: reasoningStart ? now - reasoningStart : undefined });
+      reasoning = "";
+      reasoningStart = 0;
+    }
+  };
+  const closeText = () => {
+    if (text) {
+      commit.push({ type: "assistant", content: text });
+      text = "";
+    }
+  };
+
+  switch (chunk.type) {
+    case "reasoning":
+      closeText(); // answer text before more thinking (rare) closes first
+      if (!reasoningStart) reasoningStart = now;
+      reasoning += chunk.text;
+      break;
+    case "text":
+      closeThought(); // thinking is done, the answer begins
+      text += chunk.text;
+      break;
+    case "tool-call":
+      closeThought();
+      closeText();
+      tools = addToolCall(tools, chunk);
+      break;
+    case "tool-result":
+      tools = applyToolResult(tools, chunk);
+      // Commit finished tools (completion order); keep still-running ones live.
+      for (const t of tools.filter((x) => x.output !== undefined)) commit.push({ type: "tool", tool: t });
+      tools = tools.filter((x) => x.output === undefined);
+      break;
+  }
+  return { commit, state: { reasoning, reasoningStart, text, tools } };
+}
+
+/** Flush whatever is still open at end-of-turn (or on interrupt), in order. */
+export function finishTurnFold(state: TurnFold, now: number): TurnBlock[] {
+  const out: TurnBlock[] = [];
+  if (state.reasoning) out.push({ type: "thought", content: state.reasoning, ms: state.reasoningStart ? now - state.reasoningStart : undefined });
+  if (state.text) out.push({ type: "assistant", content: state.text });
+  for (const t of state.tools) out.push({ type: "tool", tool: t });
+  return out;
 }

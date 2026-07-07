@@ -16,7 +16,11 @@ const COLOR: Record<TodoStatus, string | undefined> = {
 };
 
 export function TodoList({ todos }: { todos: Todo[] }) {
-  if (todos.length === 0) return null;
+  // Show only the ACTIVE tasks (pending / in progress); completed & cancelled ones are folded
+  // into the count. Nothing active → render nothing, so the list disappears when the work is
+  // done instead of occupying space with a wall of ✓.
+  const active = todos.filter((t) => t.status === "pending" || t.status === "in_progress");
+  if (active.length === 0) return null;
   const done = todos.filter((t) => t.status === "completed").length;
 
   return (
@@ -33,12 +37,9 @@ export function TodoList({ todos }: { todos: Todo[] }) {
       <Text dimColor bold>
         ☰ todos {done}/{todos.length}
       </Text>
-      {todos.map((t, i) => (
-        <Text key={i} color={COLOR[t.status]} dimColor={t.status === "cancelled"}>
-          {SYMBOL[t.status]}{" "}
-          <Text strikethrough={t.status === "completed" || t.status === "cancelled"}>
-            {t.content}
-          </Text>
+      {active.map((t, i) => (
+        <Text key={i} color={COLOR[t.status]}>
+          {SYMBOL[t.status]} {t.content}
           {t.priority && t.priority !== "medium" ? (
             <Text dimColor> ({t.priority})</Text>
           ) : null}

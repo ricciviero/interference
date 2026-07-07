@@ -28,7 +28,7 @@ describe("formatTurnError", () => {
 describe("MsgBlock error rendering", () => {
   test("an isError item renders its message visibly (was silently swallowed before)", () => {
     const { lastFrame, unmount } = render(
-      <MsgBlock item={{ id: 1, role: "assistant", content: "⚠ Request failed: 402 no credit", isError: true }} />,
+      <MsgBlock item={{ kind: "error", id: 1, content: "⚠ Request failed: 402 no credit" }} />,
     );
     const out = lastFrame() ?? "";
     expect(out).toContain("⚠ Request failed: 402 no credit");
