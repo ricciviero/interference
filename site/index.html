@@ -35,6 +35,7 @@
     <span class="beta-badge">Alpha</span>
   </a>
   <nav class="nav-links">
+    <a href="#framework" data-i18n="nav.framework">Framework</a>
     <a href="#how" data-i18n="nav.how">How it works</a>
     <a href="#features" data-i18n="nav.features">Features</a>
     <a href="#start" data-i18n="nav.start">Quickstart</a>
@@ -92,6 +93,33 @@
       </div>
       <img class="term-shot" src="assets/screenshot.png" alt="interference terminal screenshot" />
     </div>
+  </section>
+
+  <!-- ── ENGINEERING FRAMEWORK (the differentiator) ──── -->
+  <section id="framework" class="section">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="framework.eyebrow">/ 01 — engineering framework</span>
+      <h2 data-i18n="framework.title">Not just an agent. It builds an Engineering Framework in your repo.</h2>
+      <p class="lede fw-lede" data-i18n-html="framework.lede">interference doesn't start from zero every session. On <code>/init</code> it sets up a living <code>.agents/</code> framework — project memory, decisions and skills — then maintains it as it works and reloads it every session. It remembers how your project is built.</p>
+    </div>
+    <div class="fw-grid">
+      <div class="fw-card reveal-up">
+        <span class="eyebrow"><code>.agents/memory</code></span>
+        <h3 data-i18n="framework.memory_title">Memory</h3>
+        <p data-i18n="framework.memory_desc">Durable facts about your project — integration state, gotchas, conventions — recorded as it works and reloaded into context every session.</p>
+      </div>
+      <div class="fw-card reveal-up" style="--d:1">
+        <span class="eyebrow"><code>.agents/decisions</code></span>
+        <h3 data-i18n="framework.decisions_title">Decisions</h3>
+        <p data-i18n-html="framework.decisions_desc">The <em>why</em> behind changes, captured as lightweight records — so the reasoning survives, not just the diff.</p>
+      </div>
+      <div class="fw-card reveal-up" style="--d:2">
+        <span class="eyebrow"><code>.agents/skills</code></span>
+        <h3 data-i18n="framework.skills_title">Skills</h3>
+        <p data-i18n="framework.skills_desc">Repeatable, project-specific patterns turned into reusable skills the agent applies on its own.</p>
+      </div>
+    </div>
+    <p class="fw-cycle reveal-up" data-i18n-html="framework.cycle"><strong>read</strong> → <strong>maintain</strong> → <strong>reload</strong> — the framework grows with your project</p>
   </section>
 
   <!-- ── HOW IT WORKS ────────────────────────────────── -->

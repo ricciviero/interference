@@ -9,6 +9,7 @@ const I18N = {
     "og.title": "interference — the open-source terminal coding agent",
     "og.desc": "An Italian open-source AI coding agent that lives in your terminal. TypeScript + Bun.",
 
+    "nav.framework": "Framework",
     "nav.how": "How it works",
     "nav.features": "Features",
     "nav.start": "Quickstart",
@@ -21,7 +22,18 @@ const I18N = {
 
     "term.title": "interference — ~/project",
 
-    "how.eyebrow": "/ 01 — the loop",
+    "framework.eyebrow": "/ 01 — engineering framework",
+    "framework.title": "Not just an agent. It builds an Engineering Framework in your repo.",
+    "framework.lede": "interference doesn't start from zero every session. On <code>/init</code> it sets up a living <code>.agents/</code> framework — project memory, decisions and skills — then maintains it as it works and reloads it every session. It remembers how your project is built.",
+    "framework.memory_title": "Memory",
+    "framework.memory_desc": "Durable facts about your project — integration state, gotchas, conventions — recorded as it works and reloaded into context every session.",
+    "framework.decisions_title": "Decisions",
+    "framework.decisions_desc": "The <em>why</em> behind changes, captured as lightweight records — so the reasoning survives, not just the diff.",
+    "framework.skills_title": "Skills",
+    "framework.skills_desc": "Repeatable, project-specific patterns turned into reusable skills the agent applies on its own.",
+    "framework.cycle": "<strong>read</strong> → <strong>maintain</strong> → <strong>reload</strong> — the framework grows with your project",
+
+    "how.eyebrow": "/ 02 — the loop",
     "how.title": "An agent loop you can watch and trust.",
     "how.step1_title": "You ask",
     "how.step1_desc": "Describe a task in plain language. interference plans before it touches anything.",
@@ -32,7 +44,7 @@ const I18N = {
     "how.step4_title": "Undo anything",
     "how.step4_desc": "Sessions are persisted and snapshotted. Roll back a change the agent made, instantly.",
 
-    "skills.eyebrow": "/ 02 — skills",
+    "skills.eyebrow": "/ 03 — skills",
     "skills.title": "Teach it once. It remembers every time.",
     "skills.without_eyebrow": "without skills",
     "skills.without_title": "Generic agent",
@@ -60,7 +72,7 @@ const I18N = {
     "modes.build_tick2": "Sandboxed paths, timed <code>bash</code>",
     "modes.build_tick3": "Approve-with-preview",
 
-    "features.eyebrow": "/ 03 — what's inside",
+    "features.eyebrow": "/ 04 — what's inside",
     "features.title": "Small surface. Serious capability.",
     "feat.1_title": "Native tool-calling",
     "feat.1_desc": "A typed tool registry over the Vercel AI SDK — multi-step, with tool errors fed back for self-correction.",
@@ -81,7 +93,7 @@ const I18N = {
     "feat.9_title": "Slash commands + autocomplete",
     "feat.9_desc": "/help · /clear · /undo · /redo · /init · /model · /plan · /build · /compact · /sessions · /rename · /provider · /thinking. Fuzzy autocomplete on /.",
 
-    "why.eyebrow": "/ 04 — why interference",
+    "why.eyebrow": "/ 05 — why interference",
     "why.title": "Not just another agent.",
     "why.1_title": "European, by choice",
     "why.1_desc": "Built in Italy. Open-source, MIT licensed, not VC-funded. Your code never leaves your machine unless you explicitly send it to an API. An independent, GDPR-native alternative to Silicon Valley agents.",
@@ -91,7 +103,7 @@ const I18N = {
     "why.3_desc": "There\u2019s no interference server. Chats and sessions stay local in ~/.interference/, never uploaded. We don\u2019t save your conversations, don\u2019t collect your data, and don\u2019t train on anything \u2014 what you send your LLM provider is between you and them.",
 
     "hero.requires": "Requires <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ — the runtime interference runs on.",
-    "start.eyebrow": "/ 05 — quickstart",
+    "start.eyebrow": "/ 06 — quickstart",
     "start.title": "In your terminal in a minute.",
     "start.step1": "<strong>1</strong> — Install <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ (skip if you already have it):",
     "start.step2": "<strong>2</strong> — Install interference:",
@@ -110,6 +122,7 @@ const I18N = {
     "og.title": "interference — l'agente di coding open-source da terminale",
     "og.desc": "Un agente di coding AI open-source italiano che vive nel tuo terminale. TypeScript + Bun.",
 
+    "nav.framework": "Framework",
     "nav.how": "Come funziona",
     "nav.features": "Caratteristiche",
     "nav.start": "Inizia",
@@ -122,7 +135,18 @@ const I18N = {
 
     "term.title": "interference — ~/progetto",
 
-    "how.eyebrow": "/ 01 — il loop",
+    "framework.eyebrow": "/ 01 — engineering framework",
+    "framework.title": "Non solo un agente. Costruisce un Engineering Framework nel tuo repo.",
+    "framework.lede": "interference non riparte da zero ogni sessione. Con <code>/init</code> crea un framework <code>.agents/</code> vivo — memoria, decisioni e skill di progetto — poi lo mantiene mentre lavora e lo ricarica ogni sessione. Ricorda com'è fatto il tuo progetto.",
+    "framework.memory_title": "Memoria",
+    "framework.memory_desc": "Fatti durevoli sul tuo progetto — stato delle integrazioni, gotcha, convenzioni — registrati mentre lavora e ricaricati nel contesto a ogni sessione.",
+    "framework.decisions_title": "Decisioni",
+    "framework.decisions_desc": "Il <em>perché</em> dietro le modifiche, catturato come note leggere — così il ragionamento sopravvive, non solo il diff.",
+    "framework.skills_title": "Skill",
+    "framework.skills_desc": "Pattern ripetibili e specifici del progetto trasformati in skill riusabili che l'agente applica da solo.",
+    "framework.cycle": "<strong>read</strong> → <strong>maintain</strong> → <strong>reload</strong> — il framework cresce col tuo progetto",
+
+    "how.eyebrow": "/ 02 — il loop",
     "how.title": "Un agent loop che puoi osservare. Di cui ti puoi fidare.",
     "how.step1_title": "Tu chiedi",
     "how.step1_desc": "Descrivi un task in linguaggio naturale. interference pianifica prima di toccare qualsiasi cosa.",
@@ -133,7 +157,7 @@ const I18N = {
     "how.step4_title": "Annulla tutto",
     "how.step4_desc": "Le sessioni sono persistenti e con snapshot. Torna indietro su qualsiasi modifica dell'agente, all'istante.",
 
-    "skills.eyebrow": "/ 02 — skill",
+    "skills.eyebrow": "/ 03 — skill",
     "skills.title": "Insegnaglielo una volta. Se lo ricorda sempre.",
     "skills.without_eyebrow": "senza skill",
     "skills.without_title": "Agente generico",
@@ -161,7 +185,7 @@ const I18N = {
     "modes.build_tick2": "Path confinati, <code>bash</code> con timeout",
     "modes.build_tick3": "Approva con anteprima",
 
-    "features.eyebrow": "/ 03 — cosa c'è dentro",
+    "features.eyebrow": "/ 04 — cosa c'è dentro",
     "features.title": "Superficie ridotta. Capacità serie.",
     "feat.1_title": "Tool-calling nativo",
     "feat.1_desc": "Un registro tipizzato di tool su Vercel AI SDK — multi-step, con gli errori reiniettati per l'auto-correzione.",
@@ -182,7 +206,7 @@ const I18N = {
     "feat.9_title": "Slash command + autocompletamento",
     "feat.9_desc": "/help · /clear · /undo · /redo · /init · /model · /plan · /build · /compact · /sessions · /rename · /provider · /thinking. Autocompletamento fuzzy su /.",
 
-    "why.eyebrow": "/ 04 — perché interference",
+    "why.eyebrow": "/ 05 — perché interference",
     "why.title": "Non il solito agente.",
     "why.1_title": "Europeo, per scelta",
     "why.1_desc": "Fatto in Italia. Open-source, licenza MIT, non finanziato da venture capital. Il tuo codice non lascia mai la tua macchina a meno che tu non lo invii esplicitamente a un\u2019API. Un\u2019alternativa indipendente e GDPR-nativa agli agenti della Silicon Valley.",
@@ -192,7 +216,7 @@ const I18N = {
     "why.3_desc": "Non esiste un server interference. Chat e sessioni restano locali in ~/.interference/, mai caricate altrove. Non salviamo le tue conversazioni, non raccogliamo i tuoi dati, non facciamo training su nulla — quello che invii al tuo provider LLM riguarda solo te e lui.",
 
     "hero.requires": "Richiede <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ — il runtime su cui gira interference.",
-    "start.eyebrow": "/ 05 — inizia",
+    "start.eyebrow": "/ 06 — inizia",
     "start.title": "Nel tuo terminale in un minuto.",
     "start.step1": "<strong>1</strong> — Installa <a href=\"https://bun.sh\" target=\"_blank\" rel=\"noopener\">Bun</a> 1.3+ (salta se ce l'hai già):",
     "start.step2": "<strong>2</strong> — Installa interference:",

@@ -302,6 +302,24 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 860px) { .why-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .why-grid { grid-template-columns: 1fr; } }
 
+/* ── ENGINEERING FRAMEWORK ───────────────────────────── */
+.fw-lede { text-align: left; max-width: 60ch; margin-top: 20px; }
+.fw-lede code { font-family: var(--mono); font-size: 0.9em; background: rgba(10,10,10,0.05); padding: 1px 5px; border-radius: 3px; }
+.fw-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.fw-card { border: 1px solid var(--line); border-radius: 6px; padding: clamp(28px, 3.4vw, 40px); }
+.fw-card .eyebrow { text-transform: none; letter-spacing: 0.02em; }
+.fw-card .eyebrow code { font-family: var(--mono); }
+.fw-card h3 { font-size: clamp(24px, 3vw, 32px); font-weight: 500; letter-spacing: -0.02em; margin: 12px 0 10px; }
+.fw-card p { font-size: 13.5px; line-height: 1.55; color: var(--dim); margin: 0; }
+.fw-card em { font-style: italic; color: var(--ink); }
+.fw-cycle {
+  margin: clamp(34px, 5vw, 56px) 0 0; text-align: center;
+  font-family: var(--mono); font-size: clamp(12px, 1.5vw, 15px);
+  letter-spacing: 0.06em; color: var(--dim);
+}
+.fw-cycle strong { color: var(--ink); font-weight: 500; }
+@media (max-width: 860px) { .fw-grid { grid-template-columns: 1fr; } }
+
 /* ── INSTALL ─────────────────────────────────────────── */
 .install { max-width: 720px; margin-left: auto; margin-right: auto; }
 .install-row {
