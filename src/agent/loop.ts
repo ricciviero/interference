@@ -26,7 +26,7 @@ export type Chunk =
 //  - cut-off (tool-calls/length): the model was capped mid-work → continue (the
 //    messages end with tool results, so the next call resumes naturally).
 //  - natural stop + PRIMARY turn + pending todos + under the nudge cap → nudge
-//    (push a "continue" user message) — the opencode-style keep-going behavior.
+//    (push a "continue" user message) — the keep-going behavior.
 //  - otherwise → stop. If the continuation backstop is hit → limit (told to the user).
 
 export type LoopAction = "stop" | "continue" | "nudge" | "limit";

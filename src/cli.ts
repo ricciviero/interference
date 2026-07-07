@@ -23,7 +23,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Terminal tab/window title (like Claude Code), only in TTY
+  // Terminal tab/window title, only in TTY
   // (in a pipe/non-TTY, OSC sequences would pollute the output).
   // OSC 1 = icon/tab name, OSC 2 = window title.
   if (stdout.isTTY) {
