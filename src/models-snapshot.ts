@@ -73,6 +73,42 @@ export const CATALOG_SNAPSHOT = {
   },
   openai: {
     models: {
+      "gpt-5.6": {
+        id: "gpt-5.6",
+        name: "GPT-5.6",
+        reasoning: true,
+        tool_call: true,
+        modalities: { input: ["text", "image", "pdf"] },
+        limit: { context: 1_050_000, output: 128_000 },
+        cost: { input: 5, output: 30, cache_read: 0.5, cache_write: 6.25 },
+      },
+      "gpt-5.6-sol": {
+        id: "gpt-5.6-sol",
+        name: "GPT-5.6 Sol",
+        reasoning: true,
+        tool_call: true,
+        modalities: { input: ["text", "image", "pdf"] },
+        limit: { context: 1_050_000, output: 128_000 },
+        cost: { input: 5, output: 30, cache_read: 0.5, cache_write: 6.25 },
+      },
+      "gpt-5.6-terra": {
+        id: "gpt-5.6-terra",
+        name: "GPT-5.6 Terra",
+        reasoning: true,
+        tool_call: true,
+        modalities: { input: ["text", "image", "pdf"] },
+        limit: { context: 1_050_000, output: 128_000 },
+        cost: { input: 2.5, output: 15, cache_read: 0.25, cache_write: 3.125 },
+      },
+      "gpt-5.6-luna": {
+        id: "gpt-5.6-luna",
+        name: "GPT-5.6 Luna",
+        reasoning: true,
+        tool_call: true,
+        modalities: { input: ["text", "image", "pdf"] },
+        limit: { context: 1_050_000, output: 128_000 },
+        cost: { input: 1, output: 6, cache_read: 0.1, cache_write: 1.25 },
+      },
       "gpt-5.5": {
         id: "gpt-5.5",
         name: "GPT-5.5",

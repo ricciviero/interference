@@ -20,7 +20,7 @@ describe("cheapModelFor (iter 31)", () => {
     expect(cheapModelFor("anthropic")).toBe("claude-haiku-4-5");
     expect(cheapModelFor("kimi")).toBe("kimi-k2.5");
     expect(cheapModelFor("glm")).toBe("glm-5.2");
-    expect(cheapModelFor("openai")).toBe("gpt-5.4");
+    expect(cheapModelFor("openai")).toBe("gpt-5.6-luna");
   });
 });
 

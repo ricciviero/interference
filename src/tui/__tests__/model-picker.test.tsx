@@ -101,7 +101,7 @@ describe("ModelPicker grouped by provider (iter 38)", () => {
     // entry, the last group in the list) and check it's still on screen —
     // before the windowing fix this row would silently scroll off with no
     // indication, leaving the highlight nowhere to be found.
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 22; i++) {
       stdin.write(ARROW_DOWN);
       await new Promise((r) => setTimeout(r, 0));
     }
@@ -140,6 +140,19 @@ describe("ModelPicker filtering (OpenRouter dynamic catalog)", () => {
     expect(out).toContain("openai/gpt-5.5");
     expect(out).not.toContain("llama-3.3-70b");
     expect(out).toContain("Filter: gpt");
+    unmount();
+  });
+
+  test("the curated OpenAI list contains the GPT-5.6 alias, Sol, Terra and Luna", async () => {
+    setProvider("openai");
+    const { lastFrame, stdin, unmount } = render(<ModelPicker onCancel={() => {}} />);
+    stdin.write("gpt-5.6");
+    await tick();
+    const out = lastFrame() ?? "";
+    expect(out).toContain("GPT-5.6 (Sol alias");
+    expect(out).toContain("GPT-5.6 Sol");
+    expect(out).toContain("GPT-5.6 Terra");
+    expect(out).toContain("GPT-5.6 Luna");
     unmount();
   });
 

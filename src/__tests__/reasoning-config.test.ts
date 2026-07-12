@@ -1,5 +1,33 @@
 import { describe, test, expect } from "bun:test";
-import { reasoningConfig } from "../config.ts";
+import { reasoningConfig, thinkingLevelsFor, type ThinkingLevel } from "../config.ts";
+
+describe("reasoningConfig — OpenAI GPT-5.6 model-specific effort", () => {
+  test.each(["none", "low", "medium", "high", "xhigh", "max"] as const)(
+    "gpt-5.6 sends reasoning_effort:%s",
+    (level) => {
+      const cfg = reasoningConfig({ providerId: "openai", model: "gpt-5.6", level });
+      expect(cfg.extraBody).toEqual({ reasoning_effort: level });
+    },
+  );
+
+  test("legacy off maps to OpenAI's none spelling", () => {
+    const cfg = reasoningConfig({ providerId: "openai", model: "gpt-5.6-luna", level: "off" });
+    expect(cfg.extraBody).toEqual({ reasoning_effort: "none" });
+  });
+
+  test("older GPT-5.5 does not receive unsupported max", () => {
+    const cfg = reasoningConfig({ providerId: "openai", model: "gpt-5.5", level: "max" });
+    expect(cfg.extraBody).toEqual({ reasoning_effort: "high" });
+    expect(thinkingLevelsFor("openai", "gpt-5.5")).not.toContain("max");
+  });
+
+  test("all GPT-5.6 tiers expose none through max", () => {
+    const expected: ThinkingLevel[] = ["none", "low", "medium", "high", "xhigh", "max"];
+    for (const model of ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
+      expect(thinkingLevelsFor("openai", model)).toEqual(expected);
+    }
+  });
+});
 
 describe("reasoningConfig (regression: haiku does not support adaptive/effort)", () => {
   test("claude-haiku-4-5 does NOT receive providerOptions (vanilla call)", () => {

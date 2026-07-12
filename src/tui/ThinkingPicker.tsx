@@ -1,6 +1,6 @@
 import { useState, type FC } from "react";
 import { Box, Text, useInput } from "ink";
-import { currentProvider, currentThinking, type ThinkingLevel } from "../config.ts";
+import { currentModel, currentProvider, currentThinking, thinkingLevelsFor, type ThinkingLevel } from "../config.ts";
 import { SelectRow } from "./SelectRow.tsx";
 
 interface Props {
@@ -10,12 +10,15 @@ interface Props {
 
 const HINT: Partial<Record<ThinkingLevel, string>> = {
   off: "no reasoning (fastest)",
+  none: "no reasoning (fastest)",
+  xhigh: "extra-high reasoning",
   max: "deepest reasoning",
 };
 
 export const ThinkingPicker: FC<Props> = ({ onSelect, onCancel }) => {
   const provider = currentProvider();
-  const levels = provider.thinkingLevels;
+  const model = currentModel();
+  const levels = thinkingLevelsFor();
   const current = currentThinking();
   const [idx, setIdx] = useState(Math.max(0, levels.indexOf(current)));
 
@@ -38,7 +41,7 @@ export const ThinkingPicker: FC<Props> = ({ onSelect, onCancel }) => {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="magenta" padding={1}>
       <Box marginBottom={1}>
-        <Text bold>Thinking level · {provider.label}</Text>
+        <Text bold>Thinking level · {provider.label} · {model}</Text>
       </Box>
       {levels.map((l, i) => (
         <SelectRow

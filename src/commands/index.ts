@@ -1,5 +1,5 @@
 import type { AgentMode, ThinkingLevel, ProviderId } from "../config.ts";
-import { currentProvider, currentThinking, setThinking, currentModel, setModel, setProvider, savePreferences, currentProviderId, PROVIDERS } from "../config.ts";
+import { currentProvider, currentThinking, setThinking, thinkingLevelsFor, currentModel, setModel, setProvider, savePreferences, currentProviderId, PROVIDERS } from "../config.ts";
 import { undo, redo } from "../session/snapshot.ts";
 import { loadSkillBody, getCachedRegistry, type SkillInfo } from "../skills.ts";
 import { loadProjectMemory, addMemory } from "../projectMemory.ts";
@@ -154,11 +154,11 @@ register(
   "Set reasoning/thinking level for the current model (usage: /thinking <level>)",
   (args) => {
     const p = currentProvider();
-    const levels = p.thinkingLevels;
+    const levels = thinkingLevelsFor();
     const arg = args.trim().toLowerCase();
     if (!arg) {
       return (
-        `Thinking: ${currentThinking()} · model: ${p.label}\n` +
+        `Thinking: ${currentThinking()} · model: ${currentModel()} (${p.label})\n` +
         `Available levels: ${levels.join(", ")}\n` +
         `Usage: /thinking <level>`
       );

@@ -1,10 +1,54 @@
 import { describe, test, expect, afterEach } from "bun:test";
 import { dispatch } from "../commands/index.ts";
-import { setProvider, resetModel, currentModel, currentProviderId } from "../config.ts";
+import {
+  setProvider,
+  setModel,
+  resetModel,
+  currentModel,
+  currentProviderId,
+  currentThinking,
+  resetThinking,
+} from "../config.ts";
 
 afterEach(() => {
   resetModel();
+  resetThinking();
   setProvider("deepseek");
+});
+
+describe("/thinking command — model-specific OpenAI levels", () => {
+  test("GPT-5.6 accepts none, xhigh and max", async () => {
+    setProvider("openai");
+    setModel("gpt-5.6");
+
+    expect(await dispatch("/thinking none", {})).toContain("'none'");
+    expect(currentThinking()).toBe("none");
+    expect(await dispatch("/thinking xhigh", {})).toContain("'xhigh'");
+    expect(currentThinking()).toBe("xhigh");
+    expect(await dispatch("/thinking max", {})).toContain("'max'");
+    expect(currentThinking()).toBe("max");
+  });
+
+  test("GPT-5.5 rejects max but accepts xhigh", async () => {
+    setProvider("openai");
+    setModel("gpt-5.5");
+
+    const rejected = await dispatch("/thinking max", {});
+    expect(rejected).toContain("Invalid level 'max'");
+    expect(rejected).toContain("xhigh");
+
+    expect(await dispatch("/thinking xhigh", {})).toContain("'xhigh'");
+    expect(currentThinking()).toBe("xhigh");
+  });
+
+  test("status lists levels for the active model, not the whole provider", async () => {
+    setProvider("openai");
+    setModel("gpt-5.4");
+    const status = await dispatch("/thinking", {});
+    expect(status).toContain("model: gpt-5.4");
+    expect(status).toContain("none, low, medium, high, xhigh");
+    expect(status).not.toContain("xhigh, max");
+  });
 });
 
 describe("/model command", () => {

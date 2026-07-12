@@ -1,8 +1,8 @@
 // Provider abstraction (RF-CORE-03). Resolves a `LanguageModel` from the Vercel AI SDK
 // for the selected provider. Reasoning/thinking enabled per provider:
 //  - anthropic/deepseek: via providerOptions (handled in the agent loop)
-//  - glm/kimi/openrouter (openai-compatible): the `thinking` field is injected into the body
-//    with `transformRequestBody`; a middleware extracts any inline <think> tags.
+//  - openai/glm/kimi/openrouter (openai-compatible): provider-specific reasoning fields are
+//    injected into the body with `transformRequestBody`; a middleware extracts inline <think> tags.
 //  - google/groq/xai/mistral (native, it. 38): no custom reasoning handling.
 //
 // @ai-sdk/* packages are loaded via DYNAMIC IMPORTS (it. 38, fetch + on-disk cache with TTL
@@ -102,7 +102,8 @@ export async function resolveModel(override?: ModelOverride): Promise<LanguageMo
         apiKey,
         // Extra headers (e.g. OpenRouter ranking headers) sent on every request.
         headers: def.headers,
-        // Inject non-OpenAI-standard fields (e.g. `thinking`) into the raw body.
+        // Inject provider-specific fields (e.g. OpenAI `reasoning_effort`, GLM/Kimi `thinking`)
+        // into the raw body.
         transformRequestBody: extraBody
           ? (body: Record<string, unknown>) => ({ ...body, ...extraBody })
           : undefined,

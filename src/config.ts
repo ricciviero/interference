@@ -27,8 +27,17 @@ export type ProviderId =
 // reasoning control emerges for them.
 export type ProviderKind = "anthropic" | "deepseek" | "openai-compatible" | "native";
 
-/** Unified reasoning level. Providers map to their own mechanism. */
-export type ThinkingLevel = "off" | "low" | "medium" | "high" | "max";
+/** Unified reasoning level. Providers/models map the supported subset to their own mechanism. */
+export type ThinkingLevel = "off" | "none" | "low" | "medium" | "high" | "xhigh" | "max";
+
+export interface ModelDef {
+  id: string;
+  label: string;
+  /** Optional model-specific override of the provider's reasoning levels. */
+  thinkingLevels?: ThinkingLevel[];
+  /** Optional model-specific default reasoning level. */
+  defaultThinking?: ThinkingLevel;
+}
 
 export interface ProviderDef {
   label: string;
@@ -51,7 +60,7 @@ export interface ProviderDef {
   /** Default thinking level for this provider. */
   defaultThinking: ThinkingLevel;
   /** Known models for this provider (for /model picker). */
-  models: { id: string; label: string }[];
+  models: ModelDef[];
   /** Cheap model for subagent/internal tasks (compaction). Fallback: defaultModel. */
   cheapModel?: string;
 }
@@ -75,18 +84,53 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   openai: {
     label: "OpenAI",
     envKey: "OPENAI_API_KEY",
-    defaultModel: "gpt-5.5",
+    // Official alias: gpt-5.6 routes to the Sol tier.
+    defaultModel: "gpt-5.6",
     kind: "openai-compatible",
     npm: "@ai-sdk/openai-compatible",
     baseURL: "https://api.openai.com/v1",
-    contextLimit: 1_000_000,
-    thinkingLevels: ["off", "low", "medium", "high", "max"],
-    defaultThinking: "high",
+    contextLimit: 1_050_000,
+    thinkingLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+    defaultThinking: "max",
     models: [
-      { id: "gpt-5.5", label: "GPT-5.5 (1M ctx)" },
-      { id: "gpt-5.4", label: "GPT-5.4 (1M ctx)" },
+      {
+        id: "gpt-5.6",
+        label: "GPT-5.6 (Sol alias · 1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+        defaultThinking: "max",
+      },
+      {
+        id: "gpt-5.6-sol",
+        label: "GPT-5.6 Sol (1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+        defaultThinking: "max",
+      },
+      {
+        id: "gpt-5.6-terra",
+        label: "GPT-5.6 Terra (1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+        defaultThinking: "max",
+      },
+      {
+        id: "gpt-5.6-luna",
+        label: "GPT-5.6 Luna (1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh", "max"],
+        defaultThinking: "max",
+      },
+      {
+        id: "gpt-5.5",
+        label: "GPT-5.5 (1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh"],
+        defaultThinking: "high",
+      },
+      {
+        id: "gpt-5.4",
+        label: "GPT-5.4 (1.05M ctx)",
+        thinkingLevels: ["none", "low", "medium", "high", "xhigh"],
+        defaultThinking: "high",
+      },
     ],
-    cheapModel: "gpt-5.4",
+    cheapModel: "gpt-5.6-luna",
   },
   anthropic: {
     label: "Anthropic (Claude)",
@@ -363,13 +407,51 @@ export function setMode(mode: AgentMode) {
 // --- Thinking level (runtime, /thinking) ------------------------------------
 let _thinking: ThinkingLevel | null = null;
 
-/** Current thinking level (runtime override or provider default). */
+function modelDefFor(providerId: ProviderId, modelId: string): ModelDef | undefined {
+  return PROVIDERS[providerId].models.find((model) => model.id === modelId);
+}
+
+/** Reasoning levels supported by a specific model, falling back to the provider definition. */
+export function thinkingLevelsFor(
+  providerId: ProviderId = currentProviderId(),
+  modelId: string = currentModel(),
+): ThinkingLevel[] {
+  return modelDefFor(providerId, modelId)?.thinkingLevels ?? PROVIDERS[providerId].thinkingLevels;
+}
+
+function effectiveThinkingLevel(
+  providerId: ProviderId,
+  modelId: string,
+  requested?: ThinkingLevel | null,
+): ThinkingLevel {
+  const levels = thinkingLevelsFor(providerId, modelId);
+  // `off` is the cross-provider legacy/UI spelling; OpenAI's API spells it `none`.
+  let normalized = providerId === "openai" && requested === "off" ? "none" : requested;
+  // OpenRouter exposes low/medium/high only; preserve the existing max→high clamp
+  // before validating against its advertised levels.
+  if (providerId === "openrouter" && normalized === "max") normalized = "high";
+  if (normalized && levels.includes(normalized)) return normalized;
+
+  const modelDefault = modelDefFor(providerId, modelId)?.defaultThinking;
+  if (modelDefault && levels.includes(modelDefault)) return modelDefault;
+
+  const providerDefault = PROVIDERS[providerId].defaultThinking;
+  if (levels.includes(providerDefault)) return providerDefault;
+
+  return levels.at(-1) ?? "off";
+}
+
+/** Current thinking level, validated against the active model's supported levels. */
 export function currentThinking(): ThinkingLevel {
-  return _thinking ?? currentProvider().defaultThinking;
+  return effectiveThinkingLevel(currentProviderId(), currentModel(), _thinking);
 }
 
 export function setThinking(level: ThinkingLevel) {
   _thinking = level;
+}
+
+export function resetThinking() {
+  _thinking = null;
 }
 
 export interface ReasoningConfig {
@@ -388,9 +470,9 @@ export interface ReasoningOverride {
 
 /** Translates the thinking level (current, or passed via override) into provider options. */
 export function reasoningConfig(override?: ReasoningOverride): ReasoningConfig {
-  const level = override?.level ?? currentThinking();
   const providerId = override?.providerId ?? currentProviderId();
   const model = override?.model ?? currentModel();
+  const level = effectiveThinkingLevel(providerId, model, override?.level ?? _thinking);
 
   switch (providerId) {
     case "deepseek":
@@ -425,6 +507,10 @@ export function reasoningConfig(override?: ReasoningOverride): ReasoningConfig {
     }
 
     case "openai":
+      // The OpenAI-compatible adapter uses Chat Completions. OpenAI exposes the
+      // reasoning control as the top-level `reasoning_effort` request field.
+      return { extraBody: { reasoning_effort: level } };
+
     case "glm":
       return { extraBody: { thinking: { type: level === "off" ? "disabled" : "enabled" } } };
 

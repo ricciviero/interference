@@ -5,6 +5,14 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-07-12
+
+### Added
+- **OpenAI GPT-5.6 family** — `gpt-5.6` (Sol alias), `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` are available in the model picker; Luna is the low-cost model used for OpenAI subagents and compaction. Pricing/context metadata is included in the offline catalog snapshot.
+
+### Changed
+- **Model-specific reasoning levels.** `/thinking` now exposes only the levels supported by the active model. GPT-5.6 supports `none`, `low`, `medium`, `high`, `xhigh`, and `max`; OpenAI Chat Completions receives the corresponding `reasoning_effort` value.
+
 ## [0.4.0] — 2026-07-07
 
 ### Added
@@ -131,7 +139,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ricciviero/interference/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ricciviero/interference/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/ricciviero/interference/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/ricciviero/interference/compare/v0.3.1...v0.3.2

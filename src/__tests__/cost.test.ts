@@ -157,6 +157,15 @@ describe("cache pricing from catalog (absolute prices, not coefficients)", () =>
     });
     expect(delta).toBeCloseTo(0.5, 5);
   });
+
+  test("gpt-5.6-luna: uses the offline catalog's $1/$6 pricing", () => {
+    _resetCatalogForTests();
+    let delta = 0;
+    forModel("openai", "gpt-5.6-luna", () => {
+      delta = costDelta(() => trackUsage(1_000_000, 1_000_000));
+    });
+    expect(delta).toBeCloseTo(7, 5);
+  });
 });
 
 describe("usage persistence across reload (fix/11)", () => {
