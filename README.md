@@ -86,14 +86,18 @@ interference checks npm for new versions and shows a discreet notice when one is
 
 ## Releasing (maintainers)
 
-Releases publish to npm automatically on tag push:
+Releases are tag-driven. `npm version` runs typecheck and tests, creates the version commit and tag,
+then pushes them through the `postversion` hook. The tag workflow validates the release and attempts
+a provenance publish; the maintainer completes npm publication manually with OTP:
 
 ```bash
-npm version minor        # runs typecheck+test, bumps, tags
-git push --follow-tags   # the `publish` GitHub Action publishes to npm
+npm version minor                    # patch|minor|major
+npm publish                          # maintainer only; complete the OTP prompt
+npm view interference-agent version # verify the public version
 ```
 
-Requires the `NPM_TOKEN` repo secret. See `CHANGELOG.md`.
+An npm Automation token in the `NPM_TOKEN` repository secret can enable unattended publishing, but
+the current release procedure does not depend on it. See `CHANGELOG.md`.
 
 ## Screenshot
 
