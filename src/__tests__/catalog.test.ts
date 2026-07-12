@@ -85,6 +85,25 @@ describe("catalog.ts (iter 37, metadata from models.dev)", () => {
     expect(info!.contextLimit).toBeGreaterThan(0);
   });
 
+  test("offline snapshot includes every GPT-5.6 tier with current metadata", async () => {
+    mockFetchFail();
+    await loadCatalog();
+
+    const expected = {
+      "gpt-5.6": { input: 5, output: 30 },
+      "gpt-5.6-sol": { input: 5, output: 30 },
+      "gpt-5.6-terra": { input: 2.5, output: 15 },
+      "gpt-5.6-luna": { input: 1, output: 6 },
+    } as const;
+    for (const [model, cost] of Object.entries(expected)) {
+      const info = getModelInfo("openai", model);
+      expect(info?.contextLimit).toBe(1_050_000);
+      expect(info?.outputLimit).toBe(128_000);
+      expect(info?.cost?.input).toBe(cost.input);
+      expect(info?.cost?.output).toBe(cost.output);
+    }
+  });
+
   test("malformed JSON from fetch: does not crash, falls back to snapshot", async () => {
     globalThis.fetch = (async () => new Response("{not valid json", { status: 200 })) as unknown as typeof fetch;
     await loadCatalog();
