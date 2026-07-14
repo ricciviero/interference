@@ -35,8 +35,7 @@
     "typecheck": "bunx tsc --noEmit",
     "build": "bun build src/cli.ts --compile --minify --sourcemap --outfile dist/interference",
     "test": "bun test ./src",
-    "preversion": "bun run typecheck && bun run test",
-    "postversion": "git push && git push --tags"
+    "preversion": "bun run typecheck && bun run test"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.1",

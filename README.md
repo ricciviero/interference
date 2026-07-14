@@ -84,20 +84,37 @@ bun install -g interference-agent@latest   # or: npm i -g interference-agent@lat
 
 interference checks npm for new versions and shows a discreet notice when one is available; run `/update` from inside the app to upgrade.
 
+## Contributing
+
+Contributions are welcome. You do not need to be a member of a GitHub team: fork the repository,
+make your change in a branch, and open a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+the complete workflow.
+
 ## Releasing (maintainers)
 
-Releases are tag-driven. `npm version` runs typecheck and tests, creates the version commit and tag,
-then pushes them through the `postversion` hook. The tag workflow validates the release and attempts
-a provenance publish; the maintainer completes npm publication manually with OTP:
+`main` accepts changes only through a passing Pull Request. Releases are tag-driven, so prepare the
+version in a short-lived release branch, merge its PR into `main`, then create the tag from that
+merged commit:
 
 ```bash
-npm version minor                    # patch|minor|major
-npm publish                          # maintainer only; complete the OTP prompt
-npm view interference-agent version # verify the public version
+git checkout dev && git pull --ff-only
+git checkout -b release/vX.Y.Z
+# Update CHANGELOG.md first.
+npm --no-git-tag-version version minor  # patch|minor|major; runs the preversion checks
+git add package.json CHANGELOG.md
+git commit -m "chore: release vX.Y.Z"
+git push -u origin release/vX.Y.Z
+# Open and merge a PR to main after CI passes.
+git checkout main && git pull --ff-only
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+npm publish                            # maintainer only; complete the OTP prompt
+npm view interference-agent version   # verify the public version
 ```
 
-An npm Automation token in the `NPM_TOKEN` repository secret can enable unattended publishing, but
-the current release procedure does not depend on it. See `CHANGELOG.md`.
+The tag workflow validates the release and attempts a provenance publish. The manual `npm publish`
+step remains the release authority; an npm Automation token in `NPM_TOKEN` is optional. Sync `main`
+back into `dev` after the release. See `CHANGELOG.md`.
 
 ## Screenshot
 

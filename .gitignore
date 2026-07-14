@@ -45,3 +45,7 @@ Thumbs.db
 *.key
 *.p12
 interference.json
+AGENTS.override.md
+.agents/
+agents.md
+.codex
