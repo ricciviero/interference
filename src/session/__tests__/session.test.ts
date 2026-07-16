@@ -23,6 +23,7 @@ import {
   finalizeSnapshots,
 } from "../snapshot.ts";
 import type { ModelMessage } from "ai";
+import { PROTOCOL_VERSION } from "@agenticswe/core";
 
 const TMP = path.join(process.cwd(), ".test-tmp-session");
 
@@ -66,6 +67,31 @@ describe("session store", () => {
   test("load nonexistent session returns null", async () => {
     const s = await loadSession("nonexistent-id");
     expect(s).toBeNull();
+  });
+
+  test("persists an optional Agentic SWE resume snapshot without changing old sessions", async () => {
+    const session = createSession({ mode: "build" });
+    session.behavior = {
+      schemaVersion: 1,
+      protocolVersion: PROTOCOL_VERSION,
+      packageVersion: "0.1.0",
+      requestId: "request-resume",
+      phase: "planning",
+      turnNumber: 2,
+      planningRecord: "iterazioni/46-delivery",
+      events: [],
+      evidence: [],
+      outstandingCriteria: ["gates-satisfied"],
+    };
+    await saveSession(session);
+    const loaded = await loadSession(session.meta.id);
+    expect(loaded?.behavior).toEqual(session.behavior);
+    await deleteSession(session.meta.id);
+
+    const legacy = createSession();
+    await saveSession(legacy);
+    expect((await loadSession(legacy.meta.id))?.behavior).toBeUndefined();
+    await deleteSession(legacy.meta.id);
   });
 
   test("list sessions", async () => {

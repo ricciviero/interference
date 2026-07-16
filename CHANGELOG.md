@@ -5,6 +5,24 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Agentic SWE authoritative behavior runtime.** The separate Agentic SWE Protocol 1.1 now drives classification, mutation intent, setup/planning gates, skill selection, capability requests, and completion criteria for primary turns.
+- **Host-verifiable delivery evidence.** Tool authorization, mutation, validation, documentation, refusal, abort, and completion events are recorded with redacted subjects and exact exit codes; only successful compatible events become evidence.
+- **Behavior status and state persistence.** `/behavior`, the plain status line, and the TUI footer expose the active phase; session snapshots persist compatible plan/event/evidence state without changing older session files. Retry state is reused only for the same hashed request and never after abort/refusal.
+- The repository now dogfoods Agentic SWE through a versioned `.agentic/config.yaml` and a portable `AGENTS.md#Agentic Workflow` section.
+
+### Security
+- Effective capabilities use a deny-wins intersection across protocol requests, Plan/Build mode, concrete host tools, and the existing permission policy. Setup and planning writes are path-scoped, stale/concurrent calls are re-authorized, and specialized subagents cannot regain parent capabilities.
+- Behavior diagnostics and session events store only hashes and typed projections; request text, prompts, command arguments/output, source content, secrets, and skill bodies are excluded. Deleting a session also deletes its shadow JSONL.
+
+### Changed
+- Agentic SWE authoritative enforcement is the supported default. `engine: "legacy"` remains an explicit temporary rollback; `enforcement: "shadow"` remains available for diagnostics.
+- The authoritative prompt renders `BehaviorPlan` instead of duplicating `BUILD_RULES`, `VERIFY_TEXT`, or `MEMORY_RULES`; the legacy prompt remains byte-compatible behind the rollback path.
+- `agents-setup` and `iterations-planner` are loaded from the versioned `@agenticswe/skills@0.1.0` package instead of embedded Interference copies.
+- Interference users continue to install only `interference-agent`; the exact `@agenticswe/core@0.1.0`, `@agenticswe/node@0.1.0`, and `@agenticswe/skills@0.1.0` runtime packages are resolved transitively, with no separate Agentic SWE process or account.
+- Completion checks use a bounded protocol-nudge budget separate from todo continuations. Abort and permission refusal remain terminal.
+- Public README, architecture, contribution guide, and landing now present Agentic SWE as the separate open-source behavior framework at Interference's core and link directly to its repository.
+
 ## [0.5.0] — 2026-07-12
 
 ### Added

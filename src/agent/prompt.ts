@@ -3,6 +3,8 @@ import { loadSkillRegistry, bootstrapSkills } from "../skills.ts";
 import { loadProjectMemory } from "../projectMemory.ts";
 import { ANTHROPIC_PROFILE } from "./prompts/anthropic.ts";
 import { DEFAULT_PROFILE } from "./prompts/default.ts";
+import type { BehaviorPlan, Capability } from "@agenticswe/core";
+import { renderBehaviorPlan } from "../behavior/prompt.ts";
 
 let cachedInstructions: InstructionBlock[] | null = null;
 let skillsSummary: string | null = null;
@@ -35,6 +37,11 @@ export interface PromptContext {
   memory?: string;
   /** Current model id — selects the family profile (it. 33). Absent → no profile. */
   model?: string;
+  /** Present only when Agentic SWE is the authoritative behavior source. */
+  behavior?: {
+    plan: BehaviorPlan;
+    effectiveCapabilities: readonly Capability[];
+  };
 }
 
 export interface ModelProfile {
@@ -141,6 +148,21 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   const verify = verifySection(ctx);
   const memoryRules = memoryRulesSection(ctx);
   const profile = modelProfileSection(ctx);
+  if (ctx.behavior) {
+    return (
+      identitySection() +
+      "\n\n" +
+      environmentSection() +
+      instructionsSection(ctx) +
+      projectMemorySection(ctx) +
+      skillsSection(ctx) +
+      "\n" +
+      toolsNoteSection() +
+      "\n" +
+      (profile ? profile + "\n" : "") +
+      renderBehaviorPlan(ctx.behavior.plan, ctx.behavior.effectiveCapabilities)
+    );
+  }
   return (
     identitySection() +
     "\n\n" +
@@ -162,6 +184,7 @@ export function systemPrompt(
   mode: "plan" | "build",
   instructions?: InstructionBlock[],
   model?: string,
+  behavior?: PromptContext["behavior"],
 ): string {
   return buildSystemPrompt({
     mode,
@@ -169,5 +192,6 @@ export function systemPrompt(
     skills: skillsSummary ?? undefined,
     memory: cachedMemory ?? undefined,
     model,
+    behavior,
   });
 }

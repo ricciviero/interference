@@ -1,0 +1,17 @@
+version: 1
+
+agents:
+  - codex
+
+project_skills_dir: .agents/skills
+selected_skills:
+  - name: agents-setup
+    trigger: onboarding or non-trivial work in an unconfigured repository
+  - name: iterations-planner
+    trigger: non-trivial implementation work requiring a local planning record
+
+workflow:
+  planning_gate: non-trivial
+  iteration_directory: iterazioni
+  fix_directory: fix
+  local_workspaces_gitignored: true

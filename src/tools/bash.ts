@@ -56,10 +56,14 @@ export const bash = tool({
       return { stdout, stderr, exitCode };
     })().catch(() => ({ stdout: "", stderr: "", exitCode: 1 }));
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const result = await Promise.race([
       finished,
-      new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)),
+      new Promise<"timeout">((resolve) => {
+        timeoutId = setTimeout(() => resolve("timeout"), ms);
+      }),
     ]);
+    if (result !== "timeout" && timeoutId !== undefined) clearTimeout(timeoutId);
 
     if (result === "timeout") {
       try {
@@ -79,7 +83,10 @@ export const bash = tool({
 
     const truncated =
       stdout.length >= OUTPUT_CAP || stderr.length >= OUTPUT_CAP ? " [output truncated]" : "";
-    const exitInfo = exitCode === 0 ? "" : ` (exit code: ${exitCode})`;
+    // Always expose the structured exit status so the authoritative event layer
+    // can distinguish successful validation from output text that merely says
+    // "failed" or "error" (for example a test name).
+    const exitInfo = ` (exit code: ${exitCode})`;
 
     if (output.length === 0 && exitCode !== 0) {
       return `Command failed (exit code: ${exitCode}) with no output.`;

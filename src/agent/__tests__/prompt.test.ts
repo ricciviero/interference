@@ -1,6 +1,31 @@
 import { describe, test, expect } from "bun:test";
 import { buildSystemPrompt, systemPrompt, pickModelProfile, type PromptContext } from "../prompt.ts";
 import type { InstructionBlock } from "../../context.ts";
+import { PROTOCOL_VERSION, type BehaviorPlan } from "@agenticswe/core";
+
+const authoritativePlan: BehaviorPlan = {
+  protocolVersion: PROTOCOL_VERSION,
+  requestId: "request-1",
+  phase: "planning",
+  effectiveClassification: "non-trivial",
+  requiredGates: [
+    { id: "setup", status: "satisfied", reasonCode: "CONFIGURATION_PRESENT" },
+    { id: "planning", status: "required", reasonCode: "PLANNING_REQUIRED" },
+    { id: "verification", status: "pending", reasonCode: "VALIDATION_REQUIRED" },
+  ],
+  selectedSkills: [
+    { name: "iterations-planner", required: true, reasonCode: "PLANNING_REQUIRED" },
+  ],
+  requestedCapabilities: ["repository:read", "workspace:plan-write"],
+  completionCriteria: [
+    { id: "gates-satisfied", status: "pending", hard: true },
+    { id: "implementation-accounted-for", status: "pending", hard: true },
+    { id: "validation-evidence", status: "pending", hard: true },
+  ],
+  canComplete: false,
+  reasons: ["TASK_NON_TRIVIAL", "PLANNING_REQUIRED"],
+  diagnostics: [],
+};
 
 // Normalize cwd, OS and date (they change across machine/day) for a snapshot that is
 // stable over time AND portable across platforms — otherwise CI (linux) never matches a
@@ -69,6 +94,34 @@ describe("buildSystemPrompt (iter 32, composable sections)", () => {
     expect(build).toContain("run the real path");
     expect(build).toContain("Don't declare the task done without evidence");
     expect(plan).not.toContain("run the real path");
+  });
+
+  test("authoritative prompt derives behavior from BehaviorPlan without legacy policy", () => {
+    const out = buildSystemPrompt({
+      mode: "build",
+      behavior: {
+        plan: authoritativePlan,
+        effectiveCapabilities: ["repository:read", "workspace:plan-write"],
+      },
+    });
+    expect(out).toContain(`<agentic_swe_behavior protocol="${PROTOCOL_VERSION}"`);
+    expect(out).toContain("Phase: planning");
+    expect(out).toContain("Selected skills: iterations-planner");
+    expect(out).not.toContain("Use edit for small changes");
+    expect(out).not.toContain("run the real path");
+    expect(out).not.toContain("Project memory (.agents/)");
+  });
+
+  test("authoritative execution prompt describes read-only work without implementation language", () => {
+    const out = buildSystemPrompt({
+      mode: "build",
+      behavior: {
+        plan: { ...authoritativePlan, phase: "execution" },
+        effectiveCapabilities: ["repository:read", "instructions:read", "skills:read"],
+      },
+    });
+    expect(out).toContain("Answer or analyze the request");
+    expect(out).not.toContain("Implement the approved scope");
   });
 });
 

@@ -13,6 +13,7 @@ interface Props {
   statusLine: string;
   cost: string;
   gitBranch: string;
+  behaviorPhase?: string;
 }
 
 function fmt(n: number): string {
@@ -32,6 +33,7 @@ export function StatusFooter({
   statusLine,
   cost,
   gitBranch,
+  behaviorPhase,
 }: Props) {
   const modeColor = mode === "build" ? "yellow" : "blue";
   const contextPct = contextLimit > 0 ? Math.round((contextTokens / contextLimit) * 100) : 0;
@@ -56,6 +58,7 @@ export function StatusFooter({
           </Text>
           <Text dimColor>·</Text>
           <Text dimColor>{cost}</Text>
+          {behaviorPhase && <Text color="cyan">A:{behaviorPhase}</Text>}
           {gitBranch && <Text dimColor>⎇ {gitBranch}</Text>}
         </Box>
         <Box>

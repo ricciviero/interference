@@ -1,0 +1,85 @@
+[
+  {
+    "id": "informational-question",
+    "summary": "Explain how session persistence works without changing files.",
+    "classification": "trivial",
+    "mode": "plan",
+    "planned": false,
+    "eligible": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "mechanical-micro-edit",
+    "summary": "Fix the spelling of one label in README.md.",
+    "classification": "trivial",
+    "mode": "build",
+    "planned": false,
+    "eligible": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "multi-layer-feature",
+    "summary": "Add a persisted setting, expose it in the CLI, and document the behavior.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": true,
+    "eligible": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "migration",
+    "summary": "Migrate the session store to a versioned schema with backward compatibility.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": false,
+    "eligible": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "non-trivial-bug",
+    "summary": "Diagnose and fix the cross-provider usage totals after session resume.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": true,
+    "eligible": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "unconfigured-repository",
+    "summary": "Set up this unconfigured repository and implement a new feature.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": false,
+    "eligible": true,
+    "unconfigured": true,
+    "selectedSkills": []
+  },
+  {
+    "id": "explicit-light-process",
+    "summary": "Make the cross-layer change but use a lighter process because this is a disposable spike.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": false,
+    "eligible": true,
+    "lighterProcessReason": "Disposable spike requested by the user.",
+    "selectedSkills": []
+  },
+  {
+    "id": "explicit-project-skill",
+    "summary": "Use interference-tool while changing the behavior of a filesystem tool.",
+    "classification": "non-trivial",
+    "mode": "build",
+    "planned": true,
+    "eligible": true,
+    "selectedSkills": ["interference-tool"]
+  },
+  {
+    "id": "specialized-review",
+    "summary": "Review the current diff as a specialized read-only agent.",
+    "classification": "non-trivial",
+    "mode": "plan",
+    "planned": false,
+    "eligible": false,
+    "selectedSkills": []
+  }
+]

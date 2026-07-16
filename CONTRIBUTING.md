@@ -21,6 +21,18 @@ write access to propose a change.
 Do not commit secrets, API keys, generated local state, or files that are already ignored by the
 repository.
 
+## Cross-repository behavior changes
+
+[Agentic SWE](https://github.com/ricciviero/agentic-swe) is the separate source of truth for the
+behavior protocol, reference evaluator, schemas, conformance cases, Node adapter, and public skill
+assets. Interference owns the host integration in `src/behavior/`, concrete tools and permissions,
+sessions, providers, and UI.
+
+Open protocol/runtime changes in the Agentic SWE repository first. Open host-specific integration
+or product changes here. A cross-repository change should link both pull requests, pin an immutable
+released package version in Interference, and include clean-install E2E evidence; local `file:`
+dependencies must not be committed.
+
 ## Maintainers
 
 - Work daily on `dev` or a focused branch, then open a Pull Request to `main`.
@@ -40,3 +52,6 @@ that merged commit. Never push a release tag before the release PR is merged.
 
 `npm publish` remains a manual maintainer action with OTP. See the release section in
 [README.md](README.md#releasing-maintainers).
+
+Agentic SWE packages are released independently and only by their maintainer. An Agentic SWE
+release never implies an Interference version bump or npm publication.

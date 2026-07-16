@@ -1,6 +1,7 @@
 import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { interferenceDir } from "./paths.ts";
+import { loadSkill } from "@agenticswe/skills";
 
 /** Skills directory (`~/.interference/skills`, redirectable in tests). */
 export function skillsDir(): string {
@@ -8,49 +9,6 @@ export function skillsDir(): string {
 }
 
 const BUNDLED_SKILLS: Record<string, string> = {
-  "agents-setup": `---
-name: agents-setup
-description: Generate or update AGENTS.md for a project. Use when the user asks /init,
-  "setup agent", "initialize AGENTS.md", "configure project for agents", or wants to
-  bootstrap a project for AI coding agents.
----
-
-# agents-setup — Project bootstrap for AI agents
-
-Generate an AGENTS.md file (the cross-tool standard). This file is the source of truth for any AI agent working on this project.
-
-## Structure of AGENTS.md
-
-- §1 Overview: name, description, stack, references
-- §2 Agent skills: trigger → skill mapping table
-- §3 Project-specific skills: .agents/skills/<name>/SKILL.md
-- §4 Decision log: .agents/decisions/ (on-demand only)
-- §5 Project memory: .agents/memory/ (living facts)
-- §6 Non-negotiable rules: align to requirements, propagate fixes, completeness pass
-- §7 State snapshot
-- §8 What NOT to do`,
-
-  "iterations-planner": `---
-name: iterations-planner
-description: Organize a backlog of features/fixes into local iteration folders. Use when
-  the user provides a client brief with multiple features, asks to "plan iterations",
-  "/iterations", "organize backlog", or reports a bug with "/fix", "correggi", "regressione".
-  Creates iterazioni/NN-name/ folders with task.md + plan.md.
----
-
-# iterations-planner — Organize project backlog into iterations
-
-Transform a client brief into a structured, trackable backlog — local to the developer, not committed.
-
-## Output structure
-
-iterazioni/NN-name/task.md + plan.md (gitignored)
-fix/NN-problem/bug.md + fix.md (gitignored)
-
-## task.md: status, verbatim brief, objective, atomic tasks, files, deps, DoD
-## plan.md: decisions table, concrete steps, files touched, validation
-## Ordering: foundation first, high-impact next, cosmetic last, bugs by severity`,
-
   "interference-tool": `---
 name: interference-tool
 description: Pattern for adding or modifying a tool in the interference agent. Use when
@@ -164,7 +122,13 @@ const STOPWORDS = new Set([
 ]);
 
 export async function bootstrapSkills(): Promise<void> {
-  for (const [name, content] of Object.entries(BUNDLED_SKILLS)) {
+  const frameworkSkills = await Promise.all(
+    ["agents-setup", "iterations-planner"].map((name) => loadSkill(name)),
+  );
+  const sources: Record<string, string> = { ...BUNDLED_SKILLS };
+  for (const skill of frameworkSkills) sources[skill.name] = skill.content;
+
+  for (const [name, content] of Object.entries(sources)) {
     const dir = path.join(skillsDir(), name);
     try { await mkdir(dir, { recursive: true }); } catch {}
     const fp = path.join(dir, "SKILL.md");

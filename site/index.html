@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <title data-i18n="meta.title">interference — the open-source terminal coding agent</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" data-i18n-content="meta.desc" content="interference is an Italian open-source AI coding agent that lives in your terminal. Plan and Build modes, file & shell tools, permissions, sessions with undo — built on TypeScript + Bun." />
+<meta name="description" data-i18n-content="meta.desc" content="interference is the open-source terminal coding agent powered by Agentic SWE, a separate behavior framework for gates, scoped capabilities, and evidence-backed completion." />
 
 <link rel="icon" href="assets/favicon.ico" sizes="any" />
 <link rel="icon" type="image/svg+xml" href="assets/interference-favicon.svg" />
@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#0a0a0a" />
 
 <meta property="og:title" data-i18n-content="og.title" content="interference — the open-source terminal coding agent" />
-<meta property="og:description" data-i18n-content="og.desc" content="An Italian open-source AI coding agent that lives in your terminal. TypeScript + Bun." />
+<meta property="og:description" data-i18n-content="og.desc" content="An Italian open-source terminal coding agent with Agentic SWE at its behavioral core." />
 <meta property="og:image" content="assets/interference-og.png" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -47,9 +47,9 @@
       <span class="gh-stars" id="ghstars"></span>
     </a>
     <div class="lang-switch" role="group" aria-label="Language">
-      <button class="lang-btn is-active" data-lang="en" aria-pressed="true">EN</button>
+      <button class="lang-btn is-active" type="button" data-lang="en" aria-pressed="true">EN</button>
       <span class="lang-sep" aria-hidden="true">·</span>
-      <button class="lang-btn" data-lang="it" aria-pressed="false">IT</button>
+      <button class="lang-btn" type="button" data-lang="it" aria-pressed="false">IT</button>
     </div>
   </nav>
 </header>
@@ -62,9 +62,11 @@
       <img src="assets/interference-mark-animated.svg" alt="" />
     </div>
     <div class="hero-copy hero-copy--center">
-      <span class="hero-badge reveal" style="--d:0">Alpha</span>
+      <a class="hero-badge hero-badge--link reveal" style="--d:0" href="https://github.com/ricciviero/agentic-swe" target="_blank" rel="noopener">
+        <span data-i18n="hero.framework_badge">Behavior powered by Agentic SWE ↗</span>
+      </a>
       <h1 class="reveal" style="--d:1" data-i18n-html="hero.title">The Italian<br />Open Source<br /><span class="ital">Coding Agent.</span></h1>
-      <p class="lede lede--center reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop — with explicit permissions and a read-only Plan mode. No editor lock-in. Just the terminal.</p>
+      <p class="lede lede--center reveal" style="--d:2" data-i18n="hero.lede">interference reads your code, edits files and runs commands through an agentic loop. Every turn passes through the open-source Agentic SWE behavior framework, with code-enforced permissions and a read-only Plan mode.</p>
 
       <div class="install install--hero reveal" style="--d:3">
         <div class="install-row">
@@ -95,37 +97,60 @@
     </div>
   </section>
 
-  <!-- ── ENGINEERING FRAMEWORK (the differentiator) ──── -->
-  <section id="framework" class="section">
-    <div class="sec-head">
-      <span class="eyebrow" data-i18n="framework.eyebrow">/ 01 — engineering framework</span>
-      <h2 data-i18n="framework.title">Not just an agent. It builds an Engineering Framework in your repo.</h2>
-      <p class="lede fw-lede" data-i18n-html="framework.lede">interference doesn't start from zero every session. On <code>/init</code> it sets up a living <code>.agents/</code> framework — project memory, decisions and skills — then maintains it as it works and reloads it every session. It remembers how your project is built.</p>
+  <!-- ── AGENTIC SWE BEHAVIOR FRAMEWORK ──────────────── -->
+  <section id="framework" class="section framework-section">
+    <div class="framework-intro">
+      <div class="sec-head">
+        <span class="eyebrow" data-i18n="framework.eyebrow">/ 01 — open behavior framework</span>
+        <h2 data-i18n="framework.title">Prompts can suggest. The framework decides what happens next.</h2>
+        <p class="lede fw-lede" data-i18n="framework.lede">Every primary turn is evaluated by Agentic SWE — the separate open-source protocol and runtime at the heart of interference. It classifies intent, opens setup and planning gates, scopes capabilities, and requires host evidence before completion.</p>
+        <div class="framework-actions">
+          <a class="btn btn-ink" href="https://github.com/ricciviero/agentic-swe" target="_blank" rel="noopener">
+            <span data-i18n="framework.cta">Explore Agentic SWE on GitHub ↗</span>
+          </a>
+          <span class="framework-meta" data-i18n="framework.meta">Protocol 1.1 · MIT · separate repository</span>
+        </div>
+      </div>
+      <aside class="protocol-panel reveal-up" aria-label="Agentic SWE behavior trace">
+        <span class="protocol-kicker">Agentic SWE / BehaviorPlan</span>
+        <ol class="protocol-trace">
+          <li><span>01</span><strong data-i18n="framework.trace_intent">intent</strong><code>read-only / mutation</code></li>
+          <li><span>02</span><strong data-i18n="framework.trace_gates">gates</strong><code>setup / planning / verify</code></li>
+          <li><span>03</span><strong data-i18n="framework.trace_access">access</strong><code>protocol ∩ host</code></li>
+          <li><span>04</span><strong data-i18n="framework.trace_evidence">evidence</strong><code>host events only</code></li>
+          <li><span>05</span><strong data-i18n="framework.trace_complete">complete</strong><code>hard criteria satisfied</code></li>
+        </ol>
+      </aside>
     </div>
     <div class="fw-grid">
       <div class="fw-card reveal-up">
-        <span class="eyebrow"><code>.agents/memory</code></span>
-        <h3 data-i18n="framework.memory_title">Memory</h3>
-        <p data-i18n="framework.memory_desc">Durable facts about your project — integration state, gotchas, conventions — recorded as it works and reloaded into context every session.</p>
+        <span class="eyebrow"><code>setup → plan → execute</code></span>
+        <h3 data-i18n="framework.gates_title">Gates before action</h3>
+        <p data-i18n="framework.gates_desc">Non-trivial work cannot skip repository setup or planning. Complex questions remain read-only when no mutation was requested.</p>
       </div>
       <div class="fw-card reveal-up" style="--d:1">
-        <span class="eyebrow"><code>.agents/decisions</code></span>
-        <h3 data-i18n="framework.decisions_title">Decisions</h3>
-        <p data-i18n-html="framework.decisions_desc">The <em>why</em> behind changes, captured as lightweight records — so the reasoning survives, not just the diff.</p>
+        <span class="eyebrow"><code>protocol ∩ mode ∩ tools ∩ policy</code></span>
+        <h3 data-i18n="framework.access_title">Deny wins</h3>
+        <p data-i18n="framework.access_desc">The model may describe intent, but it cannot grant access. Agentic SWE and Interference can only narrow the toolset.</p>
       </div>
       <div class="fw-card reveal-up" style="--d:2">
-        <span class="eyebrow"><code>.agents/skills</code></span>
-        <h3 data-i18n="framework.skills_title">Skills</h3>
-        <p data-i18n="framework.skills_desc">Repeatable, project-specific patterns turned into reusable skills the agent applies on its own.</p>
+        <span class="eyebrow"><code>event → evidence → completion</code></span>
+        <h3 data-i18n="framework.evidence_title">Evidence before done</h3>
+        <p data-i18n="framework.evidence_desc">Only successful redacted host events satisfy hard criteria. A failed test never becomes proof of validation.</p>
       </div>
     </div>
-    <p class="fw-cycle reveal-up" data-i18n-html="framework.cycle"><strong>read</strong> → <strong>maintain</strong> → <strong>reload</strong> — the framework grows with your project</p>
+    <div class="framework-boundary reveal-up">
+      <p><strong>Agentic SWE</strong><span data-i18n="framework.core_owns">owns behavior: classify · gate · route · verify</span></p>
+      <span class="boundary-mark" aria-hidden="true">≠</span>
+      <p><strong>interference</strong><span data-i18n="framework.host_owns">owns execution: models · tools · permissions · sessions · TUI</span></p>
+    </div>
+    <p class="fw-cycle reveal-up" data-i18n-html="framework.cycle"><strong>AGENTS.md</strong> → <strong>gates</strong> → <strong>scoped tools</strong> → <strong>evidence</strong> — behavior that survives the chat</p>
   </section>
 
   <!-- ── HOW IT WORKS ────────────────────────────────── -->
   <section id="how" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="how.eyebrow">/ 01 — the loop</span>
+      <span class="eyebrow" data-i18n="how.eyebrow">/ 02 — the loop</span>
       <h2 data-i18n="how.title">An agent loop you can watch and trust.</h2>
     </div>
     <ol class="steps">
@@ -155,7 +180,7 @@
   <!-- ── SKILLS ──────────────────────────────────────── -->
   <section id="skills" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="skills.eyebrow">/ 02 — skills</span>
+      <span class="eyebrow" data-i18n="skills.eyebrow">/ 03 — skills</span>
       <h2 data-i18n="skills.title">Teach it once. It remembers every time.</h2>
     </div>
     <div class="modes">
@@ -209,7 +234,7 @@
   <!-- ── FEATURES ────────────────────────────────────── -->
   <section id="features" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="features.eyebrow">/ 03 — what's inside</span>
+      <span class="eyebrow" data-i18n="features.eyebrow">/ 04 — what's inside</span>
       <h2 data-i18n="features.title">Small surface. Serious capability.</h2>
     </div>
     <div class="feat-grid">
@@ -264,7 +289,7 @@
   <!-- ── WHY ─────────────────────────────────────────── -->
   <section id="why" class="section">
     <div class="sec-head">
-      <span class="eyebrow" data-i18n="why.eyebrow">/ 04 — why interference</span>
+      <span class="eyebrow" data-i18n="why.eyebrow">/ 05 — why interference</span>
       <h2 data-i18n="why.title">Not just another agent.</h2>
     </div>
     <div class="why-grid">
@@ -289,7 +314,7 @@
   <!-- ── QUICKSTART ──────────────────────────────────── -->
   <section id="start" class="band-ink section">
     <div class="sec-head sec-head--center">
-      <span class="eyebrow" data-i18n="start.eyebrow">/ 05 — quickstart</span>
+      <span class="eyebrow" data-i18n="start.eyebrow">/ 06 — quickstart</span>
       <h2 data-i18n="start.title">In your terminal in a minute.</h2>
     </div>
       <div class="install reveal-up">
@@ -322,6 +347,7 @@
     </a>
     <span class="eyebrow">
       © 2026 <a href="https://riccardociviero.it">Riccardo Civiero</a>
+      · <a href="https://github.com/ricciviero/agentic-swe" target="_blank" rel="noopener">Agentic SWE</a>
       · P.IVA IT03241840598 · CF CVRRCR98D18E472Y
     </span>
   </div>
