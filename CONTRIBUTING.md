@@ -50,6 +50,7 @@ Prepare a release in a `release/vX.Y.Z` branch from current `dev`. Update `CHANG
 Request. After that PR has been merged into `main`, create and push the annotated `vX.Y.Z` tag from
 that merged commit. Never push a release tag before the release PR is merged.
 
+The tag workflow validates the package with a publish dry-run but never writes to the registry.
 `npm publish` remains a manual maintainer action with OTP. See the release section in
 [README.md](README.md#releasing-maintainers).
 
