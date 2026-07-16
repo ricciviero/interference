@@ -1,11 +1,14 @@
 {
   "name": "interference-agent",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "The open-source coding agent that lives in your terminal.",
   "type": "module",
   "license": "MIT",
   "author": "ricciviero",
-  "repository": "github:ricciviero/interference",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricciviero/interference.git"
+  },
   "homepage": "https://github.com/ricciviero/interference#readme",
   "keywords": [
     "ai",
@@ -18,9 +21,10 @@
     "open-source"
   ],
   "bin": {
-    "interference": "./src/cli.ts"
+    "interference": "bin/interference.js"
   },
   "files": [
+    "bin",
     "src",
     "README.md",
     "LICENSE"
