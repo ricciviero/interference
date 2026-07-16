@@ -5,6 +5,8 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-07-16
+
 ### Added
 - **Agentic SWE authoritative behavior runtime.** The separate Agentic SWE Protocol 1.1 now drives classification, mutation intent, setup/planning gates, skill selection, capability requests, and completion criteria for primary turns.
 - **Host-verifiable delivery evidence.** Tool authorization, mutation, validation, documentation, refusal, abort, and completion events are recorded with redacted subjects and exact exit codes; only successful compatible events become evidence.
@@ -157,7 +159,8 @@ All notable changes to interference. Format based on
 - Tools: read/ls/glob/grep/webfetch/write/edit/bash, allow/ask/deny permissions, Plan/Build modes.
 - Ink TUI, sessions with undo/redo, slash commands, skills, subagent, compaction, config file, cost tracking.
 
-[Unreleased]: https://github.com/ricciviero/interference/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ricciviero/interference/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/ricciviero/interference/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/ricciviero/interference/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ricciviero/interference/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/ricciviero/interference/compare/v0.3.2...v0.3.3

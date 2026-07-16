@@ -1,9 +1,7 @@
-name: publish
+name: release-check
 
-# Pubblica su npm automaticamente quando si pusha un tag vX.Y.Z.
-# Flusso manutentore: `npm version minor && git push --follow-tags`
-#   → preversion (typecheck+test) → bump+tag → postversion (push) → questa Action pubblica.
-# Richiede il secret repo NPM_TOKEN (automation token npm).
+# Valida il pacchetto quando si pusha un tag vX.Y.Z.
+# Il publish su npm rimane un'operazione manuale del maintainer.
 
 on:
   push:
@@ -11,11 +9,10 @@ on:
       - "v*"
 
 jobs:
-  publish:
+  validate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # per npm provenance
     steps:
       - uses: actions/checkout@v4
 
@@ -34,9 +31,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: "https://registry.npmjs.org"
 
-      - name: Publish to npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Validate npm package
+        run: npm publish --dry-run --json
