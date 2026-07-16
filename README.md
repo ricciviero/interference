@@ -155,9 +155,10 @@ Session snapshots persist only versioned plans, event projections, and evidence 
 status and audit. A retry reuses behavior state only when both the turn number and hashed request
 identity match; a later request, abort, or refusal always starts with fresh evidence.
 
-> Development status: the integration pins the public Agentic SWE `0.1.0` packages and implements
-> Protocol `1.1`. A clean registry install and the complete Interference behavior suite are verified;
-> publishing Agentic SWE does not itself release a new Interference version.
+> Release status: `interference-agent@0.6.0` is public on npm and ships the authoritative Agentic SWE
+> integration. It pins the public Agentic SWE `0.1.0` packages, implements Protocol `1.1`, and has
+> been verified from a clean registry install. Agentic SWE and Interference remain independently
+> versioned projects.
 
 ## Updating
 
@@ -195,9 +196,9 @@ npm publish                            # maintainer only; complete the OTP promp
 npm view interference-agent version   # verify the public version
 ```
 
-The tag workflow validates the release and attempts a provenance publish. The manual `npm publish`
-step remains the release authority; an npm Automation token in `NPM_TOKEN` is optional. Sync `main`
-back into `dev` after the release. See `CHANGELOG.md`.
+The tag workflow runs the release checks and an npm publish dry-run; it never publishes to the
+registry. The manual `npm publish` step is the only publication path. Sync `main` back into `dev`
+after the release. See `CHANGELOG.md`.
 
 ## Screenshot
 
