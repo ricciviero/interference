@@ -18,6 +18,8 @@ import { shouldCompact, compactMessages, getUsagePercent } from "./agent/compact
 import { computeDiff, formatDiff } from "./tui/DiffView.tsx";
 import { estimateCost, formatCost, getRawUsage, restoreUsage } from "./cost.ts";
 import { estimateMessagesTokens } from "./agent/compaction.ts";
+import { formatBehaviorSnapshot, formatShadowReport } from "./behavior/diagnostics.ts";
+import { isAuthoritativeBehaviorEnabled } from "./behavior/runtime.ts";
 
 const DIM = "\x1b[2m";
 const BOLD = "\x1b[1m";
@@ -35,7 +37,7 @@ export default async function plain(session: Session): Promise<void> {
   stdout.write(`${DIM}  ______________________________${RESET}\n`);
   stdout.write(`\n`);
   stdout.write(
-    `${DIM}  ${modeSymbol} ${modeLabel}${RESET}  ${DIM}·${RESET}  ${provider.label}  ${DIM}·${RESET}  ${currentModel()}  ${DIM}·${RESET}  ${getUsagePercent(session.messages)}% ctx  ${DIM}·${RESET}  ${formatCost(estimateCost(estimateMessagesTokens(session.messages)))}${RESET}\n`,
+    `${DIM}  ${modeSymbol} ${modeLabel}${RESET}  ${DIM}·${RESET}  ${provider.label}  ${DIM}·${RESET}  ${currentModel()}  ${DIM}·${RESET}  ${getUsagePercent(session.messages)}% ctx  ${DIM}·${RESET}  ${formatCost(estimateCost(estimateMessagesTokens(session.messages)))}${session.behavior ? `  · Agentic ${session.behavior.phase}` : ""}${RESET}\n`,
   );
   stdout.write(`\n`);
 
@@ -48,6 +50,32 @@ export default async function plain(session: Session): Promise<void> {
   const rl = readline.createInterface({ input: stdin, output: stdout });
   const messages = session.messages;
   let aborter: AbortController | null = null;
+
+  const behaviorContext = (selectedSkillNames: readonly string[] = []) => ({
+    sessionId: session.meta.id,
+    turnNumber: session.meta.turnCount + 1,
+    ...(session.behavior?.turnNumber !== undefined
+      ? { savedTurnNumber: session.behavior.turnNumber }
+      : {}),
+    ...(session.behavior?.requestId
+      ? { savedRequestId: session.behavior.requestId }
+      : {}),
+    selectedSkillNames,
+    ...(session.behavior?.planningRecord
+      ? { planningRecord: session.behavior.planningRecord }
+      : {}),
+    ...(session.behavior?.state ? { state: session.behavior.state } : {}),
+    ...(session.behavior?.events ? { events: session.behavior.events } : {}),
+    ...(session.behavior?.protocolVersion
+      ? { savedProtocolVersion: session.behavior.protocolVersion }
+      : {}),
+    ...(session.behavior?.packageVersion
+      ? { savedPackageVersion: session.behavior.packageVersion }
+      : {}),
+    onPlan: (snapshot: NonNullable<Session["behavior"]>) => {
+      session.behavior = snapshot;
+    },
+  });
 
   // Serialize interactive prompts (fix/01): the AI SDK runs a step's tool-calls with
   // Promise.all, so 2+ "ask" tools would call the handler concurrently and race on the
@@ -108,8 +136,11 @@ export default async function plain(session: Session): Promise<void> {
           clearMessages: () => { messages.length = 0; },
           doInit: async (args) => {
             // /init: scaffold the .agents/ skeleton + gitignore (F3), then delegate AGENTS.md.
-            await scaffoldAgents(process.cwd());
-            const template = `Set up this project for AI agents. The \`.agents/{memory,decisions,skills}/\` skeleton has already been created and gitignored. Write everything you create (AGENTS.md, memory) in English.
+            const authoritative = isAuthoritativeBehaviorEnabled();
+            if (!authoritative) await scaffoldAgents(process.cwd());
+            const template = `Set up this project for AI agents. ${authoritative
+              ? "Follow the Agentic SWE setup gate and the selected agents-setup skill."
+              : "The `.agents/{memory,decisions,skills}/` skeleton has already been created and gitignored."} Write everything you create (AGENTS.md, memory) in English.
 
 Generate or update the AGENTS.md file at the project root. Key sections:
 - Project overview, stack, directory structure
@@ -130,7 +161,18 @@ ${args ? `Additional context: ${args}` : ""}`;
             messages.push({ role: "user", content: template });
             aborter = new AbortController();
             try {
-              await consumeTurn(runTurn(messages, aborter.signal));
+              await consumeTurn(
+                runTurn(
+                  messages,
+                  aborter.signal,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  behaviorContext(["agents-setup"]),
+                ),
+              );
               session.meta.turnCount++;
               session.usage = getRawUsage();
               await finalizeSnapshots();
@@ -146,7 +188,18 @@ ${args ? `Additional context: ${args}` : ""}`;
             messages.push({ role: "user", content: input });
             aborter = new AbortController();
             try {
-              await consumeTurn(runTurn(messages, aborter.signal, undefined, [body]));
+              await consumeTurn(
+                runTurn(
+                  messages,
+                  aborter.signal,
+                  undefined,
+                  [body],
+                  undefined,
+                  undefined,
+                  undefined,
+                  behaviorContext([name]),
+                ),
+              );
               session.meta.turnCount++;
               session.usage = getRawUsage();
               await finalizeSnapshots();
@@ -176,6 +229,7 @@ ${args ? `Additional context: ${args}` : ""}`;
                 messages.push(...loaded.messages);
                 session.meta = loaded.meta;
                 session.messages = loaded.messages;
+                session.behavior = loaded.behavior;
                 restoreUsage(loaded.usage);
                 return `Resumed session ${list[idx]!.id.slice(0, 12)} (${loaded.meta.turnCount} turns).`;
               }
@@ -196,6 +250,9 @@ ${args ? `Additional context: ${args}` : ""}`;
               return `Review failed: ${err instanceof Error ? err.message : String(err)}`;
             }
           },
+          doBehavior: async () => session.behavior
+            ? formatBehaviorSnapshot(session.behavior)
+            : await formatShadowReport(session.meta.id, session.meta.workspace),
         });
         if (result) stdout.write(`${DIM}${result}${RESET}\n\n`);
         continue;
@@ -215,7 +272,18 @@ ${args ? `Additional context: ${args}` : ""}`;
       messages.push({ role: "user", content: input });
       aborter = new AbortController();
       try {
-        await consumeTurn(runTurn(messages, aborter.signal, undefined, skillBodies.length > 0 ? skillBodies : undefined));
+        await consumeTurn(
+          runTurn(
+            messages,
+            aborter.signal,
+            undefined,
+            skillBodies.length > 0 ? skillBodies : undefined,
+            undefined,
+            undefined,
+            undefined,
+            behaviorContext(matchedSkills),
+          ),
+        );
         stdout.write("\n\n");
         session.meta.turnCount++;
         session.usage = getRawUsage();

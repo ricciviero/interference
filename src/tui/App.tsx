@@ -45,6 +45,8 @@ import { placeholderFor } from "./placeholders.ts";
 import { checkForUpdate, CURRENT_VERSION } from "../version.ts";
 import { USER_BAR, ASSISTANT_BAR, THINKING, THINKING_BODY } from "./theme.ts";
 import { Panel } from "./Panel.tsx";
+import { formatBehaviorSnapshot, formatShadowReport } from "../behavior/diagnostics.ts";
+import { isAuthoritativeBehaviorEnabled } from "../behavior/runtime.ts";
 
 // The chat scrollback is a chronological list of typed blocks (thought, tool, text, …),
 // committed in the order they happen during a turn — so reasoning, tool runs and the answer
@@ -117,6 +119,7 @@ export default function App({ session }: { session: Session }) {
   const [phIdx, setPhIdx] = useState(0); // placeholder example index (it. 25)
   const [update, setUpdate] = useState<string | null>(null); // newer version (it. 28)
   const [sessionTitle, setSessionTitle] = useState(session.meta.title || "");
+  const [behaviorPhase, setBehaviorPhase] = useState(session.behavior?.phase);
   const { toasts, addToast } = useToast();
   // Head-of-queue = the request currently shown to the user (null if none).
   const confirm = confirmQueue[0] ?? null;
@@ -299,6 +302,37 @@ export default function App({ session }: { session: Session }) {
     return t.length > 40 ? t.slice(0, 40).trimEnd() + "…" : t;
   };
 
+  const behaviorContext = (selectedSkillNames: readonly string[] = []) => ({
+    sessionId: sessionRef.current.meta.id,
+    turnNumber: sessionRef.current.meta.turnCount + 1,
+    ...(sessionRef.current.behavior?.turnNumber !== undefined
+      ? { savedTurnNumber: sessionRef.current.behavior.turnNumber }
+      : {}),
+    ...(sessionRef.current.behavior?.requestId
+      ? { savedRequestId: sessionRef.current.behavior.requestId }
+      : {}),
+    selectedSkillNames,
+    ...(sessionRef.current.behavior?.planningRecord
+      ? { planningRecord: sessionRef.current.behavior.planningRecord }
+      : {}),
+    ...(sessionRef.current.behavior?.state
+      ? { state: sessionRef.current.behavior.state }
+      : {}),
+    ...(sessionRef.current.behavior?.events
+      ? { events: sessionRef.current.behavior.events }
+      : {}),
+    ...(sessionRef.current.behavior?.protocolVersion
+      ? { savedProtocolVersion: sessionRef.current.behavior.protocolVersion }
+      : {}),
+    ...(sessionRef.current.behavior?.packageVersion
+      ? { savedPackageVersion: sessionRef.current.behavior.packageVersion }
+      : {}),
+    onPlan: (snapshot: NonNullable<Session["behavior"]>) => {
+      sessionRef.current.behavior = snapshot;
+      setBehaviorPhase(snapshot.phase);
+    },
+  });
+
   async function doCompact() {
     const pct = getUsagePercent(messagesRef.current);
     if (!shouldCompact(messagesRef.current)) {
@@ -318,7 +352,11 @@ export default function App({ session }: { session: Session }) {
     addToast(`Compacted: ${pct}% → ${newPct}%`, "info");
   }
 
-  async function doTurn(userText: string, skillBodies?: string[]) {
+  async function doTurn(
+    userText: string,
+    skillBodies?: string[],
+    selectedSkillNames: readonly string[] = [],
+  ) {
     setStatusText("");
     setBusy(true);
     setStreaming("");
@@ -362,7 +400,16 @@ export default function App({ session }: { session: Session }) {
     const reasoningFlush = createStreamFlusher(setReasoning, nowMs);
 
     try {
-      const chunks = runTurn(messagesRef.current, aborterRef.current.signal, undefined, skillBodies);
+      const chunks = runTurn(
+        messagesRef.current,
+        aborterRef.current.signal,
+        undefined,
+        skillBodies,
+        undefined,
+        undefined,
+        undefined,
+        behaviorContext(selectedSkillNames),
+      );
 
       for await (const chunk of chunks) {
         const { commit: blocks, state } = foldTurnChunk(fold, chunk, Date.now());
@@ -500,8 +547,11 @@ export default function App({ session }: { session: Session }) {
             try {
             // Scaffold the .agents/ memory/decisions/skills skeleton + gitignore it (F3),
             // deterministically, before the LLM writes AGENTS.md.
-            await scaffoldAgents(process.cwd());
-            const template = `Set up this project for AI agents. The \`.agents/{memory,decisions,skills}/\` skeleton has already been created and gitignored. Write everything you create (AGENTS.md, memory) in English.
+            const authoritative = isAuthoritativeBehaviorEnabled();
+            if (!authoritative) await scaffoldAgents(process.cwd());
+            const template = `Set up this project for AI agents. ${authoritative
+              ? "Follow the Agentic SWE setup gate and the selected agents-setup skill."
+              : "The `.agents/{memory,decisions,skills}/` skeleton has already been created and gitignored."} Write everything you create (AGENTS.md, memory) in English.
 
 Generate or update the AGENTS.md file at the project root. Key sections:
 - Project overview, stack, directory structure
@@ -521,7 +571,16 @@ ${args ? `Additional context: ${args}` : ""}`;
             nextTurn();
             messagesRef.current.push({ role: "user" as const, content: template });
             const aborter = new AbortController();
-            const chunks = runTurn(messagesRef.current, aborter.signal);
+            const chunks = runTurn(
+              messagesRef.current,
+              aborter.signal,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              behaviorContext(["agents-setup"]),
+            );
             for await (const chunk of chunks) {}
             sessionRef.current.meta.turnCount++;
             await finalizeSnapshots();
@@ -543,7 +602,16 @@ ${args ? `Additional context: ${args}` : ""}`;
               nextTurn();
               messagesRef.current.push({ role: "user" as const, content: `Help with this task. Use the skill context provided in the system prompt.` });
               const aborter = new AbortController();
-              const chunks = runTurn(messagesRef.current, aborter.signal, undefined, [body]);
+              const chunks = runTurn(
+                messagesRef.current,
+                aborter.signal,
+                undefined,
+                [body],
+                undefined,
+                undefined,
+                undefined,
+                behaviorContext([name]),
+              );
               let acc = "";
               for await (const chunk of chunks) {
                 if (chunk.type === "text") { acc += chunk.text; setStreaming(acc); }
@@ -590,6 +658,12 @@ ${args ? `Additional context: ${args}` : ""}`;
               setBusy(false);
             }
           },
+          doBehavior: async () => sessionRef.current.behavior
+            ? formatBehaviorSnapshot(sessionRef.current.behavior)
+            : await formatShadowReport(
+                sessionRef.current.meta.id,
+                sessionRef.current.meta.workspace,
+              ),
         }).then((result) => {
           if (result) setStatusText(result);
         });
@@ -606,7 +680,7 @@ ${args ? `Additional context: ${args}` : ""}`;
         if (skillBodies.length > 0) {
           setStatusText(`Skills matched: ${matchedSkills.join(", ")}`);
         }
-        doTurn(v, skillBodies.length > 0 ? skillBodies : undefined);
+        doTurn(v, skillBodies.length > 0 ? skillBodies : undefined, matchedSkills);
       }
 
       runWithSkills();
@@ -624,6 +698,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             if (loaded) {
               messagesRef.current = loaded.messages;
               sessionRef.current = loaded;
+              setBehaviorPhase(loaded.behavior?.phase);
               setTodos(loaded.todos ?? []);
               restoreUsage(loaded.usage);
               // Rebuild history from saved messages. Content can be a string or an
@@ -822,6 +897,7 @@ ${args ? `Additional context: ${args}` : ""}`;
             statusLine=""
             cost={formatCost(getTotalCost())}
             gitBranch={gitBranch}
+            behaviorPhase={behaviorPhase}
           />
         </>
       )}

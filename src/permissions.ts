@@ -1,3 +1,5 @@
+import { authorizeBehaviorTool } from "./behavior/authorization.ts";
+
 type Decision = "allow" | "ask" | "deny";
 
 export interface PermRule {
@@ -53,6 +55,9 @@ export function resetRules() {
 }
 
 export function decide(toolName: string, subject: string): Decision {
+  const behavior = authorizeBehaviorTool(toolName, subject);
+  if (!behavior.allowed) return "deny";
+
   if (toolName === "read" || toolName === "ls" || toolName === "glob" || toolName === "grep" || toolName === "webfetch") {
     return "allow";
   }

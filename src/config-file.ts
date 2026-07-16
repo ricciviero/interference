@@ -5,7 +5,19 @@ import { setMode, type AgentMode } from "./config.ts";
 import type { InstructionBlock } from "./context.ts";
 import { loadCustomAgents, type CustomAgentConfig } from "./agent/registry.ts";
 
-interface InterferenceConfig {
+export interface BehaviorConfig {
+  engine?: "legacy" | "agentic-swe";
+  enforcement?: "legacy" | "shadow" | "authoritative";
+  diagnostics?: boolean;
+}
+
+export interface ResolvedBehaviorConfig {
+  engine: "legacy" | "agentic-swe";
+  enforcement: "legacy" | "shadow" | "authoritative";
+  diagnostics: boolean;
+}
+
+export interface InterferenceConfig {
   model?: string;
   mode?: "plan" | "build";
   permissions?: Record<string, string | Record<string, string>>;
@@ -15,26 +27,81 @@ interface InterferenceConfig {
   /** Agent loop budget (fix/09): steps per streamText call / max automatic continuations. */
   maxSteps?: number;
   maxContinuations?: number;
+  /** Agentic SWE behavior policy. Defaults to authoritative; legacy is a rollback escape hatch. */
+  behavior?: BehaviorConfig;
 }
 
 let loadedConfig: InterferenceConfig | null = null;
+
+const DEFAULT_BEHAVIOR: ResolvedBehaviorConfig = Object.freeze({
+  engine: "agentic-swe",
+  enforcement: "authoritative",
+  diagnostics: true,
+});
 
 export function getLoadedConfig(): InterferenceConfig | null {
   return loadedConfig;
 }
 
 export async function loadConfig(): Promise<InterferenceConfig | null> {
+  loadedConfig = null;
   const filePath = findConfigFile();
   if (!filePath) return null;
 
   try {
     const raw = await readFile(filePath, "utf-8");
-    const config = JSON.parse(raw) as InterferenceConfig;
+    const config = parseInterferenceConfig(JSON.parse(raw));
     loadedConfig = config;
     return config;
-  } catch {
-    return null;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new TypeError(`Invalid interference config at ${filePath}: ${reason}`);
   }
+}
+
+export function resolveBehaviorConfig(
+  behavior: BehaviorConfig | undefined,
+): ResolvedBehaviorConfig {
+  if (!behavior) return DEFAULT_BEHAVIOR;
+  const engine = behavior.engine ?? "agentic-swe";
+  const enforcement = behavior.enforcement ??
+    (engine === "agentic-swe" ? "authoritative" : "legacy");
+  if (engine !== "legacy" && engine !== "agentic-swe") {
+    throw new TypeError(`Invalid behavior.engine: ${String(engine)}`);
+  }
+  if (
+    enforcement !== "legacy" &&
+    enforcement !== "shadow" &&
+    enforcement !== "authoritative"
+  ) {
+    throw new TypeError(`Invalid behavior.enforcement: ${String(enforcement)}`);
+  }
+  if (behavior.diagnostics !== undefined && typeof behavior.diagnostics !== "boolean") {
+    throw new TypeError("behavior.diagnostics must be a boolean.");
+  }
+  if (enforcement !== "legacy" && engine !== "agentic-swe") {
+    throw new TypeError(
+      `behavior.enforcement "${enforcement}" requires behavior.engine "agentic-swe".`,
+    );
+  }
+  return Object.freeze({
+    engine,
+    enforcement,
+    diagnostics: behavior.diagnostics ?? enforcement !== "legacy",
+  });
+}
+
+export function currentBehaviorConfig(): ResolvedBehaviorConfig {
+  return resolveBehaviorConfig(loadedConfig?.behavior);
+}
+
+function parseInterferenceConfig(value: unknown): InterferenceConfig {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError("interference.json must contain a JSON object.");
+  }
+  const config = value as InterferenceConfig;
+  resolveBehaviorConfig(config.behavior);
+  return config;
 }
 
 function findConfigFile(): string | null {

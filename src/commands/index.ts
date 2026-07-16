@@ -25,6 +25,7 @@ export type CommandHandler = (
     doRename?: (name: string) => Promise<string>;
     doCompact?: () => Promise<string>;
     doReview?: () => Promise<string>;
+    doBehavior?: () => Promise<string>;
   },
 ) => string | void | Promise<string | void>;
 
@@ -226,6 +227,11 @@ register(
   },
   { delegate: true },
 );
+
+register("behavior", "Show Agentic SWE phase, evidence, and diagnostics", (_args, ctx) => {
+  if (ctx.doBehavior) return ctx.doBehavior();
+  return "Behavior diagnostics are not available in this context.";
+});
 
 export async function initSkillCommands(): Promise<void> {
   const skills = getCachedRegistry();

@@ -45,11 +45,15 @@
     "@ai-sdk/mistral": "^4.0.2",
     "@ai-sdk/openai-compatible": "^3.0.1",
     "@ai-sdk/xai": "^4.0.3",
+    "@agenticswe/core": "0.1.0",
+    "@agenticswe/node": "0.1.0",
+    "@agenticswe/skills": "0.1.0",
     "@inkjs/ui": "^2.0.0",
     "ai": "^7.0.4",
     "ink": "^7.1.0",
     "ink-text-input": "^6.0.0",
     "react": "^19.2.7",
+    "react-devtools-core": "^7.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

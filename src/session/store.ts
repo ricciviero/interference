@@ -4,6 +4,8 @@ import { createHash } from "node:crypto";
 import type { ModelMessage } from "ai";
 import type { Todo } from "../tools/todowrite.ts";
 import { interferenceDir } from "../paths.ts";
+import { deleteShadowDiagnostics } from "../behavior/diagnostics.ts";
+import type { BehaviorSessionSnapshot } from "../behavior/types.ts";
 
 export interface SessionMeta {
   id: string;
@@ -24,6 +26,8 @@ export interface Session {
   // Cumulative token usage (fix/11): persisted so cost survives a reload. Shape matches
   // cost.ts RawUsage (inlined to keep the store decoupled from cost).
   usage?: { noCacheInput: number; output: number; cacheRead: number; cacheWrite: number };
+  /** Optional and backward-compatible: absent on sessions created before Agentic SWE. */
+  behavior?: BehaviorSessionSnapshot;
 }
 
 function projectDir(): string {
@@ -89,9 +93,11 @@ export async function latestSession(): Promise<Session | null> {
 }
 
 export async function deleteSession(id: string): Promise<void> {
+  const session = await loadSession(id);
   const file = path.join(sessionsDir(), `${id}.json`);
   try { await rm(file); } catch {}
   try { await rm(snapshotsDir(id), { recursive: true }); } catch {}
+  await deleteShadowDiagnostics(id, session?.meta.workspace ?? process.cwd());
 }
 
 export async function cleanupSessions(keep: number = 10): Promise<void> {
