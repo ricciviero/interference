@@ -4,7 +4,7 @@
 // Multi-provider with REASONING/THINKING level selectable at runtime
 // (`/thinking`). The mechanism differs by provider:
 //  - dedicated (anthropic/deepseek) → `providerOptions.<id>` passed to streamText
-//  - openai-compatible (glm/kimi)  → `thinking` field injected in the body (extraBody)
+//  - openai-compatible (glm/kimi)  → provider/model-specific fields injected in the body
 // `reasoningConfig()` translates the current level into the right options per provider.
 
 import { interferenceDir } from "./paths.ts";
@@ -167,6 +167,8 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
   kimi: {
     label: "Moonshot Kimi",
     envKey: "KIMI_API_KEY",
+    // Keep K2.7 as the implicit default: K3 requires its own preserved reasoning
+    // history, so silently resuming an existing K2 conversation on K3 is unsafe.
     defaultModel: "kimi-k2.7-code",
     kind: "openai-compatible",
     npm: "@ai-sdk/openai-compatible",
@@ -175,6 +177,12 @@ export const PROVIDERS: Record<ProviderId, ProviderDef> = {
     thinkingLevels: ["off", "max"],
     defaultThinking: "max",
     models: [
+      {
+        id: "kimi-k3",
+        label: "Kimi K3 (1M ctx · max reasoning · start fresh)",
+        thinkingLevels: ["max"],
+        defaultThinking: "max",
+      },
       { id: "kimi-k2.7-code", label: "Kimi K2.7 Code (thinking always on)" },
       { id: "kimi-k2.6", label: "Kimi K2.6 (thinking opzionale)" },
       { id: "kimi-k2.5", label: "Kimi K2.5" },
@@ -516,6 +524,11 @@ export function reasoningConfig(override?: ReasoningOverride): ReasoningConfig {
 
     case "kimi": {
       // Moonshot reasoning (`reasoning_content` field, read natively by @ai-sdk/openai-compatible).
+      // K3 is always-thinking and uses the top-level `reasoning_effort` field. At launch
+      // Moonshot accepts only "max"; unlike K2 it must not receive a `thinking` object.
+      if (model === "kimi-k3") {
+        return { extraBody: { reasoning_effort: "max" } };
+      }
       // max_tokens ≥ 16000 required: the sum of reasoning+content must not exceed max_tokens.
       // `*-code` models have thinking ALWAYS ON and do NOT accept the `thinking` param.
       const alwaysOn = model.includes("k2.7-code");

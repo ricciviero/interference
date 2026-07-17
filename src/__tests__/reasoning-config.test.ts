@@ -29,6 +29,29 @@ describe("reasoningConfig — OpenAI GPT-5.6 model-specific effort", () => {
   });
 });
 
+describe("reasoningConfig — Kimi K3", () => {
+  test("exposes only max reasoning", () => {
+    expect(thinkingLevelsFor("kimi", "kimi-k3")).toEqual(["max"]);
+  });
+
+  test.each(["off", "low", "max"] as const)(
+    "normalizes %s to K3's only supported reasoning_effort:max",
+    (level) => {
+      const cfg = reasoningConfig({ providerId: "kimi", model: "kimi-k3", level });
+      expect(cfg).toEqual({ extraBody: { reasoning_effort: "max" } });
+      expect(cfg.maxOutputTokens).toBeUndefined();
+    },
+  );
+
+  test("does not change the legacy K2 request contract", () => {
+    const cfg = reasoningConfig({ providerId: "kimi", model: "kimi-k2.6", level: "max" });
+    expect(cfg).toEqual({
+      extraBody: { thinking: { type: "enabled", keep: "all" } },
+      maxOutputTokens: 16_000,
+    });
+  });
+});
+
 describe("reasoningConfig (regression: haiku does not support adaptive/effort)", () => {
   test("claude-haiku-4-5 does NOT receive providerOptions (vanilla call)", () => {
     // Real bug found in E2E (it. 34): the cheap Anthropic subagent (cheapModel =

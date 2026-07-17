@@ -547,8 +547,10 @@ export async function* runTurn(
       }
     }
 
-    const response = await result.response;
-    messages.push(...response.messages);
+    // `response` is the FINAL step only. Persist the aggregate across every step so
+    // assistant tool calls, tool results and their reasoning remain available on the
+    // next user turn. This is required by Kimi K3 and fixes general multi-step history.
+    messages.push(...await result.responseMessages);
 
     const usage = await result.usage;
     if (usage) {

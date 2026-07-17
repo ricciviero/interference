@@ -144,6 +144,15 @@ export const CATALOG_SNAPSHOT = {
   },
   moonshotai: {
     models: {
+      "kimi-k3": {
+        id: "kimi-k3",
+        name: "Kimi K3",
+        reasoning: true,
+        tool_call: true,
+        modalities: { input: ["text", "image", "video"] },
+        limit: { context: 1_048_576, output: 131_072 },
+        cost: { input: 3, output: 15, cache_read: 0.3 },
+      },
       "kimi-k2.7-code": {
         id: "kimi-k2.7-code",
         name: "Kimi K2.7 Code",

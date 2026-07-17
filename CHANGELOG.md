@@ -5,6 +5,15 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Kimi K3 support.** The Moonshot model picker now includes the public API model `kimi-k3` with 1M context, native tools, max-effort reasoning, and offline pricing/context metadata.
+
+### Changed
+- Kimi K3 requests use the model-specific top-level `reasoning_effort: "max"` contract instead of the K2 `thinking` object. Assistant reasoning is preserved as `reasoning_content` across tool calls and subsequent turns. K2.7 remains the implicit Kimi default so existing conversations are not migrated silently.
+
+### Fixed
+- Multi-step turns now persist the aggregate AI SDK `responseMessages` instead of only the final step response, so assistant tool calls, tool results, and their reasoning remain in context on the next user turn.
+
 ## [0.6.0] — 2026-07-16
 
 ### Added

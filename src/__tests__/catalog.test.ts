@@ -104,6 +104,23 @@ describe("catalog.ts (iter 37, metadata from models.dev)", () => {
     }
   });
 
+  test("offline snapshot includes Kimi K3 launch metadata", async () => {
+    mockFetchFail();
+    await loadCatalog();
+
+    const info = getModelInfo("kimi", "kimi-k3");
+    expect(info).toMatchObject({
+      id: "kimi-k3",
+      name: "Kimi K3",
+      contextLimit: 1_048_576,
+      outputLimit: 131_072,
+      reasoning: true,
+      toolCall: true,
+      modalities: ["text", "image", "video"],
+      cost: { input: 3, output: 15, cacheRead: 0.3 },
+    });
+  });
+
   test("malformed JSON from fetch: does not crash, falls back to snapshot", async () => {
     globalThis.fetch = (async () => new Response("{not valid json", { status: 200 })) as unknown as typeof fetch;
     await loadCatalog();

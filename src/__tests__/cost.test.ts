@@ -126,6 +126,16 @@ describe("cache pricing from catalog (absolute prices, not coefficients)", () =>
   });
 
   // --- MoonshotAI / Kimi ---
+  test("kimi-k3: uses launch pricing from the offline catalog", () => {
+    _resetCatalogForTests();
+    let delta = 0;
+    forModel("kimi", "kimi-k3", () => {
+      delta = costDelta(() => trackUsage(1_000_000, 1_000_000, 1_000_000, 0));
+    });
+    // $3 no-cache input + $15 output + $0.30 cache read.
+    expect(delta).toBeCloseTo(18.3, 5);
+  });
+
   test("kimi-k2.7-code: cache_read from catalog (0.19/1M), NOT 10% of input (0.095/1M)", () => {
     _resetCatalogForTests();
     let delta = 0;
