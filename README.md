@@ -174,10 +174,10 @@ Session snapshots persist only versioned plans, event projections, and evidence 
 status and audit. A retry reuses behavior state only when both the turn number and hashed request
 identity match; a later request, abort, or refusal always starts with fresh evidence.
 
-> Release status: `interference-agent@0.6.0` is public on npm and ships the authoritative Agentic SWE
-> integration. It pins the public Agentic SWE `0.1.0` packages, implements Protocol `1.1`, and has
-> been verified from a clean registry install. Agentic SWE and Interference remain independently
-> versioned projects.
+> Release line `0.7.0` adds Kimi K3 and preserves complete reasoning/tool history across multi-step
+> turns. It retains the authoritative Agentic SWE integration introduced in `0.6.0`, pins the public
+> Agentic SWE `0.1.0` packages, and implements Protocol `1.1`. Agentic SWE and Interference remain
+> independently versioned projects.
 
 ## Updating
 
