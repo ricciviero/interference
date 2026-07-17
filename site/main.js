@@ -20,6 +20,7 @@ const I18N = {
     "hero.framework_badge": "Behavior powered by Agentic SWE ↗",
     "hero.cta_start": "Get started",
     "hero.cta_source": "GitHub ↗",
+    "hero.cta_discord": "Join Discord ↗",
 
     "term.title": "interference — ~/project",
 
@@ -143,6 +144,7 @@ const I18N = {
     "hero.framework_badge": "Comportamento basato su Agentic SWE ↗",
     "hero.cta_start": "Inizia",
     "hero.cta_source": "GitHub ↗",
+    "hero.cta_discord": "Entra su Discord ↗",
 
     "term.title": "interference — ~/progetto",
 

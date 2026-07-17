@@ -1,6 +1,6 @@
 {
   "name": "interference-agent",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "The open-source coding agent that lives in your terminal.",
   "type": "module",
   "license": "MIT",

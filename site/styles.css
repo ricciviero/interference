@@ -178,7 +178,7 @@ a { color: inherit; text-decoration: none; }
 
 /* Centered hero: logomark enlarged behind the copy, dimmed + edge-faded so it
    reads as atmosphere, not a competing element. */
-.hero-copy--center { position: relative; z-index: 1; max-width: 640px; text-align: center; }
+.hero-copy--center { position: relative; z-index: 1; width: 100%; max-width: 640px; text-align: center; }
 .hero-bg-mark {
   position: absolute; top: 50%; left: 50%; z-index: 0;
   width: min(920px, 150vw); transform: translate(-50%, -50%);
@@ -206,6 +206,13 @@ a { color: inherit; text-decoration: none; }
   transition: transform 0.18s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease);
 }
 .btn-gh svg { flex-shrink: 0; }
+.hero-actions--community {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 420px);
+  margin-left: auto;
+  margin-right: auto;
+}
 .btn:hover { transform: translateY(-2px); }
 .btn:focus-visible, .hero-badge--link:focus-visible, .nav a:focus-visible, .foot a:focus-visible {
   outline: 2px solid currentColor;
@@ -221,6 +228,7 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 620px) {
   .hero-bg-mark { width: min(640px, 190vw); opacity: 0.12; }
   .install--hero .install-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .hero-actions--community { grid-template-columns: 1fr; width: min(100%, 260px); }
 }
 
 /* ── INK BAND ────────────────────────────────────────── */
