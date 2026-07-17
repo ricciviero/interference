@@ -187,6 +187,10 @@ bun install -g interference-agent@latest   # or: npm i -g interference-agent@lat
 
 interference checks npm for new versions and shows a discreet notice when one is available; run `/update` from inside the app to upgrade.
 
+## Community
+
+Join the [interference Discord server](https://discord.gg/tbNNWu4gC) for questions, feedback, and contributor discussion.
+
 ## Contributing
 
 Contributions are welcome. You do not need to be a member of a GitHub team: fork the repository,
