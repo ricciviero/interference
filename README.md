@@ -62,7 +62,7 @@ use Interference.
 - **Config file** — per-project `interference.json` (model, permissions, mode, instructions, Agentic SWE enforcement/diagnostics)
 - **Diff view** — color-coded (+/-, green/red) in TUI for every edit/write
 - **TUI with Ink** — `<Static>` history, streaming, spinner, TextInput, status footer (model / mode / context% / cost / git branch), pickers (model, provider, thinking), slash autocomplete, session list, toast, welcome screen, aligned markdown tables, reverse search over prompt history
-- **Multi-provider** — DeepSeek, OpenAI (GPT-5.6 Sol/Terra/Luna), Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi), Google (Gemini), Groq, xAI (Grok), Mistral, OpenRouter + any OpenAI-compatible endpoint; model picker grouped by provider with type-to-filter; pricing/context from a live model catalog. **OpenRouter** loads its full live catalog (hundreds of models) from its `/models` endpoint — filter and pick any of them
+- **Multi-provider** — DeepSeek, OpenAI (GPT-5.6 Sol/Terra/Luna), Anthropic (Claude), Zhipu (GLM), Moonshot (Kimi K3/K2), Google (Gemini), Groq, xAI (Grok), Mistral, OpenRouter + any OpenAI-compatible endpoint; model picker grouped by provider with type-to-filter; pricing/context from a live model catalog. **OpenRouter** loads its full live catalog (hundreds of models) from its `/models` endpoint — filter and pick any of them
 - **Reasoning/thinking** — distinct `┄ thinking` blocks with model-specific effort levels, enabled at the maximum supported level by default
 - **Cost tracking** — real-time cost estimation per model
 - **AGENTS.md & CLAUDE.md** — auto-loaded from project tree into system prompt
@@ -101,6 +101,25 @@ interference stores its state in `~/.interference/` — sessions, skills, snapsh
 Agentic SWE is installed transitively with Interference; users do not install it separately.
 
 > `npm i -g interference-agent` works too, but **Bun must still be installed** to run the CLI (the `interference` binary runs on Bun).
+
+## Kimi K3
+
+[Kimi K3](https://www.kimi.com/blog/kimi-k3) is available through the Moonshot provider with its
+public API model ID `kimi-k3`, 1M-token context, native tool calling, and max-effort reasoning. Add
+your Moonshot key with `/provider`, then select it from the model picker or run:
+
+```text
+/model kimi kimi-k3
+/clear
+```
+
+K3 is always-thinking and currently supports only `/thinking max`. Its reasoning is preserved and
+sent back unchanged across tool calls and later turns, as required by the
+[K3 API contract](https://platform.kimi.ai/docs/guide/kimi-k3-quickstart).
+
+Kimi's implicit default remains K2.7 so an existing K2 conversation is never migrated silently.
+When switching to K3, use `/clear` as shown above or start a new session: Moonshot warns that mixing
+another model's history into K3 can make the conversation unstable.
 
 ## Agentic SWE enforcement details
 

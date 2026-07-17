@@ -1,9 +1,12 @@
 import { describe, test, expect, afterEach } from "bun:test";
+import { generateText, stepCountIs, tool, type ModelMessage } from "ai";
+import { z } from "zod";
 import { resolveModel } from "../provider.ts";
 import { cheapModelFor, currentModel, currentProvider, setModel, setProvider, resetModel, PROVIDERS } from "../config.ts";
 
 const PREV_ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const PREV_DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
+const PREV_KIMI_KEY = process.env.KIMI_API_KEY;
 
 afterEach(() => {
   resetModel();
@@ -12,6 +15,103 @@ afterEach(() => {
   else process.env.ANTHROPIC_API_KEY = PREV_ANTHROPIC_KEY;
   if (PREV_DEEPSEEK_KEY === undefined) delete process.env.DEEPSEEK_API_KEY;
   else process.env.DEEPSEEK_API_KEY = PREV_DEEPSEEK_KEY;
+  if (PREV_KIMI_KEY === undefined) delete process.env.KIMI_API_KEY;
+  else process.env.KIMI_API_KEY = PREV_KIMI_KEY;
+});
+
+describe("Kimi K3 multi-turn reasoning contract", () => {
+  test("preserves reasoning_content across a tool call and the next user turn", async () => {
+    type ChatRequest = {
+      model?: string;
+      reasoning_effort?: string;
+      thinking?: unknown;
+      messages: Array<{
+        role: string;
+        content?: string | null;
+        reasoning_content?: string;
+        tool_calls?: unknown;
+      }>;
+    };
+    const requests: ChatRequest[] = [];
+    const server = Bun.serve({
+      port: 0,
+      async fetch(request) {
+        requests.push(await request.json() as ChatRequest);
+        const turn = requests.length;
+        const message = turn === 1
+          ? {
+              role: "assistant",
+              content: null,
+              reasoning_content: "thought 1",
+              tool_calls: [{
+                id: "call_1",
+                type: "function",
+                function: { name: "multiply", arguments: JSON.stringify({ a: 17, b: 24 }) },
+              }],
+            }
+          : {
+              role: "assistant",
+              content: `answer ${turn - 1}`,
+              reasoning_content: `thought ${turn}`,
+            };
+        return Response.json({
+          id: `chatcmpl-${turn}`,
+          object: "chat.completion",
+          created: 1,
+          model: "kimi-k3",
+          choices: [{ index: 0, message, finish_reason: turn === 1 ? "tool_calls" : "stop" }],
+          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+        });
+      },
+    });
+
+    const originalBaseURL = PROVIDERS.kimi.baseURL;
+    process.env.KIMI_API_KEY = "test-key";
+    PROVIDERS.kimi.baseURL = `${server.url.origin}/v1`;
+
+    try {
+      const model = await resolveModel({ provider: "kimi", model: "kimi-k3", thinkingLevel: "max" });
+      const history: ModelMessage[] = [{ role: "user", content: "first" }];
+      const first = await generateText({
+        model,
+        messages: history,
+        tools: {
+          multiply: tool({
+            description: "Multiply two numbers.",
+            inputSchema: z.object({ a: z.number(), b: z.number() }),
+            execute: async ({ a, b }) => ({ result: a * b }),
+          }),
+        },
+        stopWhen: stepCountIs(2),
+      });
+      // Mirrors runTurn(): responseMessages aggregates every step; response.messages
+      // contains only the final step and would lose the tool-calling reasoning.
+      history.push(...first.responseMessages, { role: "user", content: "second" });
+      await generateText({ model, messages: history });
+
+      expect(requests).toHaveLength(3);
+      expect(requests[0]!.model).toBe("kimi-k3");
+      expect(requests[0]!.reasoning_effort).toBe("max");
+      expect(requests[0]!.thinking).toBeUndefined();
+
+      const toolCallingAssistant = requests[1]!.messages.find((message) => message.role === "assistant");
+      expect(toolCallingAssistant).toMatchObject({
+        role: "assistant",
+        content: null,
+        reasoning_content: "thought 1",
+      });
+      expect(toolCallingAssistant?.tool_calls).toBeDefined();
+      expect(requests[1]!.messages.some((message) => message.role === "tool")).toBe(true);
+
+      const preservedReasoning = requests[2]!.messages
+        .filter((message) => message.role === "assistant")
+        .map((message) => message.reasoning_content);
+      expect(preservedReasoning).toEqual(["thought 1", "thought 2"]);
+    } finally {
+      PROVIDERS.kimi.baseURL = originalBaseURL;
+      server.stop(true);
+    }
+  });
 });
 
 describe("cheapModelFor (iter 31)", () => {
@@ -21,6 +121,11 @@ describe("cheapModelFor (iter 31)", () => {
     expect(cheapModelFor("kimi")).toBe("kimi-k2.5");
     expect(cheapModelFor("glm")).toBe("glm-5.2");
     expect(cheapModelFor("openai")).toBe("gpt-5.6-luna");
+  });
+
+  test("K3 is selectable without silently replacing the Kimi K2 default", () => {
+    expect(PROVIDERS.kimi.defaultModel).toBe("kimi-k2.7-code");
+    expect(PROVIDERS.kimi.models.some((model) => model.id === "kimi-k3")).toBe(true);
   });
 });
 
