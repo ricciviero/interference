@@ -118,7 +118,7 @@ describe("shadow runtime", () => {
         value: "non-trivial",
         reasons: ["feature"],
         confidence: 1,
-        selectedSkills: ["agents-setup"],
+        selectedSkills: [],
       }),
       skillCandidates: [{
         name: "agents-setup",

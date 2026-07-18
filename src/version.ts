@@ -1,20 +1,11 @@
-import { readFileSync } from "node:fs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import * as path from "node:path";
+import packageJson from "../package.json" with { type: "json" };
 import { interferenceDir } from "./paths.ts";
 
-// Current version read from the package.json of the package (sync, works even
-// installed globally: version.ts lives in <pkg>/src, package.json in <pkg>/).
-function readVersion(): string {
-  try {
-    const raw = readFileSync(new URL("../package.json", import.meta.url), "utf8");
-    return (JSON.parse(raw).version as string) ?? "0.0.0";
-  } catch {
-    return "0.0.0";
-  }
-}
-
-export const CURRENT_VERSION: string = readVersion();
+// A static JSON import works both from the published source package and from
+// Bun's compiled binary, where import.meta.url no longer points at package.json.
+export const CURRENT_VERSION: string = packageJson.version;
 
 const PKG = "interference-agent";
 const TTL = 24 * 60 * 60 * 1000; // 24h

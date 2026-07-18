@@ -33,7 +33,7 @@ import {
   type ShadowRecord,
 } from "./types.ts";
 
-const PORT_TIMEOUT_MS = 15_000;
+const PORT_TIMEOUT_MS = 45_000;
 
 export function behaviorRequestId(
   sessionId: string,
@@ -44,7 +44,6 @@ export function behaviorRequestId(
 }
 
 export interface BehaviorPort extends TaskClassifier, SkillRouter {
-  setRequestedSkills?(requestId: string, names: readonly string[]): void;
   takeTelemetry?(requestId: string): ClassifierTelemetry | undefined;
   takeRequestSignals?(requestId: string): {
     explicitOnboarding: boolean;
@@ -216,7 +215,6 @@ export function createShadowRuntime(dependencies: ShadowRuntimeDependencies = {}
       const classifier = classifierFactory(
         dependencies.skillCandidates ?? behaviorSkillCandidates(),
       );
-      classifier.setRequestedSkills?.(requestId, input.legacy.selectedSkills);
       const suppliedClassification = input.classification !== undefined;
       const classification = suppliedClassification
         ? { classification: input.classification!, diagnostics: [] }

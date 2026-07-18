@@ -33,6 +33,12 @@ or product changes here. A cross-repository change should link both pull request
 released package version in Interference, and include clean-install E2E evidence; local `file:`
 dependencies must not be committed.
 
+Changes to `--headless`, behavior classification, skill routing, permissions, tool events, usage, or
+completion semantics must include deterministic headless coverage and a trajectory redaction audit.
+If a change can affect BehaviorBench, link the corresponding Agentic SWE change and state whether
+the frozen result remains comparable. Raw Harbor jobs, provider keys, local source tarballs,
+complete trajectories, and machine-specific paths must never be committed here.
+
 ## Maintainers
 
 - Work daily on `dev` or a focused branch, then open a Pull Request to `main`.

@@ -12,7 +12,7 @@ import {
 } from "../config.ts";
 import { systemPrompt } from "./prompt.ts";
 import { toolsForMode } from "../tools/index.ts";
-import { trackUsage } from "../cost.ts";
+import { getTotalCost, trackUsage } from "../cost.ts";
 import { getTodos } from "../tools/todowrite.ts";
 import {
   capabilitiesForLegacyTools,
@@ -42,9 +42,24 @@ import { BehaviorEventRecorder } from "../behavior/events.ts";
 import type { ShadowEvaluation } from "../behavior/types.ts";
 
 export type Chunk =
-  | { type: "text" | "reasoning"; text: string }
+  | { type: "text"; text: string }
+  | { type: "reasoning"; text: string }
   | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
   | { type: "tool-result"; toolCallId: string; toolName: string; output: string; isError: boolean };
+
+export interface TurnExecutionOptions {
+  /** Hard output ceiling for one provider call; used by bounded one-shot hosts. */
+  maxOutputTokens?: number;
+  /** Stop before another provider round once accumulated main-model cost reaches this cap. */
+  maxCostUsd?: number;
+}
+
+export class TurnBudgetExceededError extends Error {
+  constructor(readonly costUsd: number, readonly maxCostUsd: number) {
+    super(`Accumulated provider cost $${costUsd.toFixed(6)} reached the per-run cap $${maxCostUsd.toFixed(6)}.`);
+    this.name = "TurnBudgetExceededError";
+  }
+}
 
 // --- Continuation loop (fix/09) --------------------------------------------
 // The turn no longer ends silently at a hardcoded step cap. After each streamText
@@ -188,6 +203,13 @@ export function protocolCompletionGuardApplies(
   return mutationRequested === true && (phase === "execution" || phase === "verification");
 }
 
+export function mergeObservedSkills(
+  previous: readonly string[] = [],
+  selected: readonly { name: string }[] = [],
+): string[] {
+  return [...new Set([...previous, ...selected.map((skill) => skill.name)])].sort();
+}
+
 export async function* runTurn(
   messages: ModelMessage[],
   signal?: AbortSignal,
@@ -202,6 +224,7 @@ export async function* runTurn(
   // in E2E during it. 36.
   toolsOverride?: ToolSet,
   behaviorContext?: BehaviorTurnContext,
+  executionOptions?: TurnExecutionOptions,
 ): AsyncGenerator<Chunk> {
   const reasoning = reasoningConfig({
     providerId: modelOverride?.provider,
@@ -263,7 +286,14 @@ export async function* runTurn(
       turnNumber: behaviorContext?.turnNumber ?? 0,
       ...(planningRecord ? { planningRecord } : {}),
       plan: evaluation.plan,
+      observedSkills: mergeObservedSkills(
+        currentSnapshot?.observedSkills,
+        evaluation.plan.selectedSkills,
+      ),
       effectiveCapabilities: [...evaluation.effectiveCapabilities],
+      ...(evaluation.classifier || currentSnapshot?.classifier
+        ? { classifier: evaluation.classifier ?? currentSnapshot?.classifier }
+        : {}),
       events: [...events],
       evidence,
       outstandingCriteria: completion.outstanding.map((criterion) => criterion.id),
@@ -483,6 +513,12 @@ export async function* runTurn(
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    if (
+      executionOptions?.maxCostUsd !== undefined &&
+      getTotalCost() >= executionOptions.maxCostUsd
+    ) {
+      throw new TurnBudgetExceededError(getTotalCost(), executionOptions.maxCostUsd);
+    }
     const result = streamText({
       model,
       system,
@@ -498,7 +534,9 @@ export async function* runTurn(
             >[0]["providerOptions"],
           }
         : {}),
-      ...(reasoning.maxOutputTokens ? { maxOutputTokens: reasoning.maxOutputTokens } : {}),
+      ...(executionOptions?.maxOutputTokens || reasoning.maxOutputTokens
+        ? { maxOutputTokens: executionOptions?.maxOutputTokens ?? reasoning.maxOutputTokens }
+        : {}),
     });
 
     for await (const part of result.fullStream) {
@@ -562,6 +600,13 @@ export async function* runTurn(
       const cacheRead = usage.inputTokenDetails?.cacheReadTokens ?? 0;
       const cacheWrite = usage.inputTokenDetails?.cacheWriteTokens ?? 0;
       trackUsage(noCache, usage.outputTokens ?? 0, cacheRead, cacheWrite);
+    }
+
+    if (
+      executionOptions?.maxCostUsd !== undefined &&
+      getTotalCost() >= executionOptions.maxCostUsd
+    ) {
+      throw new TurnBudgetExceededError(getTotalCost(), executionOptions.maxCostUsd);
     }
 
     const finishReason = await result.finishReason;

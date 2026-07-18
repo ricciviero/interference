@@ -5,6 +5,20 @@ All notable changes to interference. Format based on
 
 ## [Unreleased]
 
+### Added
+- **Headless agent lifecycle.** `interference --headless` now runs one primary turn from stdin or a prompt file and atomically writes a versioned, machine-readable trajectory for harnesses and integrations.
+- Headless runs expose validated treatment, provider, model, thinking, timeout, output-token, and cost limits with stable outcomes and exit codes.
+
+### Changed
+- Agentic SWE classification now accepts `trivial` only when all four Protocol 1.1 criteria hold and applies conservative, deny-wins non-trivial signals for refactors, migrations, deployments, security/contract work, and multiple independent deliverables.
+- Required workflow skills are deterministic: setup selects `agents-setup` and required planning selects `iterations-planner`; model routing can add specialized skills but cannot suppress a gate.
+- Behavior snapshots retain cumulative observed skills and classifier attempt/usage telemetry across setup, planning, execution, verification, and completion.
+
+### Security
+- Headless trajectories exclude reasoning, secrets, complete commands, raw tool output, and source bodies; command subjects are reduced to executable metadata plus a stable hash, and paths are normalized to the workspace.
+- The serialized workspace identifier is the portable `.` marker rather than the host's absolute current directory.
+- Non-interactive confirmations use deny by default. Cost limits are checked conservatively before the provider call and again during and after the turn.
+
 ## [0.7.0] — 2026-07-17
 
 ### Added

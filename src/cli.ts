@@ -23,14 +23,14 @@ async function main(): Promise<void> {
     return;
   }
 
+  const headless = cliArgs.includes("--headless");
+
   // Terminal tab/window title, only in TTY
   // (in a pipe/non-TTY, OSC sequences would pollute the output).
   // OSC 1 = icon/tab name, OSC 2 = window title.
-  if (stdout.isTTY) {
+  if (!headless && stdout.isTTY) {
     stdout.write("\x1b]1;◉ interference\x07\x1b]2;◉ interference\x07");
   }
-
-  const provider = currentProvider();
 
   await initStore();
   // Restore the last provider/model choice (saved on every /model or /provider selection).
@@ -56,6 +56,14 @@ async function main(): Promise<void> {
   // selected, so users on other providers don't pay the fetch. Makes cost/context accurate
   // from the first turn; the /model picker loads it too when opened. Never throws.
   if (currentProviderId() === "openrouter") await loadOpenRouterModels();
+
+  if (headless) {
+    const { runHeadlessCli } = await import("./cli-headless.ts");
+    process.exitCode = await runHeadlessCli(cliArgs);
+    return;
+  }
+
+  const provider = currentProvider();
 
   const args = Bun.argv.slice(2);
   const resumeId = args.includes("--continue")

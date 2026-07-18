@@ -5,6 +5,7 @@ import {
   nextProtocolLoopAction,
   planningRecordFromEvents,
   protocolCompletionGuardApplies,
+  mergeObservedSkills,
   shouldScheduleShadowForTurn,
 } from "../loop.ts";
 import {
@@ -99,6 +100,16 @@ describe("Agentic SWE authoritative continuation", () => {
   test("abort/refusal and non-natural stops are never protocol-nudged", () => {
     expect(nextProtocolLoopAction({ ...baseProtocol, refusedOrAborted: true })).toBe("stop");
     expect(nextProtocolLoopAction({ ...baseProtocol, naturalStop: false })).toBe("stop");
+  });
+
+  test("preserves skills observed in earlier workflow phases", () => {
+    expect(mergeObservedSkills(
+      ["iterations-planner"],
+      [{ name: "project-review" }, { name: "iterations-planner" }],
+    )).toEqual(["iterations-planner", "project-review"]);
+    expect(mergeObservedSkills(["iterations-planner"], [])).toEqual([
+      "iterations-planner",
+    ]);
   });
 
   test("derives a configured planning record only from successful scoped evidence", () => {

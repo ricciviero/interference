@@ -174,6 +174,45 @@ Session snapshots persist only versioned plans, event projections, and evidence 
 status and audit. A retry reuses behavior state only when both the turn number and hashed request
 identity match; a later request, abort, or refusal always starts with fresh evidence.
 
+Mandatory workflow skills are selected by the protocol, not by the classifier model: setup always
+routes to `agents-setup`, and required planning always routes to `iterations-planner`. The model can
+propose additional specialized skills, but it cannot suppress a gate. A request is accepted as
+trivial only when all four protocol criteria hold; explicit refactor, migration, deployment,
+security, behavior/contract, or multi-deliverable signals conservatively keep it non-trivial.
+
+## Headless integrations and BehaviorBench
+
+`--headless` exposes the same agent loop as a single, non-interactive run for harnesses and host
+integrations. It reads the instruction from stdin or `--prompt-file`, requires an atomic JSON
+trajectory destination, and enforces explicit model, timeout, output-token, and cost limits:
+
+```bash
+printf '%s\n' 'Inspect this repository and summarize its test strategy.' | \
+  interference --headless \
+  --output-json ./trajectory.json \
+  --treatment authoritative \
+  --provider deepseek \
+  --model deepseek-v4-pro \
+  --thinking max \
+  --max-cost-usd 0.25
+```
+
+The trajectory contains the final answer, redacted tool events, cumulative skill observations,
+usage, estimated cost, duration, outcome, and an optional already-redacted behavior snapshot. It
+never contains chain-of-thought, API keys, complete commands, raw tool output/source bodies, or an
+absolute workspace path. The final answer remains an explicit field and receives secret-pattern
+redaction.
+Interactive confirmations are denied rather than auto-approved. Stable exit codes distinguish
+completion, failure, argument errors, refusal, budget stop, and abort.
+
+This interface enabled the first paired
+[Agentic SWE BehaviorBench](https://github.com/ricciviero/agentic-swe/tree/main/benchmarks/results/behaviorbench-dsv4p-20260718-06):
+12 task clusters and 24 completed DeepSeek V4 Pro trials comparing the same Interference build in
+`legacy` and `authoritative` modes. Functional success was equal in the observed sample and the
+safety-oriented point estimates favored authoritative enforcement, but the preregistered
+confidence intervals were too wide for a general positive claim. The public report also records
+the substantial current overhead instead of hiding it.
+
 > Release line `0.7.0` adds Kimi K3 and preserves complete reasoning/tool history across multi-step
 > turns. It retains the authoritative Agentic SWE integration introduced in `0.6.0`, pins the public
 > Agentic SWE `0.1.0` packages, and implements Protocol `1.1`. Agentic SWE and Interference remain

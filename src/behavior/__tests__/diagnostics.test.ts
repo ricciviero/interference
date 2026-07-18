@@ -59,6 +59,7 @@ function record(): ShadowRecord {
       estimatedCostUsd: 0.00001,
       summaryCharacters: 42,
       truncated: false,
+      attempts: 1,
       outcome: "success",
     },
     diagnostics: [],
