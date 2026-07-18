@@ -39,7 +39,11 @@ export interface BehaviorSessionSnapshot {
   evidence?: Evidence[];
   outstandingCriteria?: string[];
   plan?: BehaviorPlan;
+  /** Union of Agentic SWE skills selected in any phase of the current turn. */
+  observedSkills?: string[];
   effectiveCapabilities?: Capability[];
+  /** Bounded classifier telemetry; contains no prompt or model output. */
+  classifier?: ClassifierTelemetry;
 }
 
 export interface LegacyBehaviorObservation {
@@ -59,6 +63,7 @@ export interface ClassifierTelemetry {
   estimatedCostUsd: number;
   summaryCharacters: number;
   truncated: boolean;
+  attempts: number;
   outcome: "success" | "error" | "aborted";
 }
 

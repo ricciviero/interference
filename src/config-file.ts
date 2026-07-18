@@ -32,6 +32,7 @@ export interface InterferenceConfig {
 }
 
 let loadedConfig: InterferenceConfig | null = null;
+let behaviorOverride: ResolvedBehaviorConfig | null = null;
 
 const DEFAULT_BEHAVIOR: ResolvedBehaviorConfig = Object.freeze({
   engine: "agentic-swe",
@@ -92,7 +93,13 @@ export function resolveBehaviorConfig(
 }
 
 export function currentBehaviorConfig(): ResolvedBehaviorConfig {
-  return resolveBehaviorConfig(loadedConfig?.behavior);
+  return behaviorOverride ?? resolveBehaviorConfig(loadedConfig?.behavior);
+}
+
+/** Process-local override used by explicit one-shot hosts such as `--headless`.
+ *  It never rewrites the repository's interference.json. */
+export function setBehaviorConfigOverride(behavior: BehaviorConfig | null): void {
+  behaviorOverride = behavior ? resolveBehaviorConfig(behavior) : null;
 }
 
 function parseInterferenceConfig(value: unknown): InterferenceConfig {
